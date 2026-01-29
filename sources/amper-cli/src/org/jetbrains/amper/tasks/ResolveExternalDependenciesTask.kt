@@ -27,6 +27,7 @@ import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.dr.resolver.CliReportingMavenResolver
 import org.jetbrains.amper.frontend.dr.resolver.DirectFragmentDependencyNode
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies
 import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencyNodeWithModuleAndContext
 import org.jetbrains.amper.frontend.dr.resolver.flow.toResolutionPlatform
 import org.jetbrains.amper.frontend.dr.resolver.getExternalDependencies
@@ -181,7 +182,7 @@ class ResolveExternalDependenciesTask(
                 )
 
                 val result = try {
-                    val moduleDependenciesForResolution = moduleDependencies.forResolution(isTest)
+                    val moduleDependenciesForResolution = moduleDependencies.forCLIResolution(isTest)
                     incrementalCache.execute(
                         key = taskName.name,
                         inputValues = mapOf(

@@ -37,8 +37,8 @@ import org.jetbrains.amper.frontend.dr.resolver.CliReportingMavenResolver
 import org.jetbrains.amper.frontend.dr.resolver.emptyContext
 import org.jetbrains.amper.frontend.dr.resolver.uniqueModuleKey
 import org.jetbrains.amper.frontend.isDescendantOf
-import org.jetbrains.amper.tasks.ModuleDependencies
-import org.jetbrains.amper.tasks.buildDependenciesGraph
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies
+import org.jetbrains.amper.frontend.dr.resolver.buildDependenciesGraph
 
 internal class ShowDependenciesCommand: AmperModelAwareCommand(name = "dependencies") {
 
@@ -171,7 +171,7 @@ internal class ShowDependenciesCommand: AmperModelAwareCommand(name = "dependenc
         val variantsToResolve = variantsToResolveWithPlatforms.map { it.second }
 
         // Resolution should be done across all module platforms to align dependencies' versions.
-        val otherModuleDependencies = this.forResolution(isTests)
+        val otherModuleDependencies = this.forCLIResolution(isTests)
             .filterNot { perPlatformNode ->
                 variantsToResolve.any {
                     it.context.settings.platforms == perPlatformNode.context.settings.platforms

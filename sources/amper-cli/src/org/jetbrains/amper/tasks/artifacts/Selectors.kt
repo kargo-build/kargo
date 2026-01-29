@@ -15,7 +15,7 @@ import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.tasks.artifacts.api.ArtifactSelector
 import org.jetbrains.amper.tasks.artifacts.api.ArtifactType
 import org.jetbrains.amper.tasks.artifacts.api.Quantifier
-import org.jetbrains.amper.tasks.getModuleDependencies
+import org.jetbrains.amper.frontend.dr.resolver.getModuleDependencies
 import kotlin.reflect.KClass
 
 /**

@@ -13,7 +13,7 @@ import org.jetbrains.amper.tasks.CommonTaskType
 import org.jetbrains.amper.tasks.PlatformTaskType
 import org.jetbrains.amper.tasks.ProjectTasksBuilder
 import org.jetbrains.amper.tasks.ProjectTasksBuilder.Companion.getTaskOutputPath
-import org.jetbrains.amper.tasks.getModuleDependencies
+import org.jetbrains.amper.frontend.dr.resolver.getModuleDependencies
 import org.jetbrains.amper.tasks.ios.IosTaskType
 import org.jetbrains.amper.tasks.ios.ManageXCodeProjectTask
 import org.jetbrains.amper.util.BuildType

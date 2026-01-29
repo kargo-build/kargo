@@ -12,7 +12,7 @@ import org.jetbrains.amper.frontend.plugins.generated.ShadowResolutionScope
 import org.jetbrains.amper.frontend.plugins.generated.ShadowSourcesKind
 import org.jetbrains.amper.tasks.CommonTaskType
 import org.jetbrains.amper.tasks.ProjectTasksBuilder
-import org.jetbrains.amper.tasks.getModuleDependencies
+import org.jetbrains.amper.frontend.dr.resolver.getModuleDependencies
 
 fun ProjectTasksBuilder.setupTasksFromPlugins() {
     allModules().withEach {

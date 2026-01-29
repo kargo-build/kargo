@@ -27,7 +27,7 @@ import org.jetbrains.amper.frontend.jdkSettings
 import org.jetbrains.amper.frontend.mavenRepositories
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.tasks.TaskResult
-import org.jetbrains.amper.tasks.buildDependenciesGraph
+import org.jetbrains.amper.frontend.dr.resolver.buildDependenciesGraph
 import org.jetbrains.amper.tasks.toIncrementalCacheResult
 import org.jetbrains.amper.telemetry.setListAttribute
 import org.jetbrains.amper.telemetry.spanBuilder
