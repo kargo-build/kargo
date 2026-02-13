@@ -1,4 +1,7 @@
-Fragment 'shared.iosX64' dependencies
+Module shared
+│ - main
+│ - scope = COMPILE
+│ - platforms = [iosX64]
 ├─── shared:iosX64:org.jetbrains.compose.foundation:foundation:#composeDefaultVersion
 │    ╰─── org.jetbrains.compose.foundation:foundation:#composeDefaultVersion
 │         ╰─── org.jetbrains.compose.foundation:foundation-uikitx64:#composeDefaultVersion
@@ -221,14 +224,14 @@ Fragment 'shared.iosX64' dependencies
 │              ├─── org.jetbrains.compose.animation:animation-core:1.9.3 -> #composeDefaultVersion (*)
 │              ├─── org.jetbrains.compose.foundation:foundation:1.9.3 -> #composeDefaultVersion (*)
 │              ├─── org.jetbrains.compose.foundation:foundation-layout:1.9.3 -> #composeDefaultVersion (*)
-│              ├─── org.jetbrains.compose.material:material-ripple:1.9.3 -> #composeDefaultVersion
-│              │    ╰─── org.jetbrains.compose.material:material-ripple-uikitx64:#composeDefaultVersion
-│              │         ├─── org.jetbrains.compose.animation:animation:#composeDefaultVersion (*)
-│              │         ├─── org.jetbrains.compose.collection-internal:collection:#composeDefaultVersion (*)
-│              │         ├─── org.jetbrains.compose.foundation:foundation:#composeDefaultVersion (*)
-│              │         ├─── org.jetbrains.compose.runtime:runtime:#composeDefaultVersion (*)
-│              │         ├─── org.jetbrains.compose.ui:ui-util:#composeDefaultVersion (*)
-│              │         ╰─── org.jetbrains.kotlin:kotlin-stdlib:2.2.20 -> #kotlinVersion
+│              ├─── org.jetbrains.compose.material:material-ripple:1.9.3
+│              │    ╰─── org.jetbrains.compose.material:material-ripple-uikitx64:1.9.3
+│              │         ├─── org.jetbrains.compose.animation:animation:1.9.3 -> #composeDefaultVersion (*)
+│              │         ├─── org.jetbrains.compose.collection-internal:collection:1.9.3 -> #composeDefaultVersion (*)
+│              │         ├─── org.jetbrains.compose.foundation:foundation:1.9.3 -> #composeDefaultVersion (*)
+│              │         ├─── org.jetbrains.compose.runtime:runtime:1.9.3 -> #composeDefaultVersion (*)
+│              │         ├─── org.jetbrains.compose.ui:ui-util:1.9.3 -> #composeDefaultVersion (*)
+│              │         ╰─── org.jetbrains.kotlin:kotlin-stdlib:2.1.21 -> #kotlinVersion
 │              ├─── org.jetbrains.compose.runtime:runtime:1.9.3 -> #composeDefaultVersion (*)
 │              ├─── org.jetbrains.compose.ui:ui-backhandler:1.9.3 -> #composeDefaultVersion (*)
 │              ├─── org.jetbrains.compose.ui:ui-graphics:1.9.3 -> #composeDefaultVersion (*)
@@ -240,7 +243,39 @@ Fragment 'shared.iosX64' dependencies
 │                   ╰─── org.jetbrains.kotlinx:kotlinx-datetime-iosx64:0.7.1
 │                        ├─── org.jetbrains.kotlin:kotlin-stdlib:2.1.20 -> #kotlinVersion
 │                        ╰─── org.jetbrains.kotlinx:kotlinx-serialization-core:1.6.2 -> 1.7.3 (*)
+├─── shared:apple:org.jetbrains.compose.foundation:foundation:#composeDefaultVersion
+│    ╰─── org.jetbrains.compose.foundation:foundation:#composeDefaultVersion (*)
+├─── shared:apple:org.jetbrains.compose.material3:material3:1.10.0-alpha05
+│    ╰─── org.jetbrains.compose.material3:material3:1.10.0-alpha05 (*)
+├─── shared:common:org.jetbrains.compose.foundation:foundation:#composeDefaultVersion
+│    ╰─── org.jetbrains.compose.foundation:foundation:#composeDefaultVersion (*)
+├─── shared:common:org.jetbrains.compose.material3:material3:1.10.0-alpha05
+│    ╰─── org.jetbrains.compose.material3:material3:1.10.0-alpha05 (*)
+├─── shared:ios:org.jetbrains.compose.foundation:foundation:#composeDefaultVersion
+│    ╰─── org.jetbrains.compose.foundation:foundation:#composeDefaultVersion (*)
+├─── shared:ios:org.jetbrains.compose.material3:material3:1.10.0-alpha05
+│    ╰─── org.jetbrains.compose.material3:material3:1.10.0-alpha05 (*)
+├─── shared:native:org.jetbrains.compose.foundation:foundation:#composeDefaultVersion
+│    ╰─── org.jetbrains.compose.foundation:foundation:#composeDefaultVersion (*)
+├─── shared:native:org.jetbrains.compose.material3:material3:1.10.0-alpha05
+│    ╰─── org.jetbrains.compose.material3:material3:1.10.0-alpha05 (*)
 ├─── shared:iosX64:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
 │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
-╰─── shared:iosX64:org.jetbrains.compose.runtime:runtime:#composeDefaultVersion, implicit (because Compose is enabled)
+├─── shared:iosX64:org.jetbrains.compose.runtime:runtime:#composeDefaultVersion, implicit (because Compose is enabled)
+│    ╰─── org.jetbrains.compose.runtime:runtime:#composeDefaultVersion (*)
+├─── shared:apple:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+│    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
+├─── shared:apple:org.jetbrains.compose.runtime:runtime:#composeDefaultVersion, implicit (because Compose is enabled)
+│    ╰─── org.jetbrains.compose.runtime:runtime:#composeDefaultVersion (*)
+├─── shared:common:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+│    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
+├─── shared:common:org.jetbrains.compose.runtime:runtime:#composeDefaultVersion, implicit (because Compose is enabled)
+│    ╰─── org.jetbrains.compose.runtime:runtime:#composeDefaultVersion (*)
+├─── shared:ios:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+│    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
+├─── shared:ios:org.jetbrains.compose.runtime:runtime:#composeDefaultVersion, implicit (because Compose is enabled)
+│    ╰─── org.jetbrains.compose.runtime:runtime:#composeDefaultVersion (*)
+├─── shared:native:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+│    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
+╰─── shared:native:org.jetbrains.compose.runtime:runtime:#composeDefaultVersion, implicit (because Compose is enabled)
      ╰─── org.jetbrains.compose.runtime:runtime:#composeDefaultVersion (*)

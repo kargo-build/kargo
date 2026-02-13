@@ -26,14 +26,16 @@ internal class DependencyNodeWithChildren(val node: DependencyNode): DependencyN
 
 /**
  * Returned filtered dependencies graph,
- * containing paths from the root to the maven dependency node corresponding to the given coordinates (group and module)
+ * containing paths from the given root node to the maven dependency node corresponding to the given coordinates ([group] and [module])
  * and having the version equal to the actual resolved version of this dependency in the graph.
  * If the resolved dependency version is enforced by constraint, then the path to that constraint is presented
- * in the returned graph together with paths to all versions of this dependency.
+ * in a returned graph together with paths to all versions of this dependency.
  *
  * Every node of the returned graph is of the type [DependencyNodeWithChildren] holding the corresponding node of the original graph inside.
  */
-fun filterGraph(group: String, module: String, graph: DependencyNode, resolvedVersionOnly: Boolean = false): DependencyNode {
+fun DependencyNode.filterGraph(group: String, module: String, resolvedVersionOnly: Boolean = false): DependencyNode {
+    val graph = this
+
     val nodes = graph.distinctBfsSequence(
         childrenPredicate = { child, parent ->
             !resolvedVersionOnly

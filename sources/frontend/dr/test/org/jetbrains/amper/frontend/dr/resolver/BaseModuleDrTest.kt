@@ -8,6 +8,7 @@ import io.opentelemetry.api.OpenTelemetry
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.test.TestScope
 import org.intellij.lang.annotations.Language
+import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.Context
 import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.dependency.resolution.FileCacheBuilder
@@ -16,6 +17,8 @@ import org.jetbrains.amper.dependency.resolution.MavenCoordinates
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
+import org.jetbrains.amper.dependency.resolution.ResolvedGraph
+import org.jetbrains.amper.dependency.resolution.Resolver
 import org.jetbrains.amper.dependency.resolution.RootDependencyNodeStub
 import org.jetbrains.amper.dependency.resolution.diagnostics.Message
 import org.jetbrains.amper.dependency.resolution.diagnostics.Severity
@@ -33,6 +36,7 @@ import org.junit.jupiter.api.TestInfo
 import org.opentest4j.AssertionFailedError
 import java.nio.file.Path
 import kotlin.coroutines.CoroutineContext
+import kotlin.io.path.createFile
 import kotlin.io.path.deleteIfExists
 import kotlin.io.path.exists
 import kotlin.io.path.name
@@ -42,7 +46,6 @@ import kotlin.io.path.writeText
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import kotlin.test.fail
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -63,13 +66,14 @@ abstract class BaseModuleDrTest {
         module: String? = null,
         fragment: String? = null,
         goldenFileName: String = testInfo.testMethod.get().name,
+        filter: ModuleResolutionFilter? = null,
         messagesCheck: (DependencyNode) -> Unit = defaultMessagesCheck
     ): DependencyNode {
         val goldenFile = goldenFileOsAware(
             "${goldenFileName.replace(" ", "_")}.tree.txt")
         val expected = getGoldenFileText(goldenFile, fileDescription = "Golden file for resolved tree")
         return withActualDump(goldenFile) {
-            doTest(aom, resolutionInput, verifyMessages, expected, module, fragment, messagesCheck)
+            doTest(aom, resolutionInput, verifyMessages, expected, module, fragment, filter, messagesCheck)
         }
     }
 
@@ -80,6 +84,7 @@ abstract class BaseModuleDrTest {
         @Language("text") expected: String? = null,
         module: String? = null,
         fragment: String? = null,
+        filter: ModuleResolutionFilter? = null,
         messagesCheck: (DependencyNode) -> Unit = defaultMessagesCheck
     ): DependencyNode {
         val resolutionInputCopy = resolutionInput
@@ -87,74 +92,136 @@ abstract class BaseModuleDrTest {
             .copy(incrementalCacheUsage = getIncrementalCacheUsage())
 
         val graph =
-            with(moduleDependenciesResolver) {
-                aom.modules.resolveDependencies(resolutionInputCopy)
-            }
-
-//        graph.verifyGraphConnectivity()
-        if (verifyMessages) {
-            graph.distinctBfsSequence().forEach {
-                messagesCheck(it)
-            }
-        }
-
-        val subGraph = when {
-            module != null && fragment != null ->
-                RootDependencyNodeStub(
-                    graphEntryName = "Fragment '$module.$fragment' dependencies",
-                    children = graph.fragmentDeps(module, fragment),
+            if (module == null && resolutionInput.dependenciesFlowType is DependenciesFlowType.IdeSyncType) {
+                with (ModuleDependencies) {
+                    aom.resolveProjectDependencies(
+                        resolutionInputCopy,
+                        AmperUserCacheRoot(Dirs.userCacheRoot)
+                    ).also { checkMessages(verifyMessages, it, messagesCheck) }
+                        .root
+                }
+            } else {
+                val resolutionType = when {
+                    resolutionInput.dependenciesFlowType is DependenciesFlowType.IdeSyncType
+                            || (resolutionInput.dependenciesFlowType is DependenciesFlowType.ClassPathType
+                                && resolutionInput.dependenciesFlowType.isTest) -> ResolutionType.ALL
+                    else -> ResolutionType.MAIN
+                }
+                val modules = aom.modules.filter { module == null || it.userReadableName == module }
+                ModuleDependencies.resolveModuleDependencies(
+                    modules,
+                    resolutionInputCopy,
+                    AmperUserCacheRoot(Dirs.userCacheRoot),
+                    filter = filter,
+                    resolutionType = resolutionType,
                 )
-            module != null -> graph.moduleDeps(module)
-            else -> graph
-        }
+                    .also { checkMessages(verifyMessages, it, messagesCheck) }
+                    .let {
+                        if (module != null && fragment != null) {
+                            if (filter?.platforms != null) error("platforms could not be used as a filter together with fragment")
+                            val fragmentDeps = it.root.children
+                                .filterIsInstance<ModuleDependencyNode>()
+                                .fragmentDependencies(module, fragment, aom)
+                            RootDependencyNodeStub(
+                                graphEntryName = "Fragment '$module:$fragment' dependencies",
+                                children = fragmentDeps
+                            )
+                        } else {
+                            it.root
+                        }
+                    }
+            }
+
 
         expected?.let {
-            assertEquals(expected, subGraph)
+            val moduleDeps = graph.children.filterIsInstance<ModuleDependencyNode>()
+            assertEquals(moduleDeps.size, graph.children.size,
+                "Unexpected dependency type is among root children: " +
+                        (graph.children - moduleDeps).map{ it::class.simpleName }.joinToString()
+            )
+            assertModuleDepsEquals(expected, moduleDeps)
         }
-        return subGraph
+
+        return graph
     }
+
+    internal fun List<DirectFragmentDependencyNode>.filterByScope(scope: ResolutionScope?) =
+        scope?.let {
+            filter {
+                (it.dependencyNode as? MavenDependencyNode)?.dependency?.resolutionConfig?.scope == scope
+            }
+        } ?: this
 
     protected fun cacheBuilder(cacheRoot: Path): FileCacheBuilder.() -> Unit = {
         getDefaultFileCacheBuilder(cacheRoot).invoke(this)
         readOnlyExternalRepositories = emptyList()
     }
 
-    protected fun assertEquals(@Language("text") expected: String, root: DependencyNode, forMavenNode: MavenCoordinates? = null) =
-        assertEqualsWithDiff(expected.trimEnd().lines(), root.prettyPrint(forMavenNode).trimEnd().lines())
+    protected fun assertModuleDepsEquals(@Language("text") expected: String, moduleDeps: List<ModuleDependencyNode>, forMavenNode: MavenCoordinates? = null) {
+        assertEquals(expected, moduleDeps, forMavenNode)
+    }
+
+    private fun assertEquals(@Language("text") expected: String, roots: List<DependencyNode>, forMavenNode: MavenCoordinates? = null) {
+        val actual = StringBuilder()
+        roots.forEach {
+            actual.append(it.prettyPrint(forMavenNode))
+        }
+        assertEqualsWithDiff(
+            expected.trimEnd().lines(),
+            actual.trimEnd().lines()
+        )
+    }
+
+    protected fun assertEquals(@Language("text") expected: String, root: DependencyNode, forMavenNode: MavenCoordinates? = null) {
+        assertEquals(expected, listOf(root), forMavenNode)
+    }
 
     protected fun assertFiles(
         testInfo: TestInfo,
         root: DependencyNode,
         withSources: Boolean = false,
         checkExistence: Boolean = false,
-        checkAutoAddedDocumentation: Boolean = true
+        checkAutoAddedDocumentation: Boolean = true,
+        scope: ResolutionScope? = null,
     ) {
         val goldenFile = goldenFileOsAware(
             "${testInfo.testMethod.get().name.replace(" ", "_")}.files.txt")
         val expected = getGoldenFileText(goldenFile, fileDescription = "Golden file for files")
         withActualDump(goldenFile) {
-            assertFiles(expected.trim().lines(), root, withSources, checkExistence, checkAutoAddedDocumentation)
+            assertFiles(expected.trim().lines(), root, withSources, checkExistence, checkAutoAddedDocumentation, scope)
         }
     }
 
     // todo (AB) : Reuse utility methods from dependence-resolution test module
     protected fun assertFiles(
-        files: List<String>, root: DependencyNode,
+        expectedFiles: List<String>,
+        root: DependencyNode,
         withSources: Boolean = false,
         checkExistence: Boolean = false,// could be set to true only in case dependency files were downloaded by caller already
-        checkAutoAddedDocumentation: Boolean = true // auto-added documentation files are skipped fom check if this flag is false.
+        checkAutoAddedDocumentation: Boolean = true, // auto-added documentation files are skipped fom check if this flag is false.
+        scope: ResolutionScope? = null,
     ) {
         root.distinctBfsSequence()
             .filterIsInstance<MavenDependencyNode>()
-            .flatMap { it.dependency.files(withSources) }
-            .filterNot { !checkAutoAddedDocumentation && it.isAutoAddedDocumentation }
-            .mapNotNull { it.path }
-            .sortedBy { it.name }
-            .toSet()
-            .let {
-                assertEqualsWithDiff(files, it.map { file -> file.name })
+            .groupBy { it.dependency.resolutionConfig.scope } // todo (AB) : Group by module and test/main as well
+            .filterKeys { scope == null || it == scope }
+            .mapValues {
+                it.value.flatMap { it.dependency.files(withSources) }
+                    .filterNot { !checkAutoAddedDocumentation && it.isAutoAddedDocumentation }
+                    .mapNotNull { it.path }
+                    .sortedBy { it.name }
+                    .toSet()
+            }.also { filesPerScope ->
+                val actualList = buildList {
+                    for (key in filesPerScope.keys.sorted()) {
+                        add("$key")
+                        addAll(filesPerScope[key]!!.map { it.name })
+                    }
+                }
+                assertEqualsWithDiff(expectedFiles, actualList)
+
                 if (checkExistence) {
-                    it.forEach {
+                    filesPerScope.flatMap { it.value }.forEach {
                         check(it.exists()) {
                             "File $it was returned from dependency resolution, but is missing on disk"
                         }
@@ -164,7 +231,7 @@ abstract class BaseModuleDrTest {
     }
 
     protected fun getGoldenFileText(goldenFile: Path, fileDescription: String): String {
-        if (!goldenFile.exists()) fail("$fileDescription $goldenFile doesn't exist")
+        if (!goldenFile.exists()) { goldenFile.createFile() }
         return goldenFile
             .readText()
             .replace("#kotlinVersion", DefaultVersions.kotlin)
@@ -318,6 +385,30 @@ abstract class BaseModuleDrTest {
         )
     }
 
+    // todo (AB): [AMPER-4905] Remove on final cleanup
+    protected suspend fun <T> timed(text: String, block: suspend () -> T): T {
+        val start = System.currentTimeMillis()
+        return try {
+            block()
+        } finally {
+            val end = System.currentTimeMillis()
+            println("#######################")
+            println("Execution time: ${end - start} ms ($text)")
+        }
+    }
+
+    // todo (AB): [AMPER-4905] Remove on final cleanup
+    protected fun <T> timedBlocking(text: String, block: () -> T): T {
+        val start = System.currentTimeMillis()
+        return try {
+            block()
+        } finally {
+            val end = System.currentTimeMillis()
+            println("#######################")
+            println("Execution time: ${end - start} ms ($text)")
+        }
+    }
+
     protected fun context(
         scope: ResolutionScope = ResolutionScope.COMPILE,
         platform: Set<ResolutionPlatform> = setOf(ResolutionPlatform.JVM),
@@ -330,6 +421,18 @@ abstract class BaseModuleDrTest {
         this.cache = cacheBuilder
         this.openTelemetry = openTelemetry
         this.incrementalCache = incrementalCache
+    }
+}
+
+private fun checkMessages(
+    verifyMessages: Boolean,
+    graph: ResolvedGraph,
+    messagesCheck: (DependencyNode) -> Unit,
+) {
+    if (verifyMessages) {
+        graph.root.distinctBfsSequence().forEach {
+            messagesCheck(it)
+        }
     }
 }
 

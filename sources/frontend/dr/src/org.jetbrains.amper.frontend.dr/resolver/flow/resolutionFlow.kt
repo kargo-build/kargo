@@ -8,6 +8,7 @@ import org.jetbrains.amper.dependency.resolution.CacheEntryKey
 import org.jetbrains.amper.dependency.resolution.Context
 import org.jetbrains.amper.dependency.resolution.FileCacheBuilder
 import org.jetbrains.amper.dependency.resolution.JavaVersion
+import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.MavenGroupAndArtifact
 import org.jetbrains.amper.dependency.resolution.MavenLocal
 import org.jetbrains.amper.dependency.resolution.MavenRepository
@@ -68,19 +69,25 @@ abstract class AbstractDependenciesFlow<T: DependenciesFlowType>(
 ): DependenciesFlow<T> {
 
     private val contextMap: ConcurrentHashMap<ContextKey, Context> = ConcurrentHashMap<ContextKey, Context>()
+    private val alreadyAddedMavenDependencyNodes: MutableSet<MavenDependencyNode> = mutableSetOf()
 
-    internal fun MavenDependencyBase.toFragmentDirectDependencyNode(fragment: Fragment, context: Context): DirectFragmentDependencyNodeHolderWithContext {
+    internal fun MavenDependencyBase.toFragmentDirectDependencyNode(fragment: Fragment, context: Context): DirectFragmentDependencyNodeHolderWithContext? {
         val dependencyNode = context.toMavenDependencyNode(toDrMavenCoordinates(), this is BomDependency)
 
-        val node = DirectFragmentDependencyNodeHolderWithContext(
-            dependencyNode,
-            notation = this,
-            fragment = fragment,
-            templateContext = context,
-            messages = emptyList(),
-        )
-
-        return node
+        return DirectFragmentDependencyNodeHolderWithContext(
+            // todo (AB) : [AMPER-4905] Filter out duplicated dependencies
+            //   from the same module but from different fragments
+//        return if (alreadyAddedMavenDependencyNodes.add(dependencyNode)) {
+//            DirectFragmentDependencyNodeHolderWithContext(
+                dependencyNode,
+                notation = this,
+                fragment = fragment,
+                templateContext = context,
+                messages = emptyList(),
+            )
+//        } else {
+//            null
+//        }
     }
 
     fun AmperModule.getValidRepositories(): List<Repository> {
@@ -129,6 +136,7 @@ abstract class AbstractDependenciesFlow<T: DependenciesFlowType>(
     protected fun AmperModule.resolveModuleContext(
         platforms: Set<ResolutionPlatform>,
         scope: ResolutionScope,
+        isTest: Boolean,
         fileCacheBuilder: FileCacheBuilder.() -> Unit,
         openTelemetry: OpenTelemetry?,
         incrementalCache: IncrementalCache?,
@@ -138,6 +146,7 @@ abstract class AbstractDependenciesFlow<T: DependenciesFlowType>(
             ContextKey(
                 scope,
                 platforms,
+                isTest,
                 repositories.toSet()
             )
         ) { key ->
@@ -175,9 +184,9 @@ fun RepositoriesModulePart.Repository.toRepository() = when {
     else -> MavenRepository(url, userName, password)
 }
 
-private fun String.toRepository() = RepositoriesModulePart.Repository(this, this).toRepository()
+internal fun String.toRepository() = RepositoriesModulePart.Repository(this, this).toRepository()
 
-private val defaultRepositories = listOf(
+internal val defaultRepositories = listOf(
     "https://repo1.maven.org/maven2",
     "https://maven.google.com/",
 )
@@ -185,5 +194,6 @@ private val defaultRepositories = listOf(
 private data class ContextKey(
     val scope: ResolutionScope,
     val platforms: Set<ResolutionPlatform>,
-    val repositories: Set<Repository>
+    val isTest: Boolean,
+    val repositories: Set<Repository>,
 )

@@ -1,13 +1,37 @@
-module:D2
+Module D2
+│ - main
+│ - scope = COMPILE
+│ - platforms = [jvm]
 ├─── D2:common:org.ow2.asm:asm:9.7
+│    ╰─── org.ow2.asm:asm:9.7
+├─── D2:jvm:org.ow2.asm:asm:9.7
 │    ╰─── org.ow2.asm:asm:9.7
 ├─── D2:common:org.jetbrains:annotations:24.1.0
 │    ╰─── org.jetbrains:annotations:24.1.0
 ├─── D2:common:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
 │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
 │         ╰─── org.jetbrains:annotations:13.0 -> 24.1.0
+├─── D2:jvm:org.jetbrains:annotations:24.1.0
+│    ╰─── org.jetbrains:annotations:24.1.0
+╰─── D2:jvm:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+     ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion (*)
+Module D2
+│ - test
+│ - scope = COMPILE
+│ - platforms = [jvm]
+├─── D2:common:org.ow2.asm:asm:9.7
+│    ╰─── org.ow2.asm:asm:9.7
 ├─── D2:commonTest:org.ow2.asm:asm:9.7
 │    ╰─── org.ow2.asm:asm:9.7
+├─── D2:jvm:org.ow2.asm:asm:9.7
+│    ╰─── org.ow2.asm:asm:9.7
+├─── D2:jvmTest:org.ow2.asm:asm:9.7
+│    ╰─── org.ow2.asm:asm:9.7
+├─── D2:common:org.jetbrains:annotations:24.1.0
+│    ╰─── org.jetbrains:annotations:24.1.0
+├─── D2:common:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+│    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
+│         ╰─── org.jetbrains:annotations:13.0 -> 24.1.0
 ├─── D2:commonTest:org.jetbrains:annotations:24.1.0
 │    ╰─── org.jetbrains:annotations:24.1.0
 ├─── D2:commonTest:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
@@ -23,14 +47,10 @@ module:D2
 │              │    ├─── org.junit:junit-bom:5.10.1
 │              │    ╰─── org.apiguardian:apiguardian-api:1.1.2
 │              ╰─── org.apiguardian:apiguardian-api:1.1.2
-├─── D2:jvm:org.ow2.asm:asm:9.7
-│    ╰─── org.ow2.asm:asm:9.7
 ├─── D2:jvm:org.jetbrains:annotations:24.1.0
 │    ╰─── org.jetbrains:annotations:24.1.0
 ├─── D2:jvm:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
 │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion (*)
-├─── D2:jvmTest:org.ow2.asm:asm:9.7
-│    ╰─── org.ow2.asm:asm:9.7
 ├─── D2:jvmTest:org.jetbrains:annotations:24.1.0
 │    ╰─── org.jetbrains:annotations:24.1.0
 ├─── D2:jvmTest:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit

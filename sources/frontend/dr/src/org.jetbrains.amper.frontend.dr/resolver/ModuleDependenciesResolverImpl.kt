@@ -5,6 +5,7 @@ package org.jetbrains.amper.frontend.dr.resolver
 
 import io.opentelemetry.api.OpenTelemetry
 import kotlinx.serialization.modules.SerializersModuleBuilder
+import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.DependencyGraph.Companion.toSerializableReference
 import org.jetbrains.amper.dependency.resolution.DependencyGraphContext
 import org.jetbrains.amper.dependency.resolution.DependencyNode
@@ -16,15 +17,12 @@ import org.jetbrains.amper.dependency.resolution.IncrementalCacheUsage
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNodeWithContext
 import org.jetbrains.amper.dependency.resolution.MavenDependencyUnspecifiedVersionResolverBase
+import org.jetbrains.amper.dependency.resolution.ResolutionConfigPlain
 import org.jetbrains.amper.dependency.resolution.ResolutionLevel
 import org.jetbrains.amper.dependency.resolution.ResolvedGraph
-import org.jetbrains.amper.dependency.resolution.Resolver
 import org.jetbrains.amper.dependency.resolution.RootDependencyNodeWithContext
 import org.jetbrains.amper.dependency.resolution.SerializableDependencyNode
 import org.jetbrains.amper.dependency.resolution.SerializableDependencyNodeConverter
-import org.jetbrains.amper.dependency.resolution.SerializableRootDependencyNode
-import org.jetbrains.amper.dependency.resolution.filterGraph
-import org.jetbrains.amper.dependency.resolution.infoSpanBuilder
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.dr.resolver.flow.Classpath
 import org.jetbrains.amper.frontend.dr.resolver.flow.IdeSync
@@ -37,103 +35,40 @@ private val logger = LoggerFactory.getLogger(ModuleDependenciesResolverImpl::cla
 
 internal class ModuleDependenciesResolverImpl: ModuleDependenciesResolver {
 
+    // todo (AB) : Move to ModuleDependencies
     override fun AmperModule.resolveDependenciesGraph(
-        dependenciesFlowType: DependenciesFlowType,
+        dependenciesFlowType: DependenciesFlowType.ClassPathType,
         fileCacheBuilder: FileCacheBuilder.() -> Unit,
         openTelemetry: OpenTelemetry?,
         incrementalCache: IncrementalCache?
     ): ModuleDependencyNodeWithModuleAndContext {
-        val resolutionFlow = when (dependenciesFlowType) {
-            is DependenciesFlowType.ClassPathType -> Classpath(dependenciesFlowType)
-            is DependenciesFlowType.IdeSyncType -> IdeSync(dependenciesFlowType)
-        }
-
+        val resolutionFlow = Classpath(dependenciesFlowType)
         return resolutionFlow.directDependenciesGraph(this, fileCacheBuilder, openTelemetry, incrementalCache)
     }
 
+    @Deprecated("To be redesigned")
     override suspend fun DependencyNodeHolderWithContext.resolveDependencies(
         resolutionDepth: ResolutionDepth,
         resolutionLevel: ResolutionLevel,
         downloadSources: Boolean,
         incrementalCacheUsage: IncrementalCacheUsage
     ): ResolvedGraph {
-        return context.infoSpanBuilder("DR.graph:resolveDependencies").use {
-            when (resolutionDepth) {
-                ResolutionDepth.GRAPH_ONLY -> {
-                    /* Do nothing, graph is already given */
-                    ResolvedGraph(this@resolveDependencies, null)
-                }
-
-                ResolutionDepth.GRAPH_WITH_DIRECT_DEPENDENCIES,
-                ResolutionDepth.GRAPH_FULL,
-                    -> {
-                    val resolvedGraph = Resolver().resolveDependencies(
-                        root = this@resolveDependencies,
-                        resolutionLevel,
-                        downloadSources,
-                        resolutionDepth != ResolutionDepth.GRAPH_WITH_DIRECT_DEPENDENCIES,
-                        incrementalCacheUsage = incrementalCacheUsage,
-                        DirectMavenDependencyUnspecifiedVersionResolver(),
-                        postProcessGraph = {
-                            // Merge the input graph (that has PSI references) with the deserialized one
-                            it.fillNotation(this@resolveDependencies)
-                        }
-                    )
-                    resolvedGraph
-                }
-            }
+        return with(ModuleDependencies) {
+            resolveDependencies(resolutionDepth, resolutionLevel, downloadSources, incrementalCacheUsage)
         }
     }
 
-    private fun SerializableDependencyNode.fillNotation(sourceNode: DependencyNodeHolderWithContext) {
-        val sourceDirectDeps = sourceNode.children.groupBy { it.key }
-        this.children.forEach { node ->
-            when (node) {
-                is SerializableDirectFragmentDependencyNodeHolder -> {
-                    val sourceNode = sourceDirectDeps[node.key].resolveCorrespondingSourceNode<DirectFragmentDependencyNodeHolderWithContext>(node) {
-                        node.dependencyNode.getOriginalMavenCoordinates() == notation.coordinates
-                    }
-                    node.notation = sourceNode.notation
-                }
-                is SerializableModuleDependencyNodeWithModule -> {
-                    val sourceNode = sourceDirectDeps[node.key].resolveCorrespondingSourceNode<ModuleDependencyNodeWithModuleAndContext>(node)
-                    node.notation = sourceNode.notation
-                    node.fillNotation(sourceNode)
-                }
-                is SerializableRootDependencyNode -> {
-                    val sourceNode = sourceDirectDeps[node.key].resolveCorrespondingSourceNode<RootDependencyNodeWithContext>(node)
-                    node.fillNotation(sourceNode)
-                }
-            }
-        }
-    }
-
-    private inline fun <reified T: DependencyNode> List<DependencyNode>?.resolveCorrespondingSourceNode(
-        node: SerializableDependencyNode,
-        additionalMatch: T.() -> Boolean = { true }
-    ): T {
-        if (this == null || this.isEmpty())
-            error("Deserialized node with key ${node.key} has no corresponding input node")
-
-        this.forEach {
-            (it as? T) ?: error(
-                "Deserialized node corresponds to unexpected input node of type " +
-                        "${this::class.simpleName} while ${node::class.simpleName} is expected"
-            )
-            if (it.additionalMatch()) return it
-        }
-
-        return (this.first() as T)
-    }
-
+    @Deprecated("Use resolveModuleDependencies instead. To be removed")
     override suspend fun AmperModule.resolveDependencies(resolutionInput: ResolutionInput): ModuleDependencyNode {
         with(resolutionInput) {
-            val moduleDependenciesGraph = resolveDependenciesGraph(dependenciesFlowType, fileCacheBuilder, openTelemetry, incrementalCache)
+            val moduleDependenciesGraph = resolveDependenciesGraph(
+                dependenciesFlowType as DependenciesFlowType.ClassPathType, fileCacheBuilder, openTelemetry, incrementalCache)
             val resolvedGraph = moduleDependenciesGraph.resolveDependencies(resolutionDepth, resolutionLevel, downloadSources)
             return resolvedGraph.root as ModuleDependencyNode
         }
     }
 
+    @Deprecated("To be removed")
     override fun List<AmperModule>.resolveDependenciesGraph(
         dependenciesFlowType: DependenciesFlowType,
         fileCacheBuilder: FileCacheBuilder.() -> Unit,
@@ -148,25 +83,32 @@ internal class ModuleDependenciesResolverImpl: ModuleDependenciesResolver {
         return resolutionFlow.directDependenciesGraph(this, fileCacheBuilder, openTelemetry, incrementalCache)
     }
 
+    @Deprecated("Use resolveModuleDependencies instead. To be removed")
     override suspend fun List<AmperModule>.resolveDependencies(resolutionInput: ResolutionInput): DependencyNode {
         return with(resolutionInput) {
             resolutionInput.openTelemetry.spanBuilder("DR: Resolving dependencies for the list of modules").use {
-                val moduleDependenciesGraph = resolveDependenciesGraph(dependenciesFlowType, fileCacheBuilder, openTelemetry, incrementalCache)
+                val moduleDependenciesGraph = resolveDependenciesGraph(
+                    dependenciesFlowType, fileCacheBuilder, openTelemetry, incrementalCache)
                 val resolvedGraph = moduleDependenciesGraph.resolveDependencies(resolutionDepth, resolutionLevel, downloadSources, incrementalCacheUsage)
                 resolvedGraph.root
             }
         }
     }
 
-    override fun dependencyInsight(group: String, module: String, node: DependencyNode, resolvedVersionOnly: Boolean): DependencyNode =
-        filterGraph(group, module, node, resolvedVersionOnly)
-
-    override suspend fun AmperModule.dependencyInsight(group: String, module: String, resolutionInput: ResolutionInput): DependencyNode {
-        val graph = resolveDependencies(resolutionInput)
-        return filterGraph(group, module, graph)
-    }
+    @Deprecated("To be removed")
+    override suspend fun List<AmperModule>.resolveModuleDependencies(
+        resolutionInput: ResolutionInput,
+        userCacheRoot: AmperUserCacheRoot, // todo (AB) : Looks like a part of [ResolutionInput]
+        leafPlatformsOnly: Boolean,
+        filter: ModuleResolutionFilter?,
+        resolutionType: ResolutionType,
+    ): ResolvedGraph =
+        ModuleDependencies.resolveModuleDependencies(
+            this@resolveModuleDependencies, resolutionInput, userCacheRoot, leafPlatformsOnly, filter, resolutionType
+        )
 }
 
+// todo (AB) : Extract to separate serialization-specific file
 internal class AmperDrSerializableTypesProvider: GraphSerializableTypesProvider {
     override fun getSerializableConverters() =
         ModuleDependencyNodeWithModuleConverter.converters() +
@@ -189,6 +131,7 @@ internal class AmperDrSerializableTypesProvider: GraphSerializableTypesProvider 
     }
 }
 
+// todo (AB) : Extract to separate serialization-specific file
 private sealed class ModuleDependencyNodeWithModuleConverter<T: ModuleDependencyNode>: SerializableDependencyNodeConverter<T, SerializableModuleDependencyNodeWithModule>  {
     object Input: ModuleDependencyNodeWithModuleConverter<ModuleDependencyNodeWithModuleAndContext>() {
         override fun applicableTo() = ModuleDependencyNodeWithModuleAndContext::class
@@ -198,13 +141,18 @@ private sealed class ModuleDependencyNodeWithModuleConverter<T: ModuleDependency
     }
 
     override fun toEmptyNodePlain(node: T, graphContext: DependencyGraphContext): SerializableModuleDependencyNodeWithModule =
-        SerializableModuleDependencyNodeWithModule(node.moduleName, node.graphEntryName, graphContext = graphContext)
+        SerializableModuleDependencyNodeWithModule(
+            node.moduleName, node.graphEntryName,
+            resolutionConfig = ResolutionConfigPlain(node.resolutionConfig),
+            graphContext = graphContext, isForTests = node.isForTests
+        )
 
     companion object {
         fun converters()= listOf(Input, Plain)
     }
 }
 
+// todo (AB) : Extract to separate serialization-specific file
 private sealed class DirectFragmentDependencyNodeConverter<T: DirectFragmentDependencyNode>
     : SerializableDependencyNodeConverter<T, SerializableDirectFragmentDependencyNodeHolder>
 {
@@ -231,6 +179,7 @@ private sealed class DirectFragmentDependencyNodeConverter<T: DirectFragmentDepe
     }
 }
 
+// todo (AB) : Move to ModuleDependencies
 class DirectMavenDependencyUnspecifiedVersionResolver: MavenDependencyUnspecifiedVersionResolverBase() {
 
     override fun getBomNodes(node: MavenDependencyNodeWithContext): List<MavenDependencyNode> {

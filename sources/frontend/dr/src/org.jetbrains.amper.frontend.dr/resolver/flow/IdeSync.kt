@@ -66,6 +66,7 @@ import kotlin.io.path.absolutePathString
 
 private val logger = LoggerFactory.getLogger(IdeSync::class.java)
 
+@Deprecated("in favour of Idea ModuleDependencies")
 internal class IdeSync(
     dependenciesFlowType: DependenciesFlowType.IdeSyncType
 ): AbstractDependenciesFlow<DependenciesFlowType.IdeSyncType>(dependenciesFlowType) {
@@ -93,10 +94,11 @@ internal class IdeSync(
         incrementalCache: IncrementalCache?
     ): ModuleDependencyNodeWithModuleAndContext {
         val node = ModuleDependencyNodeWithModuleAndContext(
-            graphEntryName = "module:${userReadableName}",
+            isForTests = false, // todo (AB) : it doesn't make sense, since it contains both main and test and it is no longer valid usage.
             children = fragments.flatMap { it.toGraph(fileCacheBuilder, openTelemetry, incrementalCache) },
             module = this,
-            templateContext = emptyContext(fileCacheBuilder, openTelemetry, incrementalCache)
+            templateContext = emptyContext(fileCacheBuilder, openTelemetry, incrementalCache),
+            topLevel = true,
         )
         return node
     }
@@ -134,8 +136,8 @@ internal class IdeSync(
                     DependenciesFlowType.ClassPathType(
                         scope = ResolutionScope.COMPILE,
                         platforms = platforms.mapNotNull { it.toResolutionPlatform() }.toSet(),
-                        includeNonExportedNative = false,
-                        isTest = isTest
+                        isTest = isTest,
+                        includeNonExportedNative = false
                     )
                 ).directDependenciesGraph(this, fileCacheBuilder, openTelemetry, incrementalCache)
             }
@@ -231,11 +233,11 @@ internal class IdeSync(
             is MavenDependency -> if (compile) ResolutionScope.COMPILE else ResolutionScope.RUNTIME
             is BomDependency -> ResolutionScope.COMPILE
         }
-        return fragment.module.resolveModuleContext(fragmentPlatforms, scope, fileCacheBuilder, openTelemetry, incrementalCache)
+        return fragment.module.resolveModuleContext(fragmentPlatforms, scope, false, fileCacheBuilder, openTelemetry, incrementalCache)
     }
 }
 
-private val Fragment.resolutionPlatforms: Set<ResolutionPlatform>?
+internal val Fragment.resolutionPlatforms: Set<ResolutionPlatform>?
     get() =
         if (platforms.isEmpty()) {
             logger.warn("Fragment ${module.userReadableName}.$name has empty list of target platforms")

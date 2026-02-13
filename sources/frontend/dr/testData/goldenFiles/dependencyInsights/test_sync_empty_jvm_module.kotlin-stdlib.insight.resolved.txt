@@ -1,0 +1,18 @@
+root
+├─── Module jvm-empty
+│ - main
+│ - scope = COMPILE
+│ - platforms = [jvm]
+│    ╰─── jvm-empty:main:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+│         ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
+╰─── Module jvm-empty
+│ - test
+│ - scope = COMPILE
+│ - platforms = [jvm]
+     ├─── jvm-empty:main:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit (*)
+     ├─── jvm-empty:test:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+     │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
+     ╰─── jvm-empty:test:org.jetbrains.kotlin:kotlin-test-junit5:#kotlinVersion, implicit (because the test engine is junit-5)
+          ╰─── org.jetbrains.kotlin:kotlin-test-junit5:#kotlinVersion
+               ╰─── org.jetbrains.kotlin:kotlin-test:#kotlinVersion
+                    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion

@@ -18,7 +18,7 @@ import org.jetbrains.amper.tasks.ProjectTasksBuilder
 import org.jetbrains.amper.tasks.ProjectTasksBuilder.Companion.getTaskOutputPath
 import org.jetbrains.amper.tasks.PublishTask
 import org.jetbrains.amper.tasks.compose.isComposeEnabledFor
-import org.jetbrains.amper.frontend.dr.resolver.getModuleDependencies
+import org.jetbrains.amper.tasks.getModuleDependencies
 
 fun ProjectTasksBuilder.setupJvmTasks() {
     allModules()

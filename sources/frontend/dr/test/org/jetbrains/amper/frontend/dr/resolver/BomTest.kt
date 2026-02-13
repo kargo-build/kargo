@@ -32,13 +32,15 @@ class BomTest: BaseModuleDrTest() {
                     ResolutionScope.COMPILE,
                     setOf(ResolutionPlatform.JVM),
                     false,
-                    false)
+                    false
+                )
                 ,
                 ResolutionDepth.GRAPH_FULL,
                 fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
             ),
             verifyMessages = false,
             module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
             expected = """
                 Module app
                 │ - main
@@ -58,6 +60,7 @@ class BomTest: BaseModuleDrTest() {
 
         assertFiles(
             listOf(
+                "COMPILE",
                 "annotations-13.0.jar",
                 "jackson-annotations-2.18.3.jar",
                 "kotlin-stdlib-${DefaultVersions.kotlin}.jar",
@@ -80,7 +83,8 @@ class BomTest: BaseModuleDrTest() {
                 DependenciesFlowType.ClassPathType(
                     ResolutionScope.COMPILE,
                     setOf(ResolutionPlatform.JVM),
-                    false),
+                    false
+                ),
 
                 ResolutionDepth.GRAPH_WITH_DIRECT_DEPENDENCIES,
 
@@ -88,6 +92,7 @@ class BomTest: BaseModuleDrTest() {
             ),
             verifyMessages = false,
             module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
             expected = """
                 Module app
                 │ - main
@@ -105,6 +110,7 @@ class BomTest: BaseModuleDrTest() {
 
         assertFiles(
             listOf(
+                "COMPILE",
                 "jackson-core-2.18.3.jar",
                 "kotlin-stdlib-${DefaultVersions.kotlin}.jar",
             ),
@@ -127,13 +133,15 @@ class BomTest: BaseModuleDrTest() {
                     ResolutionScope.COMPILE,
                     setOf(ResolutionPlatform.JVM),
                     false,
-                    false)
+                    false
+                )
                 ,
                 ResolutionDepth.GRAPH_FULL,
                 fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
             ),
             verifyMessages = false,
-            module = "app"
+            module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
         )
 
         assertFiles(testInfo,jvmAppDeps)
@@ -166,12 +174,14 @@ class BomTest: BaseModuleDrTest() {
                     ResolutionScope.RUNTIME,
                     setOf(ResolutionPlatform.ANDROID),
                     false,
-                    false)
+                    false
+                )
                 ,
                 ResolutionDepth.GRAPH_FULL,
                 fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
             ),
             module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.RUNTIME),
         )
 
         assertFiles(testInfo,androidAppDeps)
@@ -204,13 +214,15 @@ class BomTest: BaseModuleDrTest() {
                     ResolutionScope.RUNTIME,
                     setOf(ResolutionPlatform.ANDROID),
                     false,
-                    false)
+                    false
+                )
                 ,
                 ResolutionDepth.GRAPH_FULL,
                 fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
             ),
             verifyMessages = false,
             module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.RUNTIME),
         )
 
         assertTheOnlyNonInfoMessage(

@@ -16,7 +16,6 @@ import java.nio.file.Path
 import kotlin.io.path.div
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
 /**
@@ -37,7 +36,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
     override val testGoldenFilesRoot: Path = super.testGoldenFilesRoot / "moduleDependenciesGraphMultiplatform"
 
     @Test
-    fun `test sync empty jvm module`() = runSlowModuleDependenciesTest {
+    fun `test sync empty jvm module`(testInfo: TestInfo) = runSlowModuleDependenciesTest {
         val aom = getTestProjectModel("jvm-empty", testDataRoot)
 
         assertEquals(
@@ -46,46 +45,18 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             ""
         )
 
-
-        val testFragmentDeps = doTest(
+        val testFragmentDeps = doTestByFile(
+            testInfo,
             aom,
             resolutionInput = ResolutionInput(
                 DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
                 fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
             ),
             module = "jvm-empty",
-            expected = """
-                module:jvm-empty
-                ├─── jvm-empty:main:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}
-                │         ╰─── org.jetbrains:annotations:13.0
-                ├─── jvm-empty:test:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin} (*)
-                ╰─── jvm-empty:test:org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}, implicit (because the test engine is junit-5)
-                     ╰─── org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}
-                          ├─── org.jetbrains.kotlin:kotlin-test:${DefaultVersions.kotlin}
-                          │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin} (*)
-                          ╰─── org.junit.jupiter:junit-jupiter-api:5.10.1
-                               ├─── org.junit:junit-bom:5.10.1
-                               ├─── org.opentest4j:opentest4j:1.3.0
-                               ├─── org.junit.platform:junit-platform-commons:1.10.1
-                               │    ├─── org.junit:junit-bom:5.10.1
-                               │    ╰─── org.apiguardian:apiguardian-api:1.1.2
-                               ╰─── org.apiguardian:apiguardian-api:1.1.2
-                """.trimIndent()
         )
 
         assertFiles(
-            listOf(
-                "annotations-13.0.jar",
-                "apiguardian-api-1.1.2.jar",
-                "junit-jupiter-api-5.10.1.jar",
-                "junit-platform-commons-1.10.1.jar",
-                "kotlin-stdlib-${DefaultVersions.kotlin}.jar",
-                "kotlin-test-${DefaultVersions.kotlin}.jar",
-                "kotlin-test-junit5-${DefaultVersions.kotlin}.jar",
-                "opentest4j-1.3.0.jar",
-            ),
+            testInfo,
             testFragmentDeps
         )
     }
@@ -103,6 +74,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             ),
             module = "shared",
             fragment = "ios",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
         assertFiles(testInfo, sharedIosFragmentDeps)
     }
@@ -119,6 +91,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             ),
             module = "shared",
             fragment = "iosX64",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
 
         assertFiles(testInfo, iosAppIosX64FragmentDeps)
@@ -136,6 +109,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             ),
             module = "shared",
             fragment = "iosX64Test",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
 
         assertFiles(testInfo, iosAppIosX64FragmentDeps)
@@ -157,6 +131,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             ),
             module = "ios-app",
             fragment = "iosX64Test",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
 
         assertFiles(testInfo, iosAppIosX64FragmentDeps)
@@ -175,6 +150,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             ),
             module = "ios-app",
             fragment = "ios",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
         assertFiles(testInfo, iosAppIosFragmentDeps)
     }
@@ -191,12 +167,15 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             ),
             module = "ios-app",
             fragment = "iosX64",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
         assertFiles(testInfo, iosAppIosX64FragmentDeps)
     }
 
     // todo (AB) : 'android-app.android' differs from what Gradle produce (versions).
     // todo (AB) : It seems it is caused by resolving RUNTIME version of library instead of COMPILE one being resolved by IdeSync.
+    //  Update: Versions in graph were slightly changed after ide sync started aligning versions across RUNTIME/COMPILE classpaths
+    //          The issue might have been resolved.
     @Test
     fun `test android-app@android dependencies graph`(testInfo: TestInfo) = runSlowModuleDependenciesTest {
         val aom = getTestProjectModel("compose-multiplatform", testDataRoot)
@@ -211,6 +190,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             ),
             module = "android-app",
             fragment = "main",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
         // todo (AB) : Some versions are incorrect (?) - check difference with Gradle
         assertFiles(testInfo, androidAppAndroidFragmentDeps)
@@ -229,6 +209,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             ),
             module = "shared",
             fragment = "android",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
         // todo (AB) : Some versions are incorrect (?) - check difference with Gradle
         assertFiles(testInfo, sharedAndroidFragmentDeps)
@@ -260,9 +241,9 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
                 fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
                 incrementalCacheUsage = IncrementalCacheUsage.SKIP
             ),
-            module = "shared"
+            module = "shared",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
-        assertIs<ModuleDependencyNode>(sharedModuleDeps)
 
         sharedModuleDeps.assertMapping(
             mapOf(
@@ -297,8 +278,8 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
                 fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
             ),
             module = "kmp-library",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
-        assertIs<ModuleDependencyNode>(moduleDeps)
 
         moduleDeps.assertParentKmpLibraries(
             mapOf(
@@ -308,7 +289,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
         )
     }
 
-    private fun ModuleDependencyNode.assertMapping(
+    private fun DependencyNode.assertMapping(
         expectedMapping: Map<String, String>
     ) {
         val expectedCoordinatesMapping =
@@ -334,7 +315,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             }
     }
 
-    private fun ModuleDependencyNode.assertParentKmpLibraries(
+    private fun DependencyNode.assertParentKmpLibraries(
         expectedMapping: Map<String, String>
     ) {
         val expectedCoordinatesMapping =

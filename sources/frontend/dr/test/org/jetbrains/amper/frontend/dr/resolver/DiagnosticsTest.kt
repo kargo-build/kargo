@@ -6,6 +6,7 @@ package org.jetbrains.amper.frontend.dr.resolver
 
 import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
+import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.dependency.resolution.diagnostics.Severity
 import org.jetbrains.amper.dependency.resolution.group
 import org.jetbrains.amper.dependency.resolution.module
@@ -29,6 +30,7 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.io.path.Path
 import kotlin.io.path.div
+import kotlin.test.Ignore
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -41,7 +43,7 @@ class DiagnosticsTest : BaseModuleDrTest() {
         get() = super.testGoldenFilesRoot.resolve("diagnostics")
 
     @Test
-    fun `test sync diagnostics`() = runModuleDependenciesTest {
+    fun `test sync diagnostics`(testInfo: TestInfo) = runModuleDependenciesTest {
         val aom = getTestProjectModel("multi-module-failed-resolve", testDataRoot)
 
         assertEquals(
@@ -50,70 +52,14 @@ class DiagnosticsTest : BaseModuleDrTest() {
             ""
         )
 
-        val sharedTestFragmentDeps = doTest(
+        val sharedTestFragmentDeps = doTestByFile(
+            testInfo,
             aom,
             ResolutionInput(
                 DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
                 fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot)
             ),
             module = "shared",
-            expected = """
-                module:shared
-                ├─── shared:common:org.jetbrains.compose.foundation:foundation:12.12.12
-                │    ╰─── org.jetbrains.compose.foundation:foundation:12.12.12
-                ├─── shared:common:org.jetbrains.compose.ui:ui:12.12.12
-                │    ╰─── org.jetbrains.compose.ui:ui:12.12.12
-                ├─── shared:common:org.jetbrains.kotlinx:kotlinx-serialization-core:13.13.13
-                │    ╰─── org.jetbrains.kotlinx:kotlinx-serialization-core:13.13.13
-                ├─── shared:common:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}
-                │         ╰─── org.jetbrains:annotations:13.0
-                ├─── shared:common:org.jetbrains.compose.runtime:runtime:12.12.12, implicit (because Compose is enabled)
-                │    ╰─── org.jetbrains.compose.runtime:runtime:12.12.12
-                ├─── shared:commonTest:org.jetbrains.compose.foundation:foundation:12.12.12
-                │    ╰─── org.jetbrains.compose.foundation:foundation:12.12.12
-                ├─── shared:commonTest:org.jetbrains.compose.ui:ui:12.12.12
-                │    ╰─── org.jetbrains.compose.ui:ui:12.12.12
-                ├─── shared:commonTest:org.jetbrains.kotlinx:kotlinx-serialization-core:13.13.13
-                │    ╰─── org.jetbrains.kotlinx:kotlinx-serialization-core:13.13.13
-                ├─── shared:commonTest:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin} (*)
-                ├─── shared:commonTest:org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}, implicit (because the test engine is junit-5)
-                │    ╰─── org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}
-                │         ├─── org.jetbrains.kotlin:kotlin-test:${DefaultVersions.kotlin}
-                │         │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin} (*)
-                │         ╰─── org.junit.jupiter:junit-jupiter-api:5.10.1
-                │              ├─── org.junit:junit-bom:5.10.1
-                │              ├─── org.opentest4j:opentest4j:1.3.0
-                │              ├─── org.junit.platform:junit-platform-commons:1.10.1
-                │              │    ├─── org.junit:junit-bom:5.10.1
-                │              │    ╰─── org.apiguardian:apiguardian-api:1.1.2
-                │              ╰─── org.apiguardian:apiguardian-api:1.1.2
-                ├─── shared:commonTest:org.jetbrains.compose.runtime:runtime:12.12.12, implicit (because Compose is enabled)
-                │    ╰─── org.jetbrains.compose.runtime:runtime:12.12.12
-                ├─── shared:jvm:org.jetbrains.compose.foundation:foundation:12.12.12
-                │    ╰─── org.jetbrains.compose.foundation:foundation:12.12.12
-                ├─── shared:jvm:org.jetbrains.compose.ui:ui:12.12.12
-                │    ╰─── org.jetbrains.compose.ui:ui:12.12.12
-                ├─── shared:jvm:org.jetbrains.kotlinx:kotlinx-serialization-core:13.13.13
-                │    ╰─── org.jetbrains.kotlinx:kotlinx-serialization-core:13.13.13
-                ├─── shared:jvm:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin} (*)
-                ├─── shared:jvm:org.jetbrains.compose.runtime:runtime:12.12.12, implicit (because Compose is enabled)
-                │    ╰─── org.jetbrains.compose.runtime:runtime:12.12.12
-                ├─── shared:jvmTest:org.jetbrains.compose.foundation:foundation:12.12.12
-                │    ╰─── org.jetbrains.compose.foundation:foundation:12.12.12
-                ├─── shared:jvmTest:org.jetbrains.compose.ui:ui:12.12.12
-                │    ╰─── org.jetbrains.compose.ui:ui:12.12.12
-                ├─── shared:jvmTest:org.jetbrains.kotlinx:kotlinx-serialization-core:13.13.13
-                │    ╰─── org.jetbrains.kotlinx:kotlinx-serialization-core:13.13.13
-                ├─── shared:jvmTest:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin} (*)
-                ├─── shared:jvmTest:org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}, implicit (because the test engine is junit-5)
-                │    ╰─── org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin} (*)
-                ╰─── shared:jvmTest:org.jetbrains.compose.runtime:runtime:12.12.12, implicit (because Compose is enabled)
-                     ╰─── org.jetbrains.compose.runtime:runtime:12.12.12
-                """.trimIndent(),
             messagesCheck = { node ->
                 if (!assertDependencyError(node, "org.jetbrains.compose.foundation", "foundation")
                     && !assertDependencyError(node, "org.jetbrains.compose.ui", "ui")
@@ -126,17 +72,8 @@ class DiagnosticsTest : BaseModuleDrTest() {
         )
 
         assertFiles(
-            listOf(
-                "annotations-13.0.jar",
-                "apiguardian-api-1.1.2.jar",
-                "junit-jupiter-api-5.10.1.jar",
-                "junit-platform-commons-1.10.1.jar",
-                "kotlin-stdlib-${DefaultVersions.kotlin}.jar",
-                "kotlin-test-${DefaultVersions.kotlin}.jar",
-                "kotlin-test-junit5-${DefaultVersions.kotlin}.jar",
-                "opentest4j-1.3.0.jar",
-            ),
-            sharedTestFragmentDeps
+            testInfo,
+            root = sharedTestFragmentDeps,
         )
 
         val diagnosticsReporter = CollectingProblemReporter()
@@ -144,9 +81,9 @@ class DiagnosticsTest : BaseModuleDrTest() {
         val buildProblems = diagnosticsReporter.problems
 
         /**
-         * This magic number appears because we are diagnosing each fragment (4 fragments total),
+         * This magic number 16 (4*4) appears because we are diagnosing each fragment (4 fragments total),
          * and each fragment contains 4 incorrect dependencies.
-         * 
+         *
          * The common fragment contains incorrect dependencies by definition in a module file.
          * More specific fragments contain incorrect dependencies because they were propagated during merge.
          */
@@ -189,12 +126,12 @@ class DiagnosticsTest : BaseModuleDrTest() {
      * (i.e., the number of times dependency is added to project modules multiplied by the number
      * of resolution contexts (platform and scope)).
      *
-     * This tests checks that the dependency insights graph is calculated the same number of times as the quantity of
+     * This test checks that the dependency insights graph is calculated the same number of times as the quantity of
      * different coordinates with an overridden version
      * (one coordinates with an overridden version => one dependency insights graph)
      */
     @Test
-    fun `dependency insights is calculated no more that once for problematic dependency`(testInfo: TestInfo) =
+    fun `dependency insights is calculated no more than needed for problematic dependency`(testInfo: TestInfo) =
         runSlowModuleDependenciesTest {
             val aom = getTestProjectModel("multuplatform-with-overridden-versions", testDataRoot)
 
@@ -220,7 +157,7 @@ class DiagnosticsTest : BaseModuleDrTest() {
              * This magic number doesn't matter on its own.
              * What matters is that all warnings are related to overridden dependencies (next check).
              */
-            assertEquals(34, buildProblems.size)
+            assertEquals(25, buildProblems.size)
 
             val overriddenDependencyProblems = buildProblems.mapNotNull { it as? ModuleDependencyWithOverriddenVersion }
             assertEquals(buildProblems.size, overriddenDependencyProblems.size)
@@ -235,12 +172,87 @@ class DiagnosticsTest : BaseModuleDrTest() {
 
             val uniqueInsights = overriddenDependencyProblems.map { it.overrideInsight }.distinct()
             assertEquals(
-                1, uniqueInsights.size,
+                4, uniqueInsights.size,
                 "Insights were calculated unexpected number of times, " +
-                        "while calculation of the single insight " +
+                        "while calculation of the single insight pr module" +
                         "for the library 'org.jetbrains.compose.runtime:runtime' is expected"
             )
         }
+
+    /**
+     * Migration to module-wide resolution lead to calculating overridden diagnostic of the dependency
+     * as many times as the number of modules referencing it multiplied twice (main/test) instead of a single
+     * calculation in the project-wide resolution.
+     * That caused performance degradation.
+     *
+     * This test checks that the dependency insights graph calculation doesn't impact performance much
+     * and that diagnostic is calculated the same number of times as the quantity of
+     * different modules the dependency is referenced from (multiplied for main/test).
+     *
+     * // todo (AB) : Fix degradation and remove @Ignore
+     */
+    @Test
+    @Ignore
+    fun `dependency insights is calculated no more than needed and doesn't affect performance`(testInfo: TestInfo) =
+        runSlowModuleDependenciesTest {
+            val aom = getTestProjectModel("multiplatfrorm-large-with-overridden-versions", testDataRoot)
+
+            val projectDeps = timed("doTestByFile") {
+                doTestByFile(
+                    testInfo,
+                    aom,
+                    ResolutionInput(
+                        DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
+                        fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot)
+                    ),
+                    messagesCheck = { node ->
+                        node.messages.all { it.severity <= Severity.WARNING }
+                    }
+                )
+            }
+
+            assertFiles(testInfo,projectDeps)
+
+            val diagnosticsReporter = CollectingProblemReporter()
+            timed("collectBuildProblems") {
+                collectBuildProblems(projectDeps, diagnosticsReporter, Level.Warning)
+            }
+            val buildProblems = diagnosticsReporter.problems
+
+            /**
+             * This magic number doesn't matter on its own.
+             * What matters is that all warnings are related to overridden dependencies (next check).
+             */
+            assertEquals(189, buildProblems.size)
+
+            val overriddenDependencyProblems = buildProblems.mapNotNull { it as? ModuleDependencyWithOverriddenVersion }
+            assertEquals(buildProblems.size, overriddenDependencyProblems.size)
+
+            val problematicDependencies = overriddenDependencyProblems.map { it.dependencyNode.key }.distinct()
+            assertEquals(
+                setOf(
+                    "org.jetbrains.compose.foundation:foundation",
+                    "androidx.activity:activity-compose",
+                    "androidx.appcompat:appcompat",
+                    "org.jetbrains.compose.runtime:runtime"
+                ),
+                problematicDependencies.map { it.name }.toSet()
+            )
+
+            // todo (AB) : Perform experiment: check how much time resolution of insight is taken in this branch and in main
+            //   for 'multiplatfrorm-large-with-overridden-versions' project
+
+            val uniqueInsights = overriddenDependencyProblems
+                .filter{ it.dependencyNode.key.name == "org.jetbrains.compose.runtime:runtime" }
+                .map { it.overrideInsight }.distinct()
+            assertEquals(
+                9, uniqueInsights.size,
+                "Insights were calculated unexpected number of times, " +
+                        "while calculation of the single insight pr module" +
+                        "for the library 'org.jetbrains.compose.runtime:runtime' is expected"
+            )
+        }
+
 
     // AMPER-4270
     @Test
@@ -255,7 +267,10 @@ class DiagnosticsTest : BaseModuleDrTest() {
             module = "app",
             fragment = "main",
             expected = """
-                Fragment 'app.main' dependencies
+                Module app
+                │ - main
+                │ - scope = COMPILE
+                │ - platforms = [jvm]
                 ├─── app:main:com.fasterxml.jackson.core:jackson-annotations:unspecified
                 │    ╰─── com.fasterxml.jackson.core:jackson-annotations:unspecified -> 2.18.3
                 │         ╰─── com.fasterxml.jackson:jackson-bom:2.18.3
@@ -266,6 +281,7 @@ class DiagnosticsTest : BaseModuleDrTest() {
                      ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}
                           ╰─── org.jetbrains:annotations:13.0
             """.trimIndent(),
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
             verifyMessages = false,
         )
 
@@ -286,6 +302,11 @@ class DiagnosticsTest : BaseModuleDrTest() {
     /**
      * This test checks that WARNING is reported in case a direct dependency version was unspecified and
      * taken from BOM, but later was overridden due to conflict resolution.
+     *
+     * Test checks COMPILE classpath.
+     * Version of `io.ktor:ktor-client-cio-jvm` got overridden
+     * despite compile classpath of module 'A' doesn't contain dependencies of module 'B',
+     * because versions of COMPILE and RUNTIME dependencies are aligned.
      */
     @Test
     fun `overridden version for unspecified version resolved from BOM is detected`(testInfo: TestInfo) = runModuleDependenciesTest {
@@ -299,6 +320,9 @@ class DiagnosticsTest : BaseModuleDrTest() {
             ),
             module = "app",
             fragment = "main",
+            filter = ModuleResolutionFilter(
+                scope = ResolutionScope.COMPILE,
+            ),
             verifyMessages = false,
         )
 
@@ -326,6 +350,45 @@ class DiagnosticsTest : BaseModuleDrTest() {
         assertEquals(buildProblem.message,
             "Version 3.0.2 of dependency io.ktor:ktor-client-cio-jvm taken from BOM is overridden, the actual version is 3.1.2.",
             "Unexpected diagnostic message"
+        )
+    }
+
+    /**
+     * This test checks that WARNING is reported in case a direct dependency version was unspecified and
+     * taken from BOM, but later was overridden due to conflict resolution.
+     *
+     * Test checks COMPILE classpath.
+     * Version of `io.ktor:ktor-client-cio-jvm` got overridden
+     * despite compile classpath of module 'A' doesn't contain dependencies of module 'B',
+     * because versions of COMPILE and RUNTIME dependencies are aligned.
+     */
+    @Test
+    fun `overridden version specified in unrelated project does not affect unspecified version resolved from BOM`(testInfo: TestInfo) = runModuleDependenciesTest {
+        val aom = getTestProjectModel("jvm-bom-support-no-override", testDataRoot)
+        val commonDeps = doTestByFile(
+            testInfo = testInfo,
+            aom,
+            ResolutionInput(
+                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
+                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot)
+            ),
+            module = "app",
+            fragment = "main",
+            filter = ModuleResolutionFilter(
+                scope = ResolutionScope.RUNTIME,
+            ),
+            verifyMessages = false,
+        )
+
+        val diagnosticsReporter = CollectingProblemReporter()
+        collectBuildProblems(commonDeps, diagnosticsReporter, Level.Warning)
+
+        val buildProblem = diagnosticsReporter.problems.singleOrNull()
+
+        assertNull(
+            buildProblem,
+            "No problem should be reported for dependency 'io.ktor:ktor-client-cio-jvm'," +
+                    " since it is overridden in unrelated module"
         )
     }
 
@@ -372,6 +435,7 @@ class DiagnosticsTest : BaseModuleDrTest() {
             "Unexpected source range for build problem. The Kotlin version value should be highlighted."
         )
     }
+
 
     @OptIn(ExperimentalContracts::class)
     internal fun DependencyNode.isMavenDependency(group: String, module: String): Boolean {

@@ -9,11 +9,13 @@ import io.opentelemetry.api.OpenTelemetry
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.Context
 import org.jetbrains.amper.dependency.resolution.DependencyNode
+import org.jetbrains.amper.dependency.resolution.IncrementalCacheUsage
 import org.jetbrains.amper.dependency.resolution.JavaVersion
 import org.jetbrains.amper.dependency.resolution.MavenCoordinates
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNodeWithContext
 import org.jetbrains.amper.dependency.resolution.Repository
+import org.jetbrains.amper.dependency.resolution.ResolutionLevel
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.dependency.resolution.ResolvedGraph
@@ -93,7 +95,16 @@ open class MavenResolver(
         }
 
     /**
-     * Perform a resolution over a passed [root]. 
+     * Perform a resolution over a passed [root].
+     *
+     * todo (AB) : This functional expose low-level API
+     * todo (AB) : making calling side to prepare DependencyNodeHolderWithContext with properly initialized context.
+     *  It should be split on two parts:
+     *   1. Resolution of maven coordinates (a method that takes the list of maven coordinates and resolution parameters
+     *      and create context and nodes inside, hiding those details from caller)
+     *   2. Resolution of module [Classpath] used in plugins
+     *      (a method that takes list of modules and external dependencies and resolve it module-wide aligning version between compile/runtime)
+     *
      */
     suspend fun resolve(
         root: RootDependencyNodeWithContext,
@@ -108,13 +119,52 @@ open class MavenResolver(
             settings.platforms.singleOrNull()?.wasmTarget?.let { setAttribute("wasmTarget", it) }
         }
         .use {
-            with(moduleDependenciesResolver) { root.resolveDependencies(resolutionDepth, downloadSources = false) }
-                .also {
-                    // We are referencing the same root, but after [resolveDependencies] was called, so it is filled now.
-                    val reporter = CollectingProblemReporter().also { collectBuildProblems(root, it, Level.Warning) }
+            with(ModuleDependencies) { root.resolveDependencies(resolutionDepth, downloadSources = false) }
+                .also { resolvedGraph ->
+                    // Collecting diagnostics from the resolved graph
+                    val reporter = CollectingProblemReporter().also {
+                        collectBuildProblems(graph = resolvedGraph.root, it, Level.Warning)
+                    }
                     processProblems(reporter.problems, resolveSourceMoniker)
                 }
         }
+
+    /**
+     * Perform a resolution of module dependencies [moduleDependencies].
+     */
+    suspend fun resolve(
+        moduleDependencies: ModuleDependencies,
+        isTest: Boolean,
+        resolveSourceMoniker: String,
+        resolutionDepth: ResolutionDepth = ResolutionDepth.GRAPH_FULL,
+    ): ResolvedGraph =
+        ModuleDependencies.resolveModuleDependencies(
+            moduleDependenciesList = listOf(moduleDependencies),
+            resolutionInput = ResolutionInput(
+                dependenciesFlowType = DependenciesFlowType.ClassPathType(
+                    scope = ResolutionScope.COMPILE,
+                    platforms = emptySet(),
+                    isTest = isTest,
+                    includeNonExportedNative = false
+                ),
+                resolutionDepth = resolutionDepth,
+                resolutionLevel = ResolutionLevel.NETWORK,
+                downloadSources = false,
+                incrementalCacheUsage = IncrementalCacheUsage.USE,
+                fileCacheBuilder = getAmperFileCacheBuilder(userCacheRoot),
+                openTelemetry = GlobalOpenTelemetry.get()
+            ),
+            leafPlatformsOnly = true,
+            filter = null,
+            resolutionType = if(isTest) ResolutionType.TEST else ResolutionType.MAIN,
+        )
+            .also { resolvedGraph ->
+                // Collecting diagnostics from the resolved graph
+                val reporter = CollectingProblemReporter().also {
+                    collectBuildProblems(graph = resolvedGraph.root, it, Level.Warning)
+                }
+                processProblems(reporter.problems, resolveSourceMoniker)
+            }
 
     protected open fun processProblems(buildProblems: List<BuildProblem>, resolveSourceMoniker: String) =
         Unit

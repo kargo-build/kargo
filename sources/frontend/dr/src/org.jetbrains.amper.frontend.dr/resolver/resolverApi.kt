@@ -7,6 +7,7 @@ import io.opentelemetry.api.OpenTelemetry
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
+import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.CacheEntryKey
 import org.jetbrains.amper.dependency.resolution.Context
 import org.jetbrains.amper.dependency.resolution.DependencyGraphContext
@@ -17,16 +18,21 @@ import org.jetbrains.amper.dependency.resolution.DependencyNodeReference
 import org.jetbrains.amper.dependency.resolution.DependencyNodeWithContext
 import org.jetbrains.amper.dependency.resolution.FileCacheBuilder
 import org.jetbrains.amper.dependency.resolution.IncrementalCacheUsage
+import org.jetbrains.amper.dependency.resolution.Key
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNodeWithContext
+import org.jetbrains.amper.dependency.resolution.ResolutionConfig
+import org.jetbrains.amper.dependency.resolution.ResolutionConfigPlain
 import org.jetbrains.amper.dependency.resolution.ResolutionLevel
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.dependency.resolution.ResolvedGraph
+import org.jetbrains.amper.dependency.resolution.RootDependencyNode
 import org.jetbrains.amper.dependency.resolution.RootDependencyNodeWithContext
 import org.jetbrains.amper.dependency.resolution.SerializableDependencyNodeHolderBase
 import org.jetbrains.amper.dependency.resolution.currentGraphContext
 import org.jetbrains.amper.dependency.resolution.diagnostics.Message
+import org.jetbrains.amper.dependency.resolution.nodeParents
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.LocalModuleDependency
@@ -38,6 +44,7 @@ import org.jetbrains.amper.frontend.api.DefaultTrace
 import org.jetbrains.amper.frontend.api.PsiTrace
 import org.jetbrains.amper.frontend.api.ResolvedReferenceTrace
 import org.jetbrains.amper.frontend.api.TransformedValueTrace
+import org.jetbrains.amper.frontend.dr.resolver.flow.toPlatform
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import kotlin.error
 
@@ -65,20 +72,22 @@ sealed interface DependenciesFlowType {
         val scope: ResolutionScope,
         val platforms: Set<ResolutionPlatform>,
         val isTest: Boolean,
-        val includeNonExportedNative: Boolean = true
+        val includeNonExportedNative: Boolean = true,
     ) : DependenciesFlowType
 
     data class IdeSyncType(val aom: Model) : DependenciesFlowType
 }
 
 interface ModuleDependenciesResolver {
+    // todo (AB) : [AMPER-4905] Move to ModuleDependencies
     fun AmperModule.resolveDependenciesGraph(
-        dependenciesFlowType: DependenciesFlowType,
+        dependenciesFlowType: DependenciesFlowType.ClassPathType,
         fileCacheBuilder: FileCacheBuilder.() -> Unit,
         openTelemetry: OpenTelemetry?,
         incrementalCache: IncrementalCache?
     ): ModuleDependencyNodeWithModuleAndContext
 
+    @Deprecated("[AMPER-4905] To be removed")
     fun List<AmperModule>.resolveDependenciesGraph(
         dependenciesFlowType: DependenciesFlowType,
         fileCacheBuilder: FileCacheBuilder.() -> Unit,
@@ -88,7 +97,18 @@ interface ModuleDependenciesResolver {
 
     /**
      * @return dependency node representing the root of the resolved graph
+     *
+     * todo (AB) : This functional expose low-level API
+     * todo (AB) : making calling side to prepare DependencyNodeHolderWithContext with properly initialized context.
+     * todo (AB) : Though this method makes sense in general, it is not a part of module resolver.
+     *  It should be split on two parts:
+     *   1. Resolution of maven coordinates (a method that takes the list of maven coordinates and resolution parameters
+     *      and create context and nodes inside, hiding those details from caller)
+     *   2. Resolution of [Classpath] used in plugins
+     *      (a method that takes list of modules and external dependencies and resolve it module-wide aligning version between compile/runtime)
+     *
      */
+    @Deprecated("[AMPER-4905] To be redesigned")
     suspend fun DependencyNodeHolderWithContext.resolveDependencies(
         resolutionDepth: ResolutionDepth,
         resolutionLevel: ResolutionLevel = ResolutionLevel.NETWORK,
@@ -96,27 +116,32 @@ interface ModuleDependenciesResolver {
         incrementalCacheUsage: IncrementalCacheUsage = IncrementalCacheUsage.USE,
     ): ResolvedGraph
 
+    @Deprecated("[AMPER-4905] Use resolveModuleDependencies instead. To be removed")
     suspend fun AmperModule.resolveDependencies(resolutionInput: ResolutionInput): ModuleDependencyNode
 
-    /**
-     * Returned filtered dependencies graph,
-     * containing paths from the root to the maven dependency node corresponding to the given coordinates (group and module)
-     * and having the version equal to the actual resolved version of this dependency in the graph.
-     * If the resolved dependency version is enforced by constraint, then the path to that constraint is presented
-     * in a returned graph together with paths to all versions of this dependency.
-     *
-     * Every node of the returned graph is of the type [DependencyNode] holding the corresponding node from the original graph inside.
-     */
-    suspend fun AmperModule.dependencyInsight(
-        group: String,
-        module: String,
-        resolutionInput: ResolutionInput
-    ): DependencyNode
-
-    fun dependencyInsight(group: String, module: String, node: DependencyNode, resolvedVersionOnly: Boolean = false): DependencyNode
-
+    @Deprecated("[AMPER-4905] in favour of [resolveModuleDependencies]")
     suspend fun List<AmperModule>.resolveDependencies(resolutionInput: ResolutionInput): DependencyNode
+
+    @Deprecated("[AMPER-4905] To be removed")
+    suspend fun List<AmperModule>.resolveModuleDependencies(
+        resolutionInput: ResolutionInput,
+        userCacheRoot: AmperUserCacheRoot, // todo (AB) : Looks like a part of [ResolutionInput]
+        leafPlatformsOnly: Boolean = false,
+        filter: ModuleResolutionFilter? = null,
+        resolutionType: ResolutionType,
+    ): ResolvedGraph
 }
+
+/**
+ * Filter resolution results.
+ * Resolution is executed module wide, aligning versions for all platforms' dependencies and across RUNTIME/COMPILE scopes.
+ *
+ * This filter is intended to be used If the caller needs resolution results for specific platforms/scope only.
+ */
+data class ModuleResolutionFilter(
+    val scope: ResolutionScope? = null,
+    val platforms: Set<ResolutionPlatform>? = null,
+)
 
 abstract class DependencyNodeHolderWithNotationAndContext(
     graphEntryName: String,
@@ -129,23 +154,72 @@ abstract class DependencyNodeHolderWithNotationAndContext(
 interface ModuleDependencyNode: DependencyNodeHolder {
     val moduleName: String
     val notation: LocalModuleDependency?
+    val isForTests: Boolean
+    val resolutionConfig: ResolutionConfig
+
+    fun attachToNewRoot(parent: RootDependencyNode)
 }
+
+fun ModuleDependencyNode.getKey(): Key<DependencyNodeHolder> = Key<DependencyNodeHolder>(
+    CacheEntryKey.CompositeCacheEntryKey(
+        listOf(
+        moduleName,
+        isForTests,
+        resolutionConfig.scope,
+        resolutionConfig.platforms
+    )).computeKey()
+)
 
 class ModuleDependencyNodeWithModuleAndContext(
     val module: AmperModule,
-    graphEntryName: String,
+    override val isForTests: Boolean,
     children: List<DependencyNodeWithContext>,
     templateContext: Context,
     override val notation: LocalModuleDependency? = null,
     parentNodes: Set<DependencyNodeWithContext> = emptySet(),
+    topLevel: Boolean,
 ) : ModuleDependencyNode,
     DependencyNodeHolderWithNotationAndContext(
-        graphEntryName, children, templateContext, notation, parentNodes = parentNodes)
+        module.getGraphEntryName(topLevel, isForTests, templateContext.settings),
+        children, templateContext, notation, parentNodes = parentNodes)
 {
     override val moduleName = module.userReadableName
 
-    override val cacheEntryKey: CacheEntryKey
-        get() = CacheEntryKey.fromString(module.uniqueModuleKey())
+    override val resolutionConfig: ResolutionConfig
+        get() = context.settings
+
+    override val cacheEntryKey: CacheEntryKey.CompositeCacheEntryKey
+        get() = CacheEntryKey.CompositeCacheEntryKey(listOf
+            (module.uniqueModuleKey(),
+            isForTests,
+            context.settings.scope,
+            context.settings.platforms))
+
+    override fun attachToNewRoot(parent: RootDependencyNode) {
+        context.nodeParents.clear()
+        context.nodeParents.add(parent)
+    }
+
+    override val key = getKey()
+}
+
+private fun AmperModule.getGraphEntryName(
+    topLevel: Boolean,
+    isForTests: Boolean,
+    resolutionConfig: ResolutionConfig,
+): String {
+    val moduleName = StringBuilder("Module ${this.userReadableName}")
+    if (topLevel) {
+        moduleName
+            .append("\n")
+            .append(
+                """│ - ${if (isForTests) "test" else "main"}
+                  |│ - scope = ${resolutionConfig.scope.name}
+                  |│ - platforms = [${resolutionConfig.platforms.joinToString { it.toPlatform().pretty }}]
+                  """.trimMargin()
+            )
+    }
+    return moduleName.toString()
 }
 
 @Serializable
@@ -153,6 +227,8 @@ class ModuleDependencyNodeWithModuleAndContext(
 internal class SerializableModuleDependencyNodeWithModule internal constructor(
     override val moduleName: String,
     override val graphEntryName: String,
+    override val isForTests: Boolean,
+    override val resolutionConfig: ResolutionConfigPlain,
     override val childrenRefs: List<DependencyNodeReference> = mutableListOf(),
     @Transient
     private val graphContext: DependencyGraphContext = currentGraphContext(),
@@ -162,6 +238,13 @@ internal class SerializableModuleDependencyNodeWithModule internal constructor(
 
     @Transient
     override var notation: LocalModuleDependency? = null
+
+    override fun attachToNewRoot(parent: RootDependencyNode) {
+        parents.clear()
+        parents.add(parent)
+    }
+
+    override val key by lazy { getKey() }
 
 }
 
@@ -181,14 +264,16 @@ class DirectFragmentDependencyNodeHolderWithContext(
 ) : DirectFragmentDependencyNode,
     DependencyNodeHolderWithNotationAndContext(
         graphEntryName = "${fragment.module.userReadableName}:${fragment.name}:${dependencyNode}${traceInfo(notation)}",
-        listOf(dependencyNode), templateContext, notation, parentNodes = parentNodes
+        children = listOf(dependencyNode), templateContext, notation, parentNodes = parentNodes
 ) {
     override val fragmentName: String = fragment.name
 
-    override val cacheEntryKey: CacheEntryKey
+    override val cacheEntryKey: CacheEntryKey.CompositeCacheEntryKey
         get() = CacheEntryKey.CompositeCacheEntryKey(listOf(
             fragment.module.uniqueModuleKey(),
             fragment.name,
+            dependencyNode.context.settings.scope,
+            dependencyNode.context.settings.platforms,
         ))
 }
 

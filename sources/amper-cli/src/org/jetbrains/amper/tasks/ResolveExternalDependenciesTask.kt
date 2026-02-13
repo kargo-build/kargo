@@ -11,13 +11,10 @@ import org.jetbrains.amper.cli.logging.withoutConsoleLogging
 import org.jetbrains.amper.cli.telemetry.setAmperModule
 import org.jetbrains.amper.cli.telemetry.setFragments
 import org.jetbrains.amper.core.AmperUserCacheRoot
-import org.jetbrains.amper.dependency.resolution.CacheEntryKey
 import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
-import org.jetbrains.amper.dependency.resolution.RootDependencyNodeWithContext
-import org.jetbrains.amper.dependency.resolution.asRootCacheEntryKey
 import org.jetbrains.amper.engine.Task
 import org.jetbrains.amper.engine.TaskGraphExecutionContext
 import org.jetbrains.amper.frontend.AmperModule
@@ -28,10 +25,8 @@ import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.dr.resolver.CliReportingMavenResolver
 import org.jetbrains.amper.frontend.dr.resolver.DirectFragmentDependencyNode
 import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies
-import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencyNodeWithModuleAndContext
 import org.jetbrains.amper.frontend.dr.resolver.flow.toResolutionPlatform
 import org.jetbrains.amper.frontend.dr.resolver.getExternalDependencies
-import org.jetbrains.amper.frontend.dr.resolver.uniqueModuleKey
 import org.jetbrains.amper.frontend.mavenRepositories
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.incrementalcache.ResultWithSerializable
@@ -68,34 +63,22 @@ internal suspend fun CliReportingMavenResolver.doResolveExternalDependencies(
     module: AmperModule,
     platform: Platform,
     isTest: Boolean,
-    moduleDependencies: List<ModuleDependencyNodeWithModuleAndContext>,
+    moduleDependencies: ModuleDependencies,
 ): ExternalDependenciesResolutionResult {
     val resolveSourceMoniker = "module ${module.userReadableName}"
-    val cacheKey = CacheEntryKey.CompositeCacheEntryKey(
-        listOf(
-            "Module dependencies graph",
-            module.uniqueModuleKey(),
-            platform,
-            isTest,
-        )
-    )
-    val root = RootDependencyNodeWithContext(
-        rootCacheEntryKey = cacheKey.asRootCacheEntryKey(),
-        children = moduleDependencies,
-        templateContext = emptyContext()
-    )
 
-    val platformCompileDepsIndex = moduleDependencies.indexOfFirst {
+    val allLeafPlatformsGraph = moduleDependencies.allLeafPlatformsGraph(isTest)
+    val platformCompileDepsIndex = allLeafPlatformsGraph.children.indexOfFirst {
         it.context.settings.platforms.single() == platform.toResolutionPlatform()
                 && it.context.settings.scope == ResolutionScope.COMPILE
     }.takeIf { it != -1 } ?: error("Compile dependencies for $platform are not found")
 
-    val platformRuntimeDepsIndex = moduleDependencies.indexOfFirst {
+    val platformRuntimeDepsIndex = allLeafPlatformsGraph.children.indexOfFirst {
         it.context.settings.platforms.single() == platform.toResolutionPlatform()
                 && it.context.settings.scope == ResolutionScope.RUNTIME
     }.takeIf { it != -1 }
 
-    val resolvedGraph = resolve(root = root, resolveSourceMoniker = resolveSourceMoniker)
+    val resolvedGraph = resolve(moduleDependencies = moduleDependencies, isTest = isTest, resolveSourceMoniker = resolveSourceMoniker)
     val resolvedChildren = resolvedGraph.root.children
     return ExternalDependenciesResolutionResult(
         resolvedChildren[platformCompileDepsIndex],
@@ -182,12 +165,12 @@ class ResolveExternalDependenciesTask(
                 )
 
                 val result = try {
-                    val moduleDependenciesForResolution = moduleDependencies.forCLIResolution(isTest)
+                    val moduleDependenciesRoot = moduleDependencies.allLeafPlatformsGraph(isTest)
                     incrementalCache.execute(
                         key = taskName.name,
                         inputValues = mapOf(
                             "userCacheRoot" to userCacheRoot.path.pathString,
-                            "dependencies" to moduleDependenciesForResolution.flatMap{ it.getExternalDependencies() }.joinToString("|"),
+                            "dependencies" to moduleDependenciesRoot.children.flatMap{ it.getExternalDependencies() }.joinToString("|"),
                             "repositories" to repositories.joinToString("|"),
                             "resolvePlatform" to resolvedPlatform.type.value,
                             "resolveNativeTarget" to (resolvedPlatform.nativeTarget ?: ""),
@@ -201,8 +184,7 @@ class ResolveExternalDependenciesTask(
                                 module = module,
                                 platform = platform,
                                 isTest = isTest,
-                                // Pass all module dependencies at once to align versions across all module platforms
-                                moduleDependencies = moduleDependenciesForResolution,
+                                moduleDependencies = moduleDependencies,
                             )
 
                         val compileClasspath = compileDependenciesRootNode.dependencyPaths()

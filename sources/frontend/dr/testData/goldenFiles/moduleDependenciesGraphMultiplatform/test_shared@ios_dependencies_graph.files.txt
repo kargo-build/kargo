@@ -1,3 +1,4 @@
+COMPILE
 animation-commonMain-1.10.3.klib
 animation-core-commonMain-1.10.3.klib
 animation-core-nonJvmMain-1.10.3.klib
@@ -58,8 +59,8 @@ lifecycle-viewmodel-savedstate-commonMain-2.9.6.klib
 lifecycle-viewmodel-savedstate-nativeMain-2.9.4.klib
 lifecycle-viewmodel-savedstate-nonAndroidMain-2.9.4.klib
 lifecycle-viewmodel-unixMain-2.9.4.klib
-material-ripple-commonMain-1.10.3.klib
-material-ripple-nonAndroidMain-1.10.3.klib
+material-ripple-commonMain-1.9.3.klib
+material-ripple-nonAndroidMain-1.9.3.klib
 material3-commonMain-1.10.0-alpha05.klib
 material3-darwinMain-1.10.0-alpha05.klib
 material3-nativeMain-1.10.0-alpha05.klib

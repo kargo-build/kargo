@@ -1,3 +1,4 @@
+COMPILE
 animation-core-uikitx64-1.10.3.klib
 animation-uikitx64-1.10.3.klib
 annotation-iosx64-1.9.1.klib
@@ -16,7 +17,7 @@ lifecycle-runtime-compose-uikitx64-2.9.6.klib
 lifecycle-runtime-iosx64-2.9.4.klib
 lifecycle-viewmodel-iosx64-2.9.4.klib
 lifecycle-viewmodel-savedstate-iosx64-2.9.4.klib
-material-ripple-uikitx64-1.10.3.klib
+material-ripple-uikitx64-1.9.3.klib
 material3-uikitx64-1.10.0-alpha05.klib
 navigationevent-iosx64-1.0.2.klib
 runtime-annotation-iosx64-1.10.5.klib

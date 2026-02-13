@@ -1,3 +1,4 @@
+COMPILE
 animation-android-1.10.5.aar
 animation-core-android-1.10.5.aar
 annotation-experimental-1.4.1.aar
@@ -19,7 +20,7 @@ lifecycle-common-jvm-2.9.4.jar
 lifecycle-runtime-android-2.9.4.aar
 lifecycle-runtime-compose-android-2.9.4.aar
 lifecycle-runtime-ktx-android-2.9.4.aar
-material-ripple-android-1.10.5.aar
+material-ripple-android-1.9.4.aar
 material3-android-1.5.0-alpha08.aar
 runtime-android-1.10.5.aar
 runtime-annotation-android-1.10.5.aar

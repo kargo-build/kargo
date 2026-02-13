@@ -21,4 +21,4 @@ Module E
 │    ╰─── org.junit:junit-bom:5.11.4 (*)
 ╰─── E:main:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
      ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
-          ╰─── org.jetbrains:annotations:13.0 -> 23.0.0
+          ╰─── org.jetbrains:annotations:13.0

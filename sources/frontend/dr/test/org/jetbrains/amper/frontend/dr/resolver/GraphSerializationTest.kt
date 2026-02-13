@@ -16,6 +16,7 @@ import org.jetbrains.amper.dependency.resolution.GraphJson
 import org.jetbrains.amper.dependency.resolution.IncrementalCacheUsage
 import org.jetbrains.amper.dependency.resolution.MavenDependencyConstraintNode
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
+import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.dependency.resolution.SerializableDependencyNode
 import org.jetbrains.amper.dependency.resolution.diagnostics.Message
 import org.jetbrains.amper.dependency.resolution.group
@@ -51,6 +52,7 @@ class GraphSerializationTest: BaseModuleDrTest() {
                 fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
             ),
             module = "D2",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
 
         assertRepetitiveGraphSerialization(appModuleGraph, testInfo)
@@ -69,6 +71,7 @@ class GraphSerializationTest: BaseModuleDrTest() {
                 fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
             ),
             module = "ios-app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE)
         )
 
         assertRepetitiveGraphSerialization(iosAppModuleDeps, testInfo)
@@ -93,7 +96,8 @@ class GraphSerializationTest: BaseModuleDrTest() {
         val deserializedRoot = assertRepetitiveGraphSerialization(root, testInfo)
 
         fun DependencyNode.getErrorMessagesForChild(group: String): Set<String> =
-            children.filterIsInstance<DirectFragmentDependencyNode>()
+            distinctBfsSequence()
+                .filterIsInstance<DirectFragmentDependencyNode>()
                 .first { (it.dependencyNode as? MavenDependencyNode)?.group == group }
                 .dependencyNode
                 .let { it as MavenDependencyNode }
@@ -103,13 +107,13 @@ class GraphSerializationTest: BaseModuleDrTest() {
 
         kotlin.test.assertEquals(
             expectedDiagnostic,
-            root.children.single().getErrorMessagesForChild("com.jetbrains.intellij.platform").single(),
+            root.getErrorMessagesForChild("com.jetbrains.intellij.platform").single(),
             "Diagnostic messages taken from deserialized graph differs from original ones"
         )
 
         kotlin.test.assertEquals(
             expectedDiagnostic,
-            deserializedRoot.children.single().getErrorMessagesForChild("com.jetbrains.intellij.platform").single(),
+            deserializedRoot.getErrorMessagesForChild("com.jetbrains.intellij.platform").single(),
             "Diagnostic messages taken from deserialized graph differs from original ones"
         )
     }
@@ -175,10 +179,14 @@ class GraphSerializationTest: BaseModuleDrTest() {
     private fun DependencyNode.assertParentsInGraph(testInfo: TestInfo, graphType: GraphType) {
         val filterOrphans = (graphType == GraphType.ORIGINAL)
 
-        val actual = distinctBfsSequence().flatMap { dep -> dep.parents
-            .filter{ !filterOrphans || !it.isOrphan(this@assertParentsInGraph) }
-            .map { it to dep } }.toSet()
-            .sortedBy { it.first.graphEntryName + it.second.graphEntryName }
+        fun DependencyNode.nodeName() = if (this is ModuleDependencyNode) "module:$moduleName" else graphEntryName
+
+        val actual = distinctBfsSequence().flatMap { dep ->
+            dep.parents
+                .filter { !filterOrphans || !it.isOrphan(this@assertParentsInGraph) }
+                .map { it.nodeName() to dep.nodeName() }
+        }.toSet()
+            .sortedBy { it.first + it.second }
             .joinToString(System.lineSeparator())
 
         val goldenFile = goldenFileOsAware(

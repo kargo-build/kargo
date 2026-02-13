@@ -113,7 +113,7 @@ internal class Classpath(
 
         visitedModules.add(this)
 
-        val moduleContext = resolveModuleContext(flowType.platforms, flowType.scope, fileCacheBuilder, openTelemetry, incrementalCache)
+        val moduleContext = resolveModuleContext(flowType.platforms, flowType.scope, flowType.isTest, fileCacheBuilder, openTelemetry, incrementalCache)
         val resolutionPlatforms = moduleContext.settings.platforms
 
         // test fragments couldn't reference test fragments of transitive (non-direct) module dependencies
@@ -137,14 +137,13 @@ internal class Classpath(
             .flatMap { it.toDependencyNode(resolutionPlatforms, directDependencies, moduleContext, visitedModules, flowType, fileCacheBuilder, openTelemetry, incrementalCache) }
             .sortedByDescending { (it.notation as? DefaultScopedNotation)?.exported == true }
 
-        val moduleName = getModuleName(addContextInfo = directDependencies, flowType, resolutionPlatforms)
-
         val node = ModuleDependencyNodeWithModuleAndContext(
             module = this,
-            graphEntryName = moduleName.toString(),
-            notation = notation,
+            isForTests = flowType.isTest,
             children = dependencies,
-            templateContext = moduleContext
+            templateContext = moduleContext,
+            notation = notation,
+            topLevel = directDependencies,
         )
 
         return node

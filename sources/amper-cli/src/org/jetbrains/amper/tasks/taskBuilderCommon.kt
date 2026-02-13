@@ -4,6 +4,7 @@
 
 package org.jetbrains.amper.tasks
 
+import io.opentelemetry.api.GlobalOpenTelemetry
 import org.jetbrains.amper.frontend.ModuleTasksPart
 import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.allSourceFragmentCompileDependencies
@@ -33,7 +34,7 @@ internal enum class CommonFragmentTaskType(override val prefix: String) : Fragme
 
 fun ProjectTasksBuilder.setupCommonTasks() {
     val moduleDependenciesMap = model.modules.associateWith {
-        ModuleDependencies(it, context.userCacheRoot, context.incrementalCache)
+        ModuleDependencies(it, context.userCacheRoot, context.incrementalCache, GlobalOpenTelemetry.get())
     }
     allModules()
         .alsoPlatforms()

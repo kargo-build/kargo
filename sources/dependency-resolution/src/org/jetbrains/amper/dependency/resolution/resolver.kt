@@ -146,7 +146,7 @@ class Resolver {
                 root.resolveDependencies(resolutionLevel, transitive, downloadSources, unspecifiedVersionResolver)
                 root.toResolvedGraph()
             } else {
-                val graphEntryKeys = getDependenciesGraphInput(root)
+                val graphEntryKeys = root.getDependenciesGraphInput()
                 if (graphEntryKeys.contains(CacheEntryKey.NotCached)) {
                     root.resolveDependencies(resolutionLevel, transitive, downloadSources, unspecifiedVersionResolver)
                     root.toResolvedGraph()
@@ -239,29 +239,6 @@ class Resolver {
         } else {
             snapshotExpirationTime ?: expirationDueToRecoverableErrorTime
         }
-    }
-
-    // todo (AB) : Add test (dependencies order matters, moving dependency from one module to another matters as well)
-    internal fun getDependenciesGraphInput(node: DependencyNodeWithContext): List<CacheEntryKey> {
-        val cacheEntryKeys: MutableList<CacheEntryKey> = mutableListOf()
-        node.bfsSequence(includeDuplicates = true).forEach {
-            // skip the parent node, its cacheEntryKey is used as a cache entry identifier
-            // and is not a part of cache configuration that affects entry invalidation
-            if (it == node) return@forEach
-
-            if (it !is DependencyNodeWithContext) {
-                cacheEntryKeys.add(CacheEntryKey.NotCached)
-                return cacheEntryKeys
-            }
-
-            val cacheEntryKey = it.getParentAwareCacheEntryKey()
-            cacheEntryKeys.add(cacheEntryKey)
-
-            if (cacheEntryKey == CacheEntryKey.NotCached) {
-                return cacheEntryKeys
-            }
-        }
-        return cacheEntryKeys
     }
 
     private fun getContextAwareRootCacheEntryKey(
@@ -857,7 +834,7 @@ enum class IncrementalCacheUsage {
  * are associated with the same [ResolutionConfig],
  * otherwise composite key containing components of the original key plus node's [ResolutionConfig] is returned.
  */
-internal fun DependencyNodeWithContext.getParentAwareCacheEntryKey(): CacheEntryKey {
+fun DependencyNodeWithContext.getParentAwareCacheEntryKey(): CacheEntryKey {
     val node= this
     val cacheEntryKey = when (val cacheEntryKey = node.cacheEntryKey) {
         is CacheEntryKey.NotCached -> CacheEntryKey.NotCached
@@ -884,6 +861,29 @@ internal fun DependencyNodeWithContext.getParentAwareCacheEntryKey(): CacheEntry
     }
 
     return cacheEntryKey
+}
+
+// todo (AB) : Add test (dependencies order matters, moving dependency from one module to another matters as well)
+fun DependencyNodeWithContext.getDependenciesGraphInput(): List<CacheEntryKey> {
+    val cacheEntryKeys: MutableList<CacheEntryKey> = mutableListOf()
+    bfsSequence(includeDuplicates = true).forEach {
+        // skip the parent node, its cacheEntryKey is used as a cache entry identifier
+        // and is not a part of cache configuration that affects entry invalidation
+        if (it == this@getDependenciesGraphInput) return@forEach
+
+        if (it !is DependencyNodeWithContext) {
+            cacheEntryKeys.add(CacheEntryKey.NotCached)
+            return cacheEntryKeys
+        }
+
+        val cacheEntryKey = it.getParentAwareCacheEntryKey()
+        cacheEntryKeys.add(cacheEntryKey)
+
+        if (cacheEntryKey == CacheEntryKey.NotCached) {
+            return cacheEntryKeys
+        }
+    }
+    return cacheEntryKeys
 }
 
 // todo (AB) : Check all places where this exception is thrown,

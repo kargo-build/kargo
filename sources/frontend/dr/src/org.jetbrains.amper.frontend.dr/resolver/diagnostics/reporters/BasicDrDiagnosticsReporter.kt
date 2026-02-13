@@ -8,6 +8,7 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiElement
 import org.jetbrains.amper.core.UsedInIdePlugin
 import org.jetbrains.amper.dependency.resolution.DependencyNode
+import org.jetbrains.amper.dependency.resolution.Key
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.diagnostics.Message
 import org.jetbrains.amper.dependency.resolution.diagnostics.detailedMessage
@@ -56,7 +57,7 @@ object BasicDrDiagnosticsReporter : DrDiagnosticsReporter {
         if (node.fragmentDependencies.isEmpty()) {
             reportMessagesAsGlobal(importantMessages, problemReporter)
         } else {
-            reportMessagesOnParentPsiNodes(node, importantMessages, problemReporter)
+            reportMessagesOnParentPsiNodes(node, importantMessages, problemReporter, context)
         }
     }
 
@@ -78,13 +79,17 @@ object BasicDrDiagnosticsReporter : DrDiagnosticsReporter {
     private fun reportMessagesOnParentPsiNodes(
         node: DependencyNode,
         importantMessages: List<Message>,
-        problemReporter: ProblemReporter
+        problemReporter: ProblemReporter,
+        context: DrReporterContext,
     ) {
         for (directDependency in node.fragmentDependencies) {
             // for every direct module dependency referencing this dependency node
             val psiElement = directDependency.notation.trace.extractPsiElementOrNull()
 
             if (psiElement != null) {
+                val alreadyReported = context.cache.computeIfAbsent(alreadyReportedCacheKey) { mutableSetOf() }
+                if (!alreadyReported.add(AlreadyReportedKey(node, psiElement))) continue
+
                 for (message in importantMessages) {
                     val msgLevel = message.mapSeverityToLevel()
                     if (node.isTransitiveFor(directDependency)) {
@@ -152,7 +157,15 @@ object BasicDrDiagnosticsReporter : DrDiagnosticsReporter {
             is PsiTrace -> null
         }
     }
+
+    private val alreadyReportedCacheKey =
+        Key<MutableSet<AlreadyReportedKey>>("DependencyNode::alreadyReported")
 }
+
+private data class AlreadyReportedKey(
+    val node: DependencyNode,
+    val psiElement: PsiElement,
+)
 
 class DependencyBuildProblem(
     @field:UsedInIdePlugin

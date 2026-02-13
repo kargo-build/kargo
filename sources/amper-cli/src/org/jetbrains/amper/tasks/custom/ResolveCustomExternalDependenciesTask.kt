@@ -62,8 +62,9 @@ internal class ResolveCustomExternalDependenciesTask(
             // It's safe to split here, because, validation was already done in the frontend
             MavenDependencyNodeWithContext(drContext, it.toDrMavenCoordinates(), isBom = false)
         }
+        // todo (AB) : [AMPER-4905] Runtime scope should be added here resolved as well, and later filtered out in [toIncrementalCacheResult]
         val localDependencyNodes = localDependencies.map {
-            it.buildDependenciesGraph(isTest = false, Platform.JVM, resolutionScope, userCacheRoot, incrementalCache)
+            it.buildDependenciesGraph(isTest = false, Platform.JVM, resolutionScope, true, userCacheRoot, incrementalCache)
         }
 
         val root = RootDependencyNodeWithContext(
