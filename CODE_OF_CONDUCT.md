@@ -1,4 +1,9 @@
-## Code of Conduct
+## Enforcement
 
-This project and the corresponding community is governed by the [JetBrains Open Source and Community Code of Conduct](https://github.com/JetBrains#code-of-conduct). Please make sure you read it. 
+Instances of abusive, harassing, or otherwise unacceptable behavior
+may be reported by opening a private issue addressed to the maintainers.
 
+All complaints will be reviewed and investigated fairly and in good faith.
+
+Project maintainers reserve the right to take appropriate action,
+including warning or removal from the project.

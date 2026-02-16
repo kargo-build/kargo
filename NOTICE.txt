@@ -1,3 +1,6 @@
-This software includes code from Amper project configuration tool
+This software includes code originally developed in the Amper project
 Copyright (C) JetBrains s.r.o.
 https://www.jetbrains.com
+
+Kargo is an independent continuation with ongoing development.
+Copyright (C) 2026 The Kargo Authors
