@@ -19,15 +19,15 @@ annotation class DiscouragedDirectDefaultVersionAccess
 @DiscouragedDirectDefaultVersionAccess
 object DefaultVersions {
 
-    /*managed_default*/ val compose = "1.8.2"
+    /*managed_default*/ val compose = "1.10.1"
     /*managed_default*/ val composeHotReload = "1.0.0-rc01"
     /*managed_default*/ val jdk = 21
     /*managed_default*/ val junitPlatform = "6.0.1"
-    /*managed_default*/ val kotlin = "2.2.21"
-    /*managed_default*/ val kotlinxRpc = "0.10.1"
-    /*managed_default*/ val kotlinxSerialization = "1.9.0"
+    /*managed_default*/ val kotlin = "2.3.10"
+    /*managed_default*/ val kotlinxRpc = "0.10.2"
+    /*managed_default*/ val kotlinxSerialization = "1.10.0"
     /*managed_default*/ val ksp = "2.3.0"
     /*managed_default*/ val ktor = "3.2.3"
     /*managed_default*/ val lombok = "1.18.38"
-    /*managed_default*/ val springBoot = "3.5.5"
+    /*managed_default*/ val springBoot = "4.0.2"
 }

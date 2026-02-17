@@ -43,6 +43,9 @@ abstract class Base : SchemaNode() {
     @HiddenFromCompletion
     @SchemaDoc("Tasks settings. Experimental and will be replaced")
     val tasks by nullableValue<Map<String, TaskSettings>>()
+
+    @SchemaDoc("File layout of the module. [Read more]($userGuideUrl/advanced/maven-like-layout)")
+    val layout by value(AmperLayout.AMPER)
 }
 
 class Template : Base()
@@ -60,9 +63,6 @@ class Module : Base() {
     @SchemaDoc("Lists the templates applied to the module. [Read more]($userGuideUrl/templates/)")
     val apply by nullableValue<List<TraceablePath>>()
 
-    @SchemaDoc("File layout of the module. [Read more]($userGuideUrl/advanced/maven-like-layout)")
-    val layout by value(AmperLayout.AMPER)
-
     @ProductTypeSpecific(ProductType.JVM_AMPER_PLUGIN)
     val pluginInfo by nullableValue<PluginDeclarationSchema>()
 }
@@ -74,7 +74,7 @@ class Repository : SchemaNode() {
     val url by value<String>()
 
     @SchemaDoc("The ID of the repository, used to reference it. Defaults to the repository url")
-    val id by dependentValue(::url)
+    val id by referenceValue(::url)
 
     @SchemaDoc("Credentials to connect to this repository")
     val credentials by nullableValue<Credentials>()

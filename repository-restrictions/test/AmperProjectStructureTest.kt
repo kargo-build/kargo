@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 import com.charleskorn.kaml.Yaml
@@ -60,12 +60,12 @@ class AmperProjectStructureTest {
     }
 
     @Test
-    fun `UsedVersions is alphabetically sorted`() {
-        val usedVersionsKt = Dirs.amperSourcesRoot.resolve("core/src/org/jetbrains/amper/core/UsedVersions.kt")
+    fun `DefaultVersions is alphabetically sorted`() {
+        val usedVersionsKt = Dirs.amperSourcesRoot.resolve("frontend-api/src/org/jetbrains/amper/frontend/schema/DefaultVersions.kt")
         val versionLines = usedVersionsKt.readLines()
             .map { it.trim() }
             .filter { it.startsWith("/*magic_replacement*/ val ") }
-        assertAlphabeticalOrder(versionLines, "Used versions")
+        assertAlphabeticalOrder(versionLines, "Default versions")
     }
 
     @Test
@@ -251,7 +251,7 @@ class AmperProjectStructureTest {
     private fun readAmperProjectModel(): Model = with(NoopProblemReporter) {
         val projectContext = StandaloneAmperProjectContext.create(Dirs.amperCheckoutRoot, buildDir = null, project = null)
             ?: error("Invalid project root: ${Dirs.amperCheckoutRoot}")
-        projectContext.readProjectModel(pluginData = emptyList(), mavenPluginXmls = emptyList())
+        projectContext.readProjectModel(pluginData = emptyList(), mavenPluginsWithXmls = emptyList())
     }
 
     private fun AmperModule.nonLibraryDependencies(includeTestDeps: Boolean): List<String> =

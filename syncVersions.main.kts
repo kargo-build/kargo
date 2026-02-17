@@ -22,7 +22,7 @@ This script is meant to be used to update several user-facing versions in:
 The source of truth is the list of versions at the top of this file.
  */
 
-val bootstrapAmperVersion = "0.10.0-dev-3623" // AUTO-UPDATED BY THE CI - DO NOT RENAME
+val bootstrapAmperVersion = "0.10.0-dev-3662" // AUTO-UPDATED BY THE CI - DO NOT RENAME
 
 /**
  * This is the version of the JetBrains Runtime that Amper wrappers use to run the Amper dist.
@@ -38,17 +38,17 @@ val amperInternalJbrVersion = "21.0.8b1038.68"
  * Make sure we respect the constraints of the Android Gradle plugin (used internally in delegated Gradle builds).
  * See the [compatiblity table](https://developer.android.com/build/kotlin-support).
  */
-val kotlinVersion = "2.2.21" // /!\ Remember to update the KotlinVersion enum with outdated/experimental versions
+val kotlinVersion = "2.3.10" // /!\ Remember to update the KotlinVersion enum with outdated/experimental versions
 
 val composeHotReloadVersion = "1.0.0-rc01"
-val composeVersion = "1.8.2"
+val composeVersion = "1.10.1"
 val jdkVersion = "21" // TODO bump to 25 when Kotlin supports it
 val junitPlatformVersion = "6.0.1"
-val kotlinxRpcVersion = "0.10.1"
-val kotlinxSerializationVersion = "1.9.0"
+val kotlinxRpcVersion = "0.10.2"
+val kotlinxSerializationVersion = "1.10.0"
 val kspVersion = "2.3.0"
 val ktorVersion = "3.2.3"
-val springBootVersion = "3.5.5"
+val springBootVersion = "4.0.2"
 
 val amperMavenRepoUrl = "https://packages.jetbrains.team/maven/p/amper/amper"
 

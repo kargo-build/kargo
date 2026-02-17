@@ -5,12 +5,14 @@
 package org.jetbrains.amper.frontend.catalogs
 
 import org.apache.maven.artifact.versioning.ComparableVersion
+import org.jetbrains.amper.buildinfo.AmperBuild
 import org.jetbrains.amper.frontend.InMemoryVersionCatalog
 import org.jetbrains.amper.frontend.VersionCatalog
 import org.jetbrains.amper.frontend.api.BuiltinCatalogTrace
 import org.jetbrains.amper.frontend.api.DefaultTrace
 import org.jetbrains.amper.frontend.api.TraceableString
 import org.jetbrains.amper.frontend.api.TraceableVersion
+import org.jetbrains.amper.frontend.api.TransformedValueTrace
 import org.jetbrains.amper.frontend.api.schemaDelegate
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.reportBundleError
@@ -122,7 +124,7 @@ private class BuiltInCatalog(
             put("compose.html.svg", library("org.jetbrains.compose.html:html-svg", composeVersion))
             put("compose.html.testUtils", library("org.jetbrains.compose.html:html-test-utils", composeVersion))
             put("compose.material", library("org.jetbrains.compose.material:material", composeVersion))
-            put("compose.material3", library("org.jetbrains.compose.material3:material3", composeVersion))
+            put("compose.material3", library("org.jetbrains.compose.material3:material3", composeMaterial3VersionForCMPVersion(composeVersion)))
             // material icons is no longer
             if (ComparableVersion(composeVersion.value) < ComparableVersion("1.8.0")) {
                 put("compose.materialIconsCore", library("org.jetbrains.compose.material:material-icons-core", composeVersion))
@@ -271,9 +273,6 @@ private class BuiltInCatalog(
         // Spring Boot dependencies
         if (springBootVersion != null) {
             put("spring.boot", library("org.springframework.boot:spring-boot", springBootVersion))
-            put("spring.boot.test", library("org.springframework.boot:spring-boot-test", springBootVersion))
-            put("spring.boot.test.autoconfigure", library("org.springframework.boot:spring-boot-test-autoconfigure", springBootVersion))
-            put("spring.boot.testcontainers", library("org.springframework.boot:spring-boot-testcontainers", springBootVersion))
             put("spring.boot.actuator", library("org.springframework.boot:spring-boot-actuator", springBootVersion))
             put("spring.boot.actuator.autoconfigure", library("org.springframework.boot:spring-boot-actuator-autoconfigure", springBootVersion))
             put("spring.boot.autoconfigure", library("org.springframework.boot:spring-boot-autoconfigure", springBootVersion))
@@ -306,10 +305,10 @@ private class BuiltInCatalog(
             put("spring.boot.starter.data.ldap", library("org.springframework.boot:spring-boot-starter-data-ldap", springBootVersion))
             put("spring.boot.starter.data.mongodb", library("org.springframework.boot:spring-boot-starter-data-mongodb", springBootVersion))
             put("spring.boot.starter.data.mongodb.reactive", library("org.springframework.boot:spring-boot-starter-data-mongodb-reactive", springBootVersion))
+            put("spring.boot.starter.data.neo4j", library("org.springframework.boot:spring-boot-starter-data-neo4j", springBootVersion))
             put("spring.boot.starter.data.r2dbc", library("org.springframework.boot:spring-boot-starter-data-r2dbc", springBootVersion))
             put("spring.boot.starter.data.redis", library("org.springframework.boot:spring-boot-starter-data-redis", springBootVersion))
             put("spring.boot.starter.data.redis.reactive", library("org.springframework.boot:spring-boot-starter-data-redis-reactive", springBootVersion))
-            put("spring.boot.starter.data.neo4j", library("org.springframework.boot:spring-boot-starter-data-neo4j", springBootVersion))
             put("spring.boot.starter.data.rest", library("org.springframework.boot:spring-boot-starter-data-rest", springBootVersion))
             put("spring.boot.starter.freemarker", library("org.springframework.boot:spring-boot-starter-freemarker", springBootVersion))
             put("spring.boot.starter.graphql", library("org.springframework.boot:spring-boot-starter-graphql", springBootVersion))
@@ -335,14 +334,22 @@ private class BuiltInCatalog(
             put("spring.boot.starter.rsocket", library("org.springframework.boot:spring-boot-starter-rsocket", springBootVersion))
             put("spring.boot.starter.security", library("org.springframework.boot:spring-boot-starter-security", springBootVersion))
             put("spring.boot.starter.test", library("org.springframework.boot:spring-boot-starter-test", springBootVersion))
+            put("spring.boot.starter.test.data.jpa", library("org.springframework.boot:spring-boot-starter-data-jpa-test", springBootVersion))
+            put("spring.boot.starter.test.jdbc", library("org.springframework.boot:spring-boot-starter-jdbc-test", springBootVersion))
+            put("spring.boot.starter.test.restclient", library("org.springframework.boot:spring-boot-starter-restclient-test", springBootVersion))
+            put("spring.boot.starter.test.webmvc", library("org.springframework.boot:spring-boot-starter-webmvc-test", springBootVersion))
             put("spring.boot.starter.thymeleaf", library("org.springframework.boot:spring-boot-starter-thymeleaf", springBootVersion))
             put("spring.boot.starter.tomcat", library("org.springframework.boot:spring-boot-starter-tomcat", springBootVersion))
             put("spring.boot.starter.undertow", library("org.springframework.boot:spring-boot-starter-undertow", springBootVersion))
             put("spring.boot.starter.validation", library("org.springframework.boot:spring-boot-starter-validation", springBootVersion))
             put("spring.boot.starter.web", library("org.springframework.boot:spring-boot-starter-web", springBootVersion))
-            put("spring.boot.starter.webflux", library("org.springframework.boot:spring-boot-starter-webflux", springBootVersion))
-            put("spring.boot.starter.websocket", library("org.springframework.boot:spring-boot-starter-websocket", springBootVersion))
             put("spring.boot.starter.web.services", library("org.springframework.boot:spring-boot-starter-web-services", springBootVersion))
+            put("spring.boot.starter.webflux", library("org.springframework.boot:spring-boot-starter-webflux", springBootVersion))
+            put("spring.boot.starter.webmvc", library("org.springframework.boot:spring-boot-starter-webmvc", springBootVersion))
+            put("spring.boot.starter.websocket", library("org.springframework.boot:spring-boot-starter-websocket", springBootVersion))
+            put("spring.boot.test", library("org.springframework.boot:spring-boot-test", springBootVersion))
+            put("spring.boot.test.autoconfigure", library("org.springframework.boot:spring-boot-test-autoconfigure", springBootVersion))
+            put("spring.boot.testcontainers", library("org.springframework.boot:spring-boot-testcontainers", springBootVersion))
         }
         // @formatter:on
     }
@@ -354,3 +361,56 @@ private fun library(groupAndModule: String, version: TraceableVersion): Traceabl
         value = "$groupAndModule:${version.value}",
         trace = BuiltinCatalogTrace(catalog, version = version),
     )
+
+
+/**
+ * Gets the Compose Material3 version corresponding to a given Compose version.
+ *
+ * This is defined the same way the Compose Gradle plugin defines the `compose.material3` alias.
+ */
+private fun composeMaterial3VersionForCMPVersion(composeVersion: TraceableVersion): TraceableVersion {
+    // Before Compose Multiplatform 1.9.0, the material3 version was aligned with the Compose version
+    // Starting from 1.9.0, the material3 version was decoupled, and only stable versions (at the time of
+    // publication) were used.
+    // See https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.9.0
+    val comparableComposeVersion = ComparableVersion(composeVersion.value)
+    if (comparableComposeVersion < ComparableVersion("1.9.0")) {
+        return TraceableVersion(
+            value = composeVersion.value,
+            trace = TransformedValueTrace("aligned with Compose version (before Compose 1.9.0)", composeVersion),
+        )
+    }
+    val material3Version = when (composeVersion.value) {
+        "1.9.0" -> "1.8.2" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.9.0
+        "1.9.1" -> "1.9.0" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.9.1
+        "1.9.2" -> "1.9.0" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.9.2
+        "1.9.3" -> "1.9.0" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.9.3
+        "1.10.0-beta01" -> "1.10.0-alpha04" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.0-beta01
+        "1.10.0-beta02" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.0-beta02
+        "1.10.0-rc01" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.0-rc01
+        "1.10.0-rc02" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.0-rc02
+        "1.10.0" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.0
+        "1.10.1" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.1
+        else -> null // not known yet, or regular alphas/betas/rcs
+    }
+    if (material3Version != null) {
+        return TraceableVersion(
+            value = material3Version,
+            trace = TransformedValueTrace("derived from Compose version based on CMP release info", composeVersion),
+        )
+    }
+    if ("alpha" in composeVersion.value) {
+        return TraceableVersion(
+            value = composeVersion.value,
+            trace = TransformedValueTrace("aligned with Compose version in alpha versions", composeVersion),
+        )
+    }
+    return TraceableVersion(
+        value = composeVersion.value,
+        trace = TransformedValueTrace(
+            description = "aligned with the Compose version because the correct material3 version was unknown " +
+                    "for Compose ${composeVersion.value} at the time Amper ${AmperBuild.mavenVersion} was released",
+            sourceValue = composeVersion,
+        ),
+    )
+}

@@ -312,12 +312,12 @@ settings:
 `settings.compose` configures the [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/)
 framework. Read more about [Compose configuration](../user-guide/builtin-tech/compose-multiplatform.md).
 
-| Attribute              | Description                                                    | Default |
-|------------------------|----------------------------------------------------------------|---------|
-| `enabled: boolean`     | Enable Compose runtime, dependencies and the compiler plugins. | `false` |
-| `version: string`      | The Compose plugin version to use.                             | `1.8.2` |
-| `resources: object`    | Compose Resources settings.                                    |         |
-| `experimental: object` | Experimental Compose settings.                                 |         |
+| Attribute              | Description                                                    | Default  |
+|------------------------|----------------------------------------------------------------|----------|
+| `enabled: boolean`     | Enable Compose runtime, dependencies and the compiler plugins. | `false`  |
+| `version: string`      | The Compose plugin version to use.                             | `1.10.1` |
+| `resources: object`    | Compose Resources settings.                                    |          |
+| `experimental: object` | Experimental Compose settings.                                 |          |
 
 `settings.compose.resources` configures Compose Resources settings.
 
@@ -469,11 +469,12 @@ Values for `selectionMode`:
 `settings.jvm.test` configures the test settings on the JVM and Android platforms.
 Read more about [testing support](../user-guide/testing.md).
 
-| Value                          | Description                                   |
-|--------------------------------|-----------------------------------------------|
-| `junitPlatformVersion: string` | The JUnit platform version used to run tests. |
-| `systemProperties: map`        | JVM system properties for the test process.   |
-| `freeJvmArgs: string list`     | Free JVM arguments for the test process.      |
+| Value                          | Description                                      |
+|--------------------------------|--------------------------------------------------|
+| `junitPlatformVersion: string` | The JUnit platform version used to run tests.    |
+| `systemProperties: map`        | JVM system properties for the test process.      |
+| `extraEnvironment: map`        | Environment variables for the test process.      |
+| `freeJvmArgs: string list`     | Free JVM arguments for the test process.         |
 
 ### `settings.kotlin`
 
@@ -681,6 +682,7 @@ Each cinterop module is defined by a name and supports the following attributes:
 | `compilerOpts` | A list of flags to be passed to the C compiler (e.g., `-I/path/to/includes`). |
 | `linkerOpts`   | A list of C/C++ source files (`.c`, `.cpp`) to be compiled and/or flags to be passed to the linker (e.g., `-lm`). |
 
+
 Example:
 
 ```yaml
@@ -700,6 +702,7 @@ settings:
           - -I/usr/local/include
         linkerOpts:
           - -lfoo
+
 ```
 
 ### `settings.springBoot`

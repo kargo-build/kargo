@@ -5,7 +5,9 @@
 package org.jetbrains.amper.frontend.tree
 
 import org.jetbrains.amper.frontend.SchemaBundle
+import org.jetbrains.amper.frontend.api.Default
 import org.jetbrains.amper.frontend.api.ResolvedReferenceTrace
+import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.api.Traceable
 import org.jetbrains.amper.frontend.api.TransformedValueTrace
 import org.jetbrains.amper.frontend.api.isDefault
@@ -95,8 +97,13 @@ private class TreeReferencesResolver(
             return node
         }
 
-        val resolved = resolve(node, node.referencedPath) ?: return node
-        val trace = node.resolvedTrace(resolved)
+        var resolved = resolve(node, node.referencedPath) ?: return node
+        val trace = node.transform?.let { transform ->
+            node.transformedTrace(resolved, transform).also { trace ->
+                resolved = Default.Static(transform.function(resolved)).toTreeValue(node.type, trace)
+            }
+        } ?: node.resolvedTrace(resolved)
+
         val converted = resolved.cast(targetType = node.type) ?: run {
             reporter.reportBundleError(
                 node.trace.asBuildProblemSource(), "validation.reference.unexpected.type",
@@ -251,15 +258,16 @@ private fun RefinedTreeNode.cast(
         return this
 
     return when (targetType) {
-        is SchemaType.EnumType if this is EnumNode && type.declaration == targetType.declaration -> this
+        is SchemaType.EnumType if this is EnumNode && type.declaration == targetType.declaration ->
+            EnumNode(entryName, targetType, trace, contexts)
         is SchemaType.PathType -> when (this) {
-            is PathNode -> this
+            is PathNode -> PathNode(value, targetType, trace, contexts)
             is StringNode -> PathNode(Path(value), targetType, trace, contexts)
             else -> null
         }
         is SchemaType.StringType if this is ScalarNode &&
                 type.stringSemantics() assignableTo targetType.semantics -> when (this) {
-            is StringNode -> this
+            is StringNode -> StringNode(value, targetType, trace, contexts)
             is PathNode -> StringNode(value.pathString, targetType, trace, contexts)
             is IntNode -> StringNode(value.toString(), targetType, trace, contexts)
             is EnumNode -> StringNode(entryName, targetType, trace, contexts)
@@ -314,3 +322,14 @@ private fun ReferenceNode.resolvedTrace(resolvedValue: Traceable) = ResolvedRefe
     referenceTrace = trace,
     resolvedValue = resolvedValue,
 )
+
+private fun ReferenceNode.transformedTrace(
+    resolvedValue: Traceable,
+    transform: ReferenceNode.Transform,
+): Trace {
+    check(trace.isDefault) { "Can't have transform in the non-default references" }
+    return TransformedValueTrace(
+        description = $$"default, based on ${$${referencedPath.joinToString(".")}}: $${transform.description}",
+        sourceValue = resolvedValue,
+    )
+}

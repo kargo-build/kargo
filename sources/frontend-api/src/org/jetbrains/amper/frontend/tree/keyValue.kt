@@ -45,6 +45,31 @@ interface RefinedKeyValue : KeyValue {
 }
 
 /**
+ * A key-value pair in [CompleteMappingNode].
+ */
+interface CompleteKeyValue : RefinedKeyValue {
+    override val value: CompleteTreeNode
+}
+
+/**
+ * A key-value pair in [CompleteMapNode].
+ *
+ * [propertyDeclaration] is always `null`.
+ */
+interface CompleteMapKeyValue : CompleteKeyValue {
+    override val propertyDeclaration: Nothing?
+}
+
+/**
+ * A key-value pair in [CompleteObjectNode].
+ *
+ * [propertyDeclaration] is always present.
+ */
+interface CompletePropertyKeyValue : CompleteKeyValue {
+    override val propertyDeclaration: SchemaObjectDeclaration.Property
+}
+
+/**
  * Creates a [org.jetbrains.amper.frontend.tree.KeyValue] instance, fetching the property from the [parentType].
  */
 fun KeyValue(
@@ -80,6 +105,16 @@ fun KeyValue(
 ) : KeyValue = KeyValueImpl(propertyDeclaration.name, keyTrace, value, propertyDeclaration, trace)
 
 /**
+ * Creates a [org.jetbrains.amper.frontend.tree.RefinedKeyValue] instance using the supplied [propertyDeclaration].
+ */
+fun RefinedKeyValue(
+    keyTrace: Trace,
+    value: RefinedTreeNode,
+    propertyDeclaration: SchemaObjectDeclaration.Property,
+    trace: Trace,
+): RefinedKeyValue = RefinedKeyValueImpl(propertyDeclaration.name, keyTrace, value, propertyDeclaration, trace)
+
+/**
  * Copies the key-value node as an *unrefined* node, replacing its value to the supplied [value].
  */
 fun KeyValue.copyWithValue(
@@ -92,6 +127,24 @@ fun KeyValue.copyWithValue(
 fun KeyValue.copyWithValue(
     value: RefinedTreeNode,
 ) : RefinedKeyValue = RefinedKeyValueImpl(key, keyTrace, value, propertyDeclaration, trace)
+
+/**
+ * Copies the key-value as a *complete* one designated for [CompleteMapNode], using the supplied [value].
+ */
+fun KeyValue.asCompleteForMap(
+    value: CompleteTreeNode,
+) : CompleteMapKeyValue = CompleteMapKeyValueImpl(key, keyTrace, value, trace).also {
+    require(propertyDeclaration == null) { "`propertyDeclaration` is not null" }
+}
+
+/**
+ * Copies the key-value as a *complete* one designated for [CompleteObjectNode], using the supplied [value].
+ */
+fun KeyValue.asCompleteForObject(
+    value: CompleteTreeNode,
+): CompletePropertyKeyValue = CompletePropertyKeyValueImpl(key, keyTrace, value, checkNotNull(propertyDeclaration) {
+    "`propertyDeclaration` is null"
+}, trace)
 
 private data class KeyValueImpl(
     override val key: String,
@@ -108,3 +161,20 @@ private data class RefinedKeyValueImpl(
     override val propertyDeclaration: SchemaObjectDeclaration.Property?,
     override val trace: Trace,
 ) : RefinedKeyValue, WithContexts by value
+
+private data class CompleteMapKeyValueImpl(
+    override val key: String,
+    override val keyTrace: Trace,
+    override val value: CompleteTreeNode,
+    override val trace: Trace,
+) : CompleteMapKeyValue, WithContexts by value {
+    override val propertyDeclaration: Nothing? get() = null
+}
+
+private data class CompletePropertyKeyValueImpl(
+    override val key: String,
+    override val keyTrace: Trace,
+    override val value: CompleteTreeNode,
+    override val propertyDeclaration: SchemaObjectDeclaration.Property,
+    override val trace: Trace,
+) : CompletePropertyKeyValue, WithContexts by value

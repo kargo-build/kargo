@@ -38,6 +38,7 @@ import org.jetbrains.amper.dependency.resolution.files.produceResultWithTempFile
 import org.jetbrains.amper.dependency.resolution.files.readTextWithRetry
 import org.jetbrains.amper.dependency.resolution.metadata.json.module.File
 import org.jetbrains.amper.dependency.resolution.metadata.xml.parseMetadata
+import org.jetbrains.amper.dependency.resolution.telemetry.debugSpanBuilder
 import org.jetbrains.amper.filechannels.writeFrom
 import org.jetbrains.amper.telemetry.use
 import org.slf4j.LoggerFactory
@@ -416,14 +417,13 @@ open class DependencyFileImpl(
         filePath: Path,
         level: ResolutionLevel = ResolutionLevel.NETWORK,
     ): Boolean {
-        return settings.spanBuilder("hasMatchingChecksumLocally")
+        return settings.debugSpanBuilder("hasMatchingChecksumLocally")
             .setAttribute("fileName", fileName)
             .use {
-                val computedHashes = settings.spanBuilder("Computing hashes").use { filePath.computeHash() }
+                val computedHashes = settings.debugSpanBuilder("Computing hashes").use { filePath.computeHash() }
 
-                val result = settings.spanBuilder("verifyHashes").use {
-                    verifyHashes(computedHashes, diagnosticsReporter, level, settings)
-                }
+                val result = verifyHashes(computedHashes, diagnosticsReporter, level)
+
                 when (result) {
                     VerificationResult.PASSED -> true
                     VerificationResult.FAILED -> false
@@ -447,7 +447,7 @@ open class DependencyFileImpl(
             context.settings.repositories.ensureFirst(dependency.repository),
             context.settings.progress,
             context.resolutionCache,
-            context.settings.spanBuilder,
+            context.debugSpanBuilder,
             true,
             diagnosticsReporter,
         )
@@ -802,11 +802,10 @@ open class DependencyFileImpl(
         hashers: Collection<Hash>,
         diagnosticsReporter: DiagnosticReporter,
         requestedLevel: ResolutionLevel,
-        settings: Settings,
     ): VerificationResult {
         for (hasher in hashers) {
             val algorithm = hasher.algorithm
-            val expectedHash = settings.spanBuilder("getExpectedHash").use { getExpectedHash(algorithm, settings) } ?: continue
+            val expectedHash = getExpectedHash(algorithm) ?: continue
             return checkHash(
                 hasher,
                 expectedHash = SimpleHash(hash = expectedHash, algorithm = algorithm),
@@ -821,7 +820,7 @@ open class DependencyFileImpl(
     private suspend fun getExpectedHash(
         diagnosticsReporter: DiagnosticReporter, requestedLevel: ResolutionLevel, searchInMetadata: Boolean = true,
     ): Hash? {
-        val hash = LocalStorageHashSource.getExpectedHash(this, dependency.settings, searchInMetadata)
+        val hash = LocalStorageHashSource.getExpectedHash(this, searchInMetadata)
 
         if (hash == null && requestedLevel != ResolutionLevel.NETWORK) {
             diagnosticsReporter.addMessage(
@@ -899,8 +898,8 @@ open class DependencyFileImpl(
      * uses them for verification.
      * This way, the checksum file is presented in local storage only in case metadata contains invalid data or is completely missing.
      */
-    internal suspend fun getExpectedHash(algorithm: HashAlgorithm, settings: Settings, searchInMetadata: Boolean = true): String? =
-        LocalStorageHashSource.getExpectedHash(this, algorithm, settings, searchInMetadata)
+    internal suspend fun getExpectedHash(algorithm: HashAlgorithm, searchInMetadata: Boolean = true): String? =
+        LocalStorageHashSource.getExpectedHash(this, algorithm, searchInMetadata)
 
     /**
      * Downloads hash of a particular type from one of the specified repositories.
@@ -989,10 +988,7 @@ open class DependencyFileImpl(
                 }
             ) { attempt ->
                 spanBuilderSource("downloadAttempt")
-                    .setAttribute("dependency", dependency.toString())
                     .setAttribute("attempt", attempt.toLong())
-                    .setAttribute("repository", repository.url)
-                    .setAttribute("fileName", fileName)
                     .setAttribute("url", url)
                     .use {
                         val request = HttpRequest.newBuilder()
@@ -1117,17 +1113,15 @@ open class DependencyFileImpl(
 
     private enum class LocalStorageHashSource {
         File {
-            override suspend fun getExpectedHash(artifact: DependencyFileImpl, algorithm: HashAlgorithm, settings: Settings) =
-                settings.spanBuilder("getHashFromGradleCacheDirectory").use { artifact.getHashFromGradleCacheDirectory(algorithm) }
-                    ?: settings.spanBuilder("getDependencyFile").use {
-                        artifact.getHashDependencyFile(algorithm)
-                    }
-                            .takeIf { file -> settings.spanBuilder("DependencyFile.isDownloaded").use { file.isDownloaded() }}
-                            ?.let { file -> settings.spanBuilder("readText").use { file.readText() } }
-                            ?.sanitize()
+            override suspend fun getExpectedHash(artifact: DependencyFileImpl, algorithm: HashAlgorithm) =
+                artifact.getHashFromGradleCacheDirectory(algorithm)
+                    ?: artifact.getHashDependencyFile(algorithm)
+                        .takeIf { it.isDownloaded() }
+                        ?.readText()
+                        ?.sanitize()
         },
         MetadataInfo {
-            override suspend fun getExpectedHash(artifact: DependencyFileImpl, algorithm: HashAlgorithm, settings: Settings) =
+            override suspend fun getExpectedHash(artifact: DependencyFileImpl, algorithm: HashAlgorithm) =
                 with(artifact) {
                     when (algorithm.name) {
                         "sha512" -> fileFromVariant(dependency, fileName)?.sha512?.fixOldGradleHash(128)
@@ -1139,11 +1133,11 @@ open class DependencyFileImpl(
                 }
         };
 
-        protected abstract suspend fun getExpectedHash(artifact: DependencyFileImpl, algorithm: HashAlgorithm, settings: Settings): String?
+        protected abstract suspend fun getExpectedHash(artifact: DependencyFileImpl, algorithm: HashAlgorithm): String?
 
-        private suspend fun getExpectedHash(artifact: DependencyFileImpl, settings: Settings): Hash? {
+        private suspend fun getExpectedHash(artifact: DependencyFileImpl): Hash? {
             for (hashAlgorithm in hashAlgorithms) {
-                val expectedHash = getExpectedHash(artifact, hashAlgorithm, settings)
+                val expectedHash = getExpectedHash(artifact, hashAlgorithm)
                 if (expectedHash != null) {
                     return SimpleHash(hash = expectedHash, algorithm = hashAlgorithm)
                 }
@@ -1152,20 +1146,16 @@ open class DependencyFileImpl(
         }
 
         companion object {
-            suspend fun getExpectedHash(artifact: DependencyFileImpl, algorithm: HashAlgorithm, settings: Settings, searchInMetadata: Boolean) =
-                settings.spanBuilder(" File.getExpectedHash").use {
-                    File.getExpectedHash(artifact, algorithm, settings)
-                }
-                    ?: if (searchInMetadata) settings.spanBuilder("MetadataInfo.getExpectedHash").use {
-                        MetadataInfo.getExpectedHash(artifact, algorithm, settings)
-                    } else null
+            suspend fun getExpectedHash(artifact: DependencyFileImpl, algorithm: HashAlgorithm, searchInMetadata: Boolean) =
+                File.getExpectedHash(artifact, algorithm)
+                    ?: if (searchInMetadata) MetadataInfo.getExpectedHash(artifact, algorithm) else null
 
             /**
              * @return hash of the artifact resolved from a local artifacts storage
              */
-            suspend fun getExpectedHash(artifact: DependencyFileImpl, settings: Settings, searchInMetadata: Boolean = true): Hash? =
-                File.getExpectedHash(artifact, settings)
-                    ?: if (searchInMetadata) MetadataInfo.getExpectedHash(artifact, settings) else null
+            suspend fun getExpectedHash(artifact: DependencyFileImpl, searchInMetadata: Boolean = true): Hash? =
+                File.getExpectedHash(artifact)
+                    ?: if (searchInMetadata) MetadataInfo.getExpectedHash(artifact) else null
         }
     }
 

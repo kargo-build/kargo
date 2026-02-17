@@ -37,6 +37,7 @@ import org.slf4j.LoggerFactory
 import java.util.concurrent.CancellationException
 import java.util.regex.Pattern
 import kotlin.io.path.Path
+import kotlin.text.replace
 
 private val logger = LoggerFactory.getLogger("dr/maven/pomResolver.kt")
 
@@ -226,8 +227,14 @@ private fun MavenDependency.parsePom(text: String): Project =
     sanitizePom(text, coordinates).parsePom()
 
 private fun sanitizePom(pomText: String, coordinates: MavenCoordinates): String =
-    if (coordinates.groupId == "org.codehaus.plexus" && coordinates.artifactId == "plexus")
+    if (coordinates.groupId == "org.codehaus.plexus" && coordinates.artifactId == "plexus"
+        || coordinates.artifactId == "plexus-root")
         pomText.replace("&oslash;", "ø")
+    else if (coordinates.artifactId == "hadoop-project")
+        // Removing Xlint: prefix (that is recognized as an unknown namespace by XML parser making entire XML invalid)
+        pomText
+            .replace("<Xlint:-", "<")
+            .replace("<Xlint:", "<")
     else
         pomText
 

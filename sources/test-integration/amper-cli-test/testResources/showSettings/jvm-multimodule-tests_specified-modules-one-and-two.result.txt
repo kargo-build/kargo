@@ -9,7 +9,7 @@ settings@jvm:
       enabled: false  # default
       exposedAccessors: false  # default
       packageName:   # default
-    version: 1.8.2  # default
+    version: 1.10.1  # default
   java:
     annotationProcessing:
       processorOptions: {}  # default
@@ -23,10 +23,11 @@ settings@jvm:
       distributions: null  # default
       selectionMode: auto  # default
       version: 21  # default
-    release: 21  # Default, computed from 'jdk'
+    release: 21  # default, from ${jdk.version}
     runtimeClasspathMode: jars  # default
     storeParameterNames: false  # default
     test:
+      extraEnvironment: {}  # default
       freeJvmArgs: []  # default
       junitPlatformVersion: 6.0.1  # default
       systemProperties: {}  # default
@@ -59,14 +60,14 @@ settings@jvm:
       annotationTypeSafetyEnabled: true  # default
       applyBom: true  # default
       enabled: false  # default
-      version: 0.10.1  # default
+      version: 0.10.2  # default
     serialization:
-      enabled: false  # enabled when 'format' is specified
+      enabled: false  # default, based on ${format}: enabled when specified
       format: null  # default
-      version: 1.9.0  # default
+      version: 1.10.0  # default
     suppressWarnings: false  # default
     verbose: false  # default
-    version: 2.2.21  # default
+    version: 2.3.10  # default
   kover: null  # default
   ktor:
     applyBom: true  # default
@@ -83,7 +84,7 @@ settings@jvm:
   springBoot:
     applyBom: true  # default
     enabled: false  # default
-    version: 3.5.5  # default
+    version: 4.0.2  # default
 
 Module: two
 
@@ -96,7 +97,7 @@ settings@jvm:
       enabled: false  # default
       exposedAccessors: false  # default
       packageName:   # default
-    version: 1.8.2  # default
+    version: 1.10.1  # default
   java:
     annotationProcessing:
       processorOptions: {}  # default
@@ -110,10 +111,11 @@ settings@jvm:
       distributions: null  # default
       selectionMode: auto  # default
       version: 21  # default
-    release: 21  # Default, computed from 'jdk'
+    release: 21  # default, from ${jdk.version}
     runtimeClasspathMode: jars  # default
     storeParameterNames: false  # default
     test:
+      extraEnvironment: {}  # default
       freeJvmArgs: []  # default
       junitPlatformVersion: 6.0.1  # default
       systemProperties: {}  # default
@@ -146,14 +148,14 @@ settings@jvm:
       annotationTypeSafetyEnabled: true  # default
       applyBom: true  # default
       enabled: false  # default
-      version: 0.10.1  # default
+      version: 0.10.2  # default
     serialization:
-      enabled: false  # enabled when 'format' is specified
+      enabled: false  # default, based on ${format}: enabled when specified
       format: null  # default
-      version: 1.9.0  # default
+      version: 1.10.0  # default
     suppressWarnings: false  # default
     verbose: false  # default
-    version: 2.2.21  # default
+    version: 2.3.10  # default
   kover: null  # default
   ktor:
     applyBom: true  # default
@@ -170,4 +172,4 @@ settings@jvm:
   springBoot:
     applyBom: true  # default
     enabled: false  # default
-    version: 3.5.5  # default
+    version: 4.0.2  # default

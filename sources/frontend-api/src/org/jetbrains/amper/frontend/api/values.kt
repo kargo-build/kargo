@@ -4,41 +4,38 @@
 
 package org.jetbrains.amper.frontend.api
 
-import org.jetbrains.amper.frontend.SchemaEnum
-import org.jetbrains.amper.frontend.types.SchemaObjectDeclaration
+import org.jetbrains.amper.frontend.tree.BooleanNode
+import org.jetbrains.amper.frontend.tree.CompleteListNode
+import org.jetbrains.amper.frontend.tree.CompleteMapNode
+import org.jetbrains.amper.frontend.tree.CompleteObjectNode
+import org.jetbrains.amper.frontend.tree.CompletePropertyKeyValue
+import org.jetbrains.amper.frontend.tree.CompleteTreeNode
+import org.jetbrains.amper.frontend.tree.DefaultsReferenceTransform
+import org.jetbrains.amper.frontend.tree.EnumNode
+import org.jetbrains.amper.frontend.tree.IntNode
+import org.jetbrains.amper.frontend.tree.NullLiteralNode
+import org.jetbrains.amper.frontend.tree.PathNode
+import org.jetbrains.amper.frontend.tree.ReferenceNode
+import org.jetbrains.amper.frontend.tree.RefinedTreeNode
+import org.jetbrains.amper.frontend.tree.StringNode
+import org.jetbrains.amper.frontend.tree.declaration
+import org.jetbrains.amper.frontend.tree.enumConstantIfAvailable
+import org.jetbrains.amper.frontend.types.SchemaType
 import java.nio.file.Path
 import kotlin.properties.PropertyDelegateProvider
 import kotlin.properties.ReadOnlyProperty
-import kotlin.reflect.KClass
 import kotlin.reflect.KProperty
 import kotlin.reflect.KProperty0
 import kotlin.reflect.KProperty1
-import kotlin.reflect.full.createInstance
 import kotlin.reflect.jvm.isAccessible
-
-typealias ValueHolders = MutableMap<String, ValueHolder<*>>
-
-data class ValueHolder<T>(
-    val value: T,
-    val valueTrace: Trace,
-    val keyValueTrace: Trace,
-)
-
-/**
- * This setter is made public but should never be used outside the Amper frontend.
- */
-@RequiresOptIn("This is an API, that mutates/alters the already set trace. " +
-        "Consider setting the correct trace from the start.")
-annotation class InternalTraceSetter
 
 /**
  * Class to collect all values registered within it.
  */
 abstract class SchemaNode : Traceable {
     @IgnoreForSchema
-    internal val allValues = mutableListOf<SchemaValueDelegate<*>>()
-    @IgnoreForSchema
-    val valueHolders: ValueHolders = mutableMapOf()
+    lateinit var backingTree: CompleteObjectNode
+        private set
 
     /**
      * Register a required value (without default).
@@ -48,30 +45,46 @@ abstract class SchemaNode : Traceable {
     /**
      * Register a value with a default.
      */
-    fun <T> value(default: T) = SchemaValueDelegateProvider(Default.Static(default))
+    fun <T> value(default: T) = SchemaValueDelegateProvider<T>(Default.Static(default))
 
     /**
      * Register a nested object value with a default-constructed instance by default.
      */
-    inline fun <reified T : SchemaNode> nested() = SchemaValueDelegateProvider(Default.NestedObject(T::class))
+    fun <T : SchemaNode> nested() = SchemaValueDelegateProvider<T>(Default.NestedObject)
+
+    /**
+     * Register a value with a default referencing another property.
+     *
+     * WARNING: Only the property's `name` is really taken into account.
+     * The name is resolved using regular reference resolution rules: ${<name>}
+     */
+    fun <T> referenceValue(property: KProperty0<T>) =
+        SchemaValueDelegateProvider<T>(Default.Reference(listOf(property.name)))
+
+    /**
+     * Register a value with a default referencing another property from the same type.
+     *
+     * WARNING: Only the properties' `name` is really taken into account.
+     * The name is resolved using regular reference resolution rules: `${<firstName>.<secondName>}`
+     */
+    fun <T1, T2> referenceValue(first: KProperty0<T1>, second: KProperty1<T1, T2>) =
+        SchemaValueDelegateProvider<T2>(Default.Reference(listOf(first.name, second.name)))
 
     /**
      * Register a value with a default depending on another property
      */
-    fun <T> dependentValue(property: KProperty0<T>) = SchemaValueDelegateProvider(Default.DirectDependent(property))
-
-    /**
-     * Register a value with a default depending on another property
-     */
-    fun <T, V> dependentValue(
-        property: KProperty0<T>,
-        desc: String? = null,
-        transformValue: (value: T) -> V,
-    ) = SchemaValueDelegateProvider(
-        Default.TransformedDependent(
-            desc = desc ?: "Default, computed from '${property.name}'",
-            property = property,
-            transformValue = transformValue,
+    @OptIn(DefaultsReferenceTransform::class)
+    fun <T> referenceValue(
+        property: KProperty0<*>,
+        description: String,
+        transformValue: (RefinedTreeNode) -> T,
+    ) = SchemaValueDelegateProvider<T>(
+        Default.Reference(
+            referencedPath = listOf(property.name),
+            transform = ReferenceNode.Transform(
+                description = description,
+                function = transformValue,
+            ),
         )
     )
 
@@ -81,73 +94,47 @@ abstract class SchemaNode : Traceable {
     fun <T : Any> nullableValue(default: T? = null) = value(default = default)
 
     @IgnoreForSchema
-    lateinit var schemaType: SchemaObjectDeclaration
+    final override val trace: Trace
+        get() = backingTree.trace
 
-    @IgnoreForSchema
-    final override lateinit var trace: Trace
-        @InternalTraceSetter
-        set
+    /**
+     * Called by the [CompleteObjectNode.instance] in order to set itself.
+     */
+    internal fun initialize(tree: CompleteObjectNode) {
+        check(!::backingTree.isInitialized) { "initialize can't be called twice" }
+        backingTree = tree
+    }
 }
 
-sealed class Default<out T> {
-    abstract val value: T
-    abstract val trace: Trace
+sealed interface Default {
+    /**
+     * A static default [value].
+     * The value must correspond to the property type.
+     */
+    // TODO: Make a type-safe value
+    data class Static(val value: Any?) : Default
 
-    data class Static<T>(override val value: T) : Default<T>() {
-        override val trace = DefaultTrace
-    }
+    /**
+     * A default marker that means to create a default sub-object when none is provided.
+     */
+    data object NestedObject : Default
 
-    data class NestedObject<T : SchemaNode>(
-        private val kClass: KClass<T>,
-    ) : Default<T>() {
-        override val value by lazy { kClass.createInstance() }
-        override val trace = DefaultTrace
-    }
-
-    sealed class Dependent<T, V> : Default<V>() {
-        abstract val property: KProperty0<T>
-        abstract val desc: String
-    }
-
-    data class DirectDependent<T>(
-        override val property: KProperty0<T>,
-    ) : Dependent<T, T>() {
-        override val desc: String = "Default, inherited from '${property.name}'"
-        // We need to access property.schemaDelegate lazily because the delegate of the original property might not be
-        // initialized yet. This is the case when the dependent property is declared before the one it depends on in
-        // the schema.
-        override val value by lazy { property.schemaDelegate.value }
-        override val trace by lazy {
-            ResolvedReferenceTrace(
-                description = desc,
-                referenceTrace = DefaultTrace,
-                resolvedValue = property.schemaDelegate,
-            )
-        }
-    }
-
-    data class TransformedDependent<T, V>(
-        override val desc: String,
-        override val property: KProperty0<T>,
-        private val transformValue: (T) -> V,
-    ) : Dependent<T, V>() {
-        // We need to access property.schemaDelegate lazily because the delegate of the original property might not be
-        // initialized yet. This is the case when the dependent property is declared before the one it depends on in
-        // the schema.
-        override val value by lazy { transformValue(property.schemaDelegate.value) }
-        override val trace by lazy {
-            TransformedValueTrace(description = desc, sourceValue = property.schemaDelegate)
-        }
-    }
+    /**
+     * A reference default.
+     */
+    class Reference(
+        val referencedPath: List<String>,
+        val transform: ReferenceNode.Transform? = null,
+    ) : Default
 }
 
 class SchemaValueDelegateProvider<T>(
-    val default: Default<T>? = null,
+    val default: Default? = null,
 ) : PropertyDelegateProvider<SchemaNode, SchemaValueDelegate<T>> {
     override fun provideDelegate(thisRef: SchemaNode, property: KProperty<*>): SchemaValueDelegate<T> {
         // Make sure that we can access delegates from reflection.
         property.isAccessible = true
-        return SchemaValueDelegate(property, default, thisRef.valueHolders).also { thisRef.allValues.add(it) }
+        return SchemaValueDelegate(property, default, thisRef)
     }
 }
 
@@ -156,48 +143,33 @@ class SchemaValueDelegateProvider<T>(
  */
 class SchemaValueDelegate<T>(
     val property: KProperty<*>,
-    val default: Default<T>?,
-    valueHolders: ValueHolders,
+    val default: Default?,
+    val owner: SchemaNode,
 ) : Traceable, ReadOnlyProperty<SchemaNode, T> {
-    // We are creating lambdas here to prevent misusage of [valueHolders] from [SchemaValueDelegate].
-    @Suppress("UNCHECKED_CAST") // What we put in valueHolders is checked up front
-    private val valueGetter: () -> ValueHolder<T>? = { valueHolders[property.name] as ValueHolder<T>? }
-
-    val value: T
-        get() {
-            val valueGetter = valueGetter()
-            if (valueGetter != null) {
-                return valueGetter.value
-            }
-            if (default is Default.TransformedDependent<*, *>) {
-                // The only default that is taken into account on the delegate level
-                // other defaults are merged on the tree level to make them traceable and referencable.
-                return default.value
-            }
-            error("Required property '${property.name}' is not set")
-        }
+    @Suppress("UNCHECKED_CAST") // asValue() reads the SchemaType which knows the runtime type.
+    val value: T by lazy {
+        keyValue.value.asValue() as T
+    }
 
     override fun getValue(thisRef: SchemaNode, property: KProperty<*>) = value
 
     override val trace: Trace
-        get() = valueGetter()?.valueTrace
-            ?: default?.trace
-            // Not really "default" but rather "missing mandatory value".
-            // It only happens for required properties (without default) that also don't have a value.
-            ?: DefaultTrace
+        get() = keyValue.value.trace
 
     /**
      * A trace to the whole `key: value` pair, if present.
      */
     val keyValueTrace: Trace
-        get() = valueGetter()?.keyValueTrace ?: DefaultTrace
+        get() = keyValue.trace
 
-    override fun toString(): String = "SchemaValue(property = ${property.fullyQualifiedName}, value = $value)"
+    override fun toString(): String =
+        "SchemaValue(property = ${owner.backingTree.declaration.qualifiedName}.${property.name}, value = $value)"
+
+    private val keyValue: CompletePropertyKeyValue
+        get() = checkNotNull(owner.backingTree.refinedChildren[property.name]) {
+            "Not reached: value for property '${property.name}' is not set"
+        }
 }
-
-// the first "parameter" of a property is the receiver, so the containing type
-private val KProperty<*>.fullyQualifiedName: String
-    get() = "${parameters.firstOrNull()?.type ?: ""}.$name"
 
 private fun <T : KProperty<*>> T.setAccessible() = apply { isAccessible = true }
 
@@ -229,62 +201,29 @@ val <T> KProperty0<T>.isExplicitlySet: Boolean
 val <T> KProperty0<T>.isSetInTemplate: Boolean
     get() = schemaDelegate.trace.isFromTemplate
 
-val SchemaNode.propertyDelegates: List<SchemaValueDelegate<*>> get() = allValues
-
-/**
- * Abstract class to traverse final schema tree.
- */
-abstract class SchemaValuesVisitor {
-
-    open fun visit(value: Any?) {
-        when (value) {
-            is Collection<*> -> visitCollection(value)
-            is Map<*, *> -> visitMap(value)
-            is SchemaValueDelegate<*> -> visitSchemaValueDelegate(value)
-            is SchemaNode -> visitSchemaNode(value)
-            is TraceableValue<*> -> visitTraceableValue(value)
-            is SchemaEnum -> visitSchemaEnumValue(value)
-            null,
-            is Boolean,
-            is Short,
-            is Int,
-            is Long,
-            is Float,
-            is Double,
-            is String,
-            is Enum<*>,
-            is Path -> visitPrimitiveLike(value)
-            else -> visitOther(value)
-        }
+private fun CompleteTreeNode.asValue(): Any? = when (this) {
+    is BooleanNode -> value
+    is IntNode -> value
+    is EnumNode -> enumConstantIfAvailable?.wrapTraceable(type, trace)
+        // Objects of user-defined types have no internal runtime types,
+        // so they are all instantiated as `ExtensionSchemaNode`, which has no properties,
+        // thus user-defined enums are not reachable for instantiation.
+        ?: error("Not reached: enum with no runtime type can't be instantiated")
+    is StringNode -> value.wrapTraceable(type, trace)
+    is PathNode -> value.wrapTraceable(type, trace)
+    is CompleteListNode -> children.map { it.asValue() }
+    is CompleteMapNode ->  children.associate {
+        it.key.wrapTraceable(type.keyType, it.keyTrace) to it.value.asValue()
     }
-
-    open fun visitPrimitiveLike(other: Any?) = Unit
-
-    open fun visitSchemaEnumValue(schemaEnum: SchemaEnum) {
-        visit(schemaEnum.schemaValue)
-    }
-
-    open fun visitCollection(collection: Collection<*>) {
-        collection.forEach { visit(it) }
-    }
-
-    open fun visitMap(map: Map<*, *>) {
-        visitCollection(map.values)
-    }
-
-    open fun visitSchemaNode(node: SchemaNode) {
-        node.allValues.sortedBy { it.property.name }.forEach { visit(it) }
-    }
-
-    open fun visitSchemaValueDelegate(schemaValue: SchemaValueDelegate<*>) {
-        visit(schemaValue.value)
-    }
-
-    open fun visitTraceableValue(traceableValue: TraceableValue<*>) {
-        visit(traceableValue.value)
-    }
-
-    open fun visitOther(other: Any) {
-        error("Type ${other::class.simpleName} is not supported in the schema")
-    }
+    is CompleteObjectNode -> instance
+    is NullLiteralNode -> null
 }
+
+private fun Enum<*>.wrapTraceable(type: SchemaType.EnumType, trace: Trace) =
+    if (type.isTraceableWrapped) asTraceable(trace) else this
+
+private fun Path.wrapTraceable(type: SchemaType.PathType, trace: Trace) =
+    if (type.isTraceableWrapped) asTraceable(trace) else this
+
+private fun String.wrapTraceable(type: SchemaType.StringType, trace: Trace) =
+    if (type.isTraceableWrapped) asTraceable(trace) else this

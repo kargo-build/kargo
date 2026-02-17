@@ -133,8 +133,9 @@ class Resolver {
         unspecifiedVersionResolver: UnspecifiedVersionResolver<MavenDependencyNodeWithContext>? = MavenDependencyUnspecifiedVersionResolverBase(),
         postProcessGraph: (SerializableDependencyNode) -> Unit = {},
     ): ResolvedGraph {
-        return root.context.spanBuilder("DR.graph:resolveDependencies").use {
+        return root.context.debugSpanBuilder("DR.graph:resolveDependencies").use { span ->
             val resolutionId = getContextAwareRootCacheEntryKey(root, transitive, downloadSources, resolutionLevel)
+                .also { span.setAttribute("resolutionId", it) }
 
             val incrementalCache = root.context.settings.incrementalCache
 
@@ -163,30 +164,17 @@ class Resolver {
                         json = GraphJson.json,
                         forceRecalculation = (incrementalCacheUsage == IncrementalCacheUsage.REFRESH_AND_USE),
                     ) {
-                        root.context.spanBuilder("DR.graph:resolution")
-                            .setAttribute(
-                                "configuration",
-                                cacheInputValues["dependencies"]
-                            ) // todo (AB) : Remove it (was added for debugging purposes))
-                            .setAttribute(
-                                "userCacheRoot",
-                                cacheInputValues["userCacheRoot"]
-                            ) // todo (AB) : Remove it (was added for debugging purposes))
-                            .setAttribute(
-                                "resolutionId",
-                                resolutionId
-                            ) // todo (AB) : Remove it (was added for debugging purposes))
-                            .use {
-                                root.resolveDependencies(resolutionLevel, transitive, downloadSources, unspecifiedVersionResolver)
-                                val resolvedGraph = root.toResolvedGraph()
-                                val serializableGraph = resolvedGraph.root.toGraph()
+                        root.context.debugSpanBuilder("DR.graph:resolution").use {
+                            root.resolveDependencies(resolutionLevel, transitive, downloadSources, unspecifiedVersionResolver)
+                            val resolvedGraph = root.toResolvedGraph()
+                            val serializableGraph = resolvedGraph.root.toGraph()
 
-                                ResultWithSerializable(
-                                    outputValue = serializableGraph,
-                                    outputFiles = resolvedGraph.root.dependencyPaths(),
-                                    expirationTime = resolvedGraph.expirationTime,
-                                )
-                            }
+                            ResultWithSerializable(
+                                outputValue = serializableGraph,
+                                outputFiles = resolvedGraph.root.dependencyPaths(),
+                                expirationTime = resolvedGraph.expirationTime,
+                            )
+                        }
                     }.let { result ->
                         try {
                             postProcessGraph(result.outputValue.root)
@@ -330,7 +318,7 @@ class Resolver {
         transitive: Boolean = true,
         unspecifiedVersionResolver: UnspecifiedVersionResolver<MavenDependencyNodeWithContext>? = MavenDependencyUnspecifiedVersionResolverBase(),
     ) {
-        root.context.spanBuilder("Resolver.buildGraph").use {
+        root.context.debugSpanBuilder("Resolver.buildGraph").use {
             val conflictResolver =
                 ConflictResolver(root.context.settings.conflictResolutionStrategies, unspecifiedVersionResolver)
 
@@ -427,7 +415,7 @@ class Resolver {
      * Downloads dependencies of all nodes by traversing a dependency graph built by the method [buildGraph].
      */
     suspend fun downloadDependencies(node: DependencyNodeWithContext, downloadSources: Boolean = false) {
-        node.context.spanBuilder("Resolver.downloadDependencies").use {
+        node.context.debugSpanBuilder("Resolver.downloadDependencies").use {
             coroutineScope {
                 node
                     .distinctBfsSequence { child, _ -> child !is MavenDependencyConstraintNode }

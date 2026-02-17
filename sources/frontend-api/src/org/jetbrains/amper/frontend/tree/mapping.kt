@@ -35,6 +35,49 @@ interface RefinedMappingNode : MappingNode, RefinedTreeNode {
     val refinedChildren : Map<String, RefinedKeyValue>
 }
 
+/**
+ * Same as [RefinedMappingNode], but guarantees *completeness* of its [refinedChildren].
+ * Has two distinct variants:
+ * - [CompleteMapNode] (map)
+ * - [CompleteObjectNode] (object)
+ */
+sealed interface CompleteMappingNode : RefinedMappingNode, CompleteTreeNode {
+    override val children : List<CompleteKeyValue>
+    override val refinedChildren : Map<String, CompleteKeyValue>
+}
+
+/**
+ * A complete tree node of a [SchemaType.MapType] type.
+ * All child nodes are complete.
+ */
+interface CompleteMapNode : CompleteMappingNode {
+    override val type: SchemaType.MapType
+    override val children : List<CompleteMapKeyValue>
+    override val refinedChildren : Map<String, CompleteMapKeyValue>
+}
+
+/**
+ * A complete tree node of a [SchemaType.ObjectType] type.
+ * Every [keyValue][CompletePropertyKeyValue] ([children]/[refinedChildren]) is guaranteed to have a
+ * [property declaration][CompletePropertyKeyValue.propertyDeclaration].
+ * All child nodes are complete.
+ */
+interface CompleteObjectNode : CompleteMappingNode {
+    override val type: SchemaType.ObjectType
+    override val children : List<CompletePropertyKeyValue>
+    override val refinedChildren : Map<String, CompletePropertyKeyValue>
+
+    /**
+     * A cached [SchemaNode] instance, created on demand.
+     */
+    val instance: SchemaNode
+}
+
+/**
+ * Helper function to access a [CompleteObjectNode.instance] in a typed manner.
+ */
+inline fun <reified T : SchemaNode> CompleteObjectNode.instance(): T = instance as T
+
 fun MappingNode(
     children: List<KeyValue>,
     type: SchemaType.MapLikeType,
@@ -48,6 +91,20 @@ fun RefinedMappingNode(
     trace: Trace,
     contexts: Contexts,
 ) : RefinedMappingNode = RefinedMappingNodeImpl(refinedChildren, type, trace, contexts)
+
+fun CompleteMapNode(
+    refinedChildren: Map<String, CompleteMapKeyValue>,
+    type: SchemaType.MapType,
+    trace: Trace,
+    contexts: Contexts,
+) : CompleteMapNode = CompleteMapNodeImpl(refinedChildren, type, trace, contexts)
+
+fun CompleteObjectNode(
+    refinedChildren: Map<String, CompletePropertyKeyValue>,
+    type: SchemaType.ObjectType,
+    trace: Trace,
+    contexts: Contexts,
+) : CompleteObjectNode = CompleteObjectNodeImpl(refinedChildren, type, trace, contexts)
 
 /**
  * NOTE: Doesn't check given [children] for key uniqueness criteria.
@@ -90,6 +147,11 @@ val MappingNode.declaration: SchemaObjectDeclaration? get() = when(val type = ty
     is SchemaType.ObjectType -> type.declaration
 }
 
+val CompleteObjectNode.declaration: SchemaObjectDeclaration get() = type.declaration
+
+operator fun CompleteObjectNode?.get(property: String): CompleteTreeNode? =
+    this?.refinedChildren[property]?.value
+
 private class MappingNodeImpl(
     override val children: List<KeyValue>,
     override val type: SchemaType.MapLikeType,
@@ -104,4 +166,26 @@ private class RefinedMappingNodeImpl(
     override val contexts: Contexts,
 ) : RefinedMappingNode {
     override val children = refinedChildren.values.toList()
+}
+
+private class CompleteMapNodeImpl(
+    override val refinedChildren: Map<String, CompleteMapKeyValue>,
+    override val type: SchemaType.MapType,
+    override val trace: Trace,
+    override val contexts: Contexts,
+) : CompleteMapNode {
+    override val children = refinedChildren.values.toList()
+}
+
+private class CompleteObjectNodeImpl(
+    override val refinedChildren: Map<String, CompletePropertyKeyValue>,
+    override val type: SchemaType.ObjectType,
+    override val trace: Trace,
+    override val contexts: Contexts,
+) : CompleteObjectNode {
+    override val children = refinedChildren.values.toList()
+
+    override val instance: SchemaNode by lazy {
+        declaration.createInstance().apply { initialize(this@CompleteObjectNodeImpl) }
+    }
 }

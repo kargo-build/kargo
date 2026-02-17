@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.tasks.maven
@@ -67,7 +67,25 @@ fun MavenProject.addTestResources(paths: List<Path>) = paths
     .map { Resource().apply { directory = it.absolutePathString() } }
     .forEach { addTestResource(it) }
 
-// --- Maven artifacts utilities ---
+// --- Maven artifacts/dependencies utilities ---
+
+/**
+ * Shortcut constructor for the `MavenDependency`.
+ */
+fun MavenDependency(
+    groupId: String,
+    artifactId: String,
+    version: String?,
+    type: String,
+    scope: String,
+) = MavenDependency().apply {
+    this.groupId = groupId
+    this.artifactId = artifactId
+    this.version = version
+    this.type = type
+    this.scope = scope
+}
+
 /**
  * Shortcut for the default constructor with `isAddedToClasspath` flag being provided.
  */
@@ -94,9 +112,9 @@ fun DefaultMavenArtifact(
     },
 )
 
-fun AmperModule.asMavenArtifact(scope: String) = DefaultMavenArtifact(
+fun AmperModule.asMavenArtifact(scope: String, artifactIdSuffix: String = "") = DefaultMavenArtifact(
     groupId = rootFragment.settings.publishing.group ?: "unspecified",
-    artifactId = rootFragment.settings.publishing.name ?: userReadableName,
+    artifactId = (rootFragment.settings.publishing.name ?: userReadableName) + artifactIdSuffix,
     version = rootFragment.settings.publishing.version ?: "unspecified",
     scope = scope,
     type = "jar",

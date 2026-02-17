@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.maven
@@ -15,6 +15,7 @@ import org.jetbrains.amper.frontend.schema.JavaAnnotationProcessingSettings
 import org.jetbrains.amper.frontend.schema.JavaSettings
 import org.jetbrains.amper.frontend.schema.JvmSettings
 import org.jetbrains.amper.frontend.schema.KotlinSettings
+import org.jetbrains.amper.frontend.schema.MavenPlugin
 import org.jetbrains.amper.frontend.schema.Module
 import org.jetbrains.amper.frontend.schema.ModuleProduct
 import org.jetbrains.amper.frontend.schema.ProductType
@@ -363,8 +364,12 @@ class RenderToYamlTest {
                     this += scalar("module1")
                 }
                 Project::mavenPlugins {
-                    this += scalar("org.apache.maven.plugins:maven-surefire-plugin:3.5.3")
-                    this += scalar("org.apache.maven.plugins:maven-checkstyle-plugin:3.6.0")
+                    this += `object`<MavenPlugin> {
+                        MavenPlugin::coordinates setTo scalar("org.apache.maven.plugins:maven-surefire-plugin:3.5.3")
+                    }
+                    this += `object`<MavenPlugin> {
+                        MavenPlugin::coordinates setTo scalar("org.apache.maven.plugins:maven-checkstyle-plugin:3.6.0")
+                    }
                 }
             }
         }
@@ -524,6 +529,84 @@ class RenderToYamlTest {
             settings:
               kotlin:
                 version: 1.7.20
+
+        """.trimIndent(), yaml)
+    }
+
+    @Test
+    fun `yaml comments in main section`() = withTypeContext {
+        val tree = syntheticBuilder(DefaultTrace) {
+            `object`<Module> {
+                Module::product {
+                    ModuleProduct::type setTo scalar(ProductType.JVM_APP)
+                }
+                Module::settings {
+                    Settings::jvm {
+                        JvmSettings::release setTo scalar("17")
+                    }
+                }
+            }
+        }
+
+        val comments = mapOf(
+            listOf("settings", "jvm") to YamlComment(
+                path = listOf("settings", "jvm"),
+                beforeKeyComment = "This is a comment before jvm",
+                test = false,
+            )
+        )
+
+        val yaml = tree.serializeToYaml(comments)
+        assertEquals("""
+            product: jvm/app
+
+            settings:
+              # This is a comment before jvm
+              jvm:
+                release: 17
+
+        """.trimIndent(), yaml)
+    }
+
+    @Test
+    fun `yaml comments in test section`() = withTypeContext {
+        val main = syntheticBuilder(DefaultTrace) {
+            `object`<Module> {
+                Module::product {
+                    ModuleProduct::type setTo scalar(ProductType.JVM_APP)
+                }
+            }
+        }
+
+        val test = syntheticBuilder(DefaultTrace, listOf(TestCtx)) {
+            `object`<Module> {
+                Module::settings {
+                    Settings::jvm {
+                        JvmSettings::release setTo scalar("21")
+                    }
+                }
+            }
+        }
+
+        val merged = mergeTrees(listOf(main, test))
+
+        val comments = mapOf(
+            listOf("settings", "jvm") to YamlComment(
+                path = listOf("settings", "jvm"),
+                beforeKeyComment = "This comment appears only in test",
+                test = true,
+            )
+        )
+
+        val yaml = merged.serializeToYaml(comments)
+
+        assertEquals("""
+            product: jvm/app
+
+            test-settings:
+              # This comment appears only in test
+              jvm:
+                release: 21
 
         """.trimIndent(), yaml)
     }

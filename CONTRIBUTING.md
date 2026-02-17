@@ -1,5 +1,26 @@
-The best way to contribute to Amper right now is to try it and share your feedback. Your input will help immensely in defining the future direction of the project.
+# Contributing to Kargo
 
-Submit your ideas in the [tracker](https://youtrack.jetbrains.com/issues/AMPER) or join the [Slack channel](https://kotlinlang.slack.com/archives/C062WG3A7T8) for discussions.
+Contributions are welcome.
 
-As we perform various experiments around the build tool experience, the release branch becomes outdated quickly. Thus, while appreciated, external contributions to the code base will probably bring little value. Until the project development stabilizes, we encourage you to provide feedback instead.
+If you plan to submit significant changes, please open an issue first to discuss the proposal.
+
+## Development Philosophy
+
+Kargo evolves independently from Amper and follows its own design principles:
+
+- Explicit over implicit behavior
+- Deterministic builds
+- Native-first workflows
+- Long-term architectural clarity
+
+Not all changes from upstream are adopted, and not all design decisions aim for compatibility with Amper.
+
+## Code Contributions
+
+- Keep changes focused and well-explained.
+- Include tests when applicable.
+- Avoid unrelated refactoring in the same PR.
+
+## Questions
+
+Open a GitHub issue for discussions and proposals.

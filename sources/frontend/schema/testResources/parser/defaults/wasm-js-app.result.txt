@@ -1,7 +1,7 @@
 Fragments:
   common
     External dependencies:
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
     Src folders:
       src
     Fragment dependencies:
@@ -10,7 +10,7 @@ Fragments:
         applicationId: <default> org.example.namespace
         compileSdk: <default> 36
         maxSdk: <default> null
-        minSdk: <default> 21
+        minSdk: <default> 23
         namespace: <default> org.example.namespace
         parcelize: <default> {
           additionalAnnotations: <default> [
@@ -44,7 +44,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.8.2
+        version: <default> 1.10.1
       }
       ios: <default> {
         framework: <default> {
@@ -78,6 +78,8 @@ Fragments:
         runtimeClasspathMode: <default> jars
         storeParameterNames: <default> false
         test: <default> {
+          extraEnvironment: <default> {
+          }
           freeJvmArgs: <default> [
           ]
           junitPlatformVersion: <default> 6.0.1
@@ -127,16 +129,16 @@ Fragments:
           annotationTypeSafetyEnabled: <default> true
           applyBom: <default> true
           enabled: <default> false
-          version: <default> 0.10.1
+          version: <default> 0.10.2
         }
         serialization: <default> {
           enabled: <default> false
           format: <default> null
-          version: <default> 1.9.0
+          version: <default> 1.10.0
         }
         suppressWarnings: <default> false
         verbose: <default> false
-        version: <default> 2.2.21
+        version: <default> 2.3.10
       }
       kover: <default> null
       ktor: <default> {
@@ -158,15 +160,15 @@ Fragments:
       springBoot: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 3.5.5
+        version: <default> 4.0.2
       }
     }
 
   commonTest
     External dependencies:
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test-annotations-common:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test-annotations-common:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
     Src folders:
       test
     Fragment dependencies:
@@ -176,7 +178,7 @@ Fragments:
         applicationId: <default> org.example.namespace
         compileSdk: <default> 36
         maxSdk: <default> null
-        minSdk: <default> 21
+        minSdk: <default> 23
         namespace: <default> org.example.namespace
         parcelize: <default> {
           additionalAnnotations: <default> [
@@ -210,7 +212,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.8.2
+        version: <default> 1.10.1
       }
       ios: <default> {
         framework: <default> {
@@ -244,6 +246,8 @@ Fragments:
         runtimeClasspathMode: <default> jars
         storeParameterNames: <default> false
         test: <default> {
+          extraEnvironment: <default> {
+          }
           freeJvmArgs: <default> [
           ]
           junitPlatformVersion: <default> 6.0.1
@@ -293,16 +297,16 @@ Fragments:
           annotationTypeSafetyEnabled: <default> true
           applyBom: <default> true
           enabled: <default> false
-          version: <default> 0.10.1
+          version: <default> 0.10.2
         }
         serialization: <default> {
           enabled: <default> false
           format: <default> null
-          version: <default> 1.9.0
+          version: <default> 1.10.0
         }
         suppressWarnings: <default> false
         verbose: <default> false
-        version: <default> 2.2.21
+        version: <default> 2.3.10
       }
       kover: <default> null
       ktor: <default> {
@@ -324,13 +328,13 @@ Fragments:
       springBoot: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 3.5.5
+        version: <default> 4.0.2
       }
     }
 
   wasmJs
     External dependencies:
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
     Src folders:
       src@wasmJs
     Fragment dependencies:
@@ -340,7 +344,7 @@ Fragments:
         applicationId: <default> org.example.namespace
         compileSdk: <default> 36
         maxSdk: <default> null
-        minSdk: <default> 21
+        minSdk: <default> 23
         namespace: <default> org.example.namespace
         parcelize: <default> {
           additionalAnnotations: <default> [
@@ -374,7 +378,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.8.2
+        version: <default> 1.10.1
       }
       ios: <default> {
         framework: <default> {
@@ -408,6 +412,8 @@ Fragments:
         runtimeClasspathMode: <default> jars
         storeParameterNames: <default> false
         test: <default> {
+          extraEnvironment: <default> {
+          }
           freeJvmArgs: <default> [
           ]
           junitPlatformVersion: <default> 6.0.1
@@ -457,16 +463,16 @@ Fragments:
           annotationTypeSafetyEnabled: <default> true
           applyBom: <default> true
           enabled: <default> false
-          version: <default> 0.10.1
+          version: <default> 0.10.2
         }
         serialization: <default> {
           enabled: <default> false
           format: <default> null
-          version: <default> 1.9.0
+          version: <default> 1.10.0
         }
         suppressWarnings: <default> false
         verbose: <default> false
-        version: <default> 2.2.21
+        version: <default> 2.3.10
       }
       kover: <default> null
       ktor: <default> {
@@ -488,15 +494,15 @@ Fragments:
       springBoot: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 3.5.5
+        version: <default> 4.0.2
       }
     }
 
   wasmJsTest
     External dependencies:
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test-annotations-common:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test-annotations-common:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
     Src folders:
       test@wasmJs
     Fragment dependencies:
@@ -507,7 +513,7 @@ Fragments:
         applicationId: <default> org.example.namespace
         compileSdk: <default> 36
         maxSdk: <default> null
-        minSdk: <default> 21
+        minSdk: <default> 23
         namespace: <default> org.example.namespace
         parcelize: <default> {
           additionalAnnotations: <default> [
@@ -541,7 +547,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.8.2
+        version: <default> 1.10.1
       }
       ios: <default> {
         framework: <default> {
@@ -575,6 +581,8 @@ Fragments:
         runtimeClasspathMode: <default> jars
         storeParameterNames: <default> false
         test: <default> {
+          extraEnvironment: <default> {
+          }
           freeJvmArgs: <default> [
           ]
           junitPlatformVersion: <default> 6.0.1
@@ -624,16 +632,16 @@ Fragments:
           annotationTypeSafetyEnabled: <default> true
           applyBom: <default> true
           enabled: <default> false
-          version: <default> 0.10.1
+          version: <default> 0.10.2
         }
         serialization: <default> {
           enabled: <default> false
           format: <default> null
-          version: <default> 1.9.0
+          version: <default> 1.10.0
         }
         suppressWarnings: <default> false
         verbose: <default> false
-        version: <default> 2.2.21
+        version: <default> 2.3.10
       }
       kover: <default> null
       ktor: <default> {
@@ -655,13 +663,13 @@ Fragments:
       springBoot: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 3.5.5
+        version: <default> 4.0.2
       }
     }
 
   web
     External dependencies:
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
     Src folders:
       src@web
     Fragment dependencies:
@@ -671,7 +679,7 @@ Fragments:
         applicationId: <default> org.example.namespace
         compileSdk: <default> 36
         maxSdk: <default> null
-        minSdk: <default> 21
+        minSdk: <default> 23
         namespace: <default> org.example.namespace
         parcelize: <default> {
           additionalAnnotations: <default> [
@@ -705,7 +713,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.8.2
+        version: <default> 1.10.1
       }
       ios: <default> {
         framework: <default> {
@@ -739,6 +747,8 @@ Fragments:
         runtimeClasspathMode: <default> jars
         storeParameterNames: <default> false
         test: <default> {
+          extraEnvironment: <default> {
+          }
           freeJvmArgs: <default> [
           ]
           junitPlatformVersion: <default> 6.0.1
@@ -788,16 +798,16 @@ Fragments:
           annotationTypeSafetyEnabled: <default> true
           applyBom: <default> true
           enabled: <default> false
-          version: <default> 0.10.1
+          version: <default> 0.10.2
         }
         serialization: <default> {
           enabled: <default> false
           format: <default> null
-          version: <default> 1.9.0
+          version: <default> 1.10.0
         }
         suppressWarnings: <default> false
         verbose: <default> false
-        version: <default> 2.2.21
+        version: <default> 2.3.10
       }
       kover: <default> null
       ktor: <default> {
@@ -819,15 +829,15 @@ Fragments:
       springBoot: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 3.5.5
+        version: <default> 4.0.2
       }
     }
 
   webTest
     External dependencies:
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test-annotations-common:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test:2.2.21, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test-annotations-common:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
     Src folders:
       test@web
     Fragment dependencies:
@@ -838,7 +848,7 @@ Fragments:
         applicationId: <default> org.example.namespace
         compileSdk: <default> 36
         maxSdk: <default> null
-        minSdk: <default> 21
+        minSdk: <default> 23
         namespace: <default> org.example.namespace
         parcelize: <default> {
           additionalAnnotations: <default> [
@@ -872,7 +882,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.8.2
+        version: <default> 1.10.1
       }
       ios: <default> {
         framework: <default> {
@@ -906,6 +916,8 @@ Fragments:
         runtimeClasspathMode: <default> jars
         storeParameterNames: <default> false
         test: <default> {
+          extraEnvironment: <default> {
+          }
           freeJvmArgs: <default> [
           ]
           junitPlatformVersion: <default> 6.0.1
@@ -955,16 +967,16 @@ Fragments:
           annotationTypeSafetyEnabled: <default> true
           applyBom: <default> true
           enabled: <default> false
-          version: <default> 0.10.1
+          version: <default> 0.10.2
         }
         serialization: <default> {
           enabled: <default> false
           format: <default> null
-          version: <default> 1.9.0
+          version: <default> 1.10.0
         }
         suppressWarnings: <default> false
         verbose: <default> false
-        version: <default> 2.2.21
+        version: <default> 2.3.10
       }
       kover: <default> null
       ktor: <default> {
@@ -986,7 +998,7 @@ Fragments:
       springBoot: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 3.5.5
+        version: <default> 4.0.2
       }
     }
 

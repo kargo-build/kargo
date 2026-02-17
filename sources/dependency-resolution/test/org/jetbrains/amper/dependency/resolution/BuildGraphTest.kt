@@ -42,6 +42,46 @@ class BuildGraphTest : BaseDRTest() {
     }
 
     /**
+     * This test checks that symbol &oslash; used in pom.xml of 'plexus:plexus-root:1.0.2'
+     * (and treated by a parser as a global reference) doesn't break parsing.
+     */
+    @Test
+    fun `plexus plexus-utils 1_0_2`(testInfo: TestInfo) = runDrTest {
+        val root = doTestByFile(testInfo)
+        assertFiles(testInfo, root)
+    }
+
+    /**
+     * This test checks that dependencies with pom.xml using both namespace versions 4.0.0 and 4.1.0
+     * (https://maven.apache.org/xsd/maven-4.0.0.xsd and https://maven.apache.org/xsd/maven-4.1.0.xsd)
+     * are resolved successfully.
+     */
+    @Test
+    fun `org_roboquant roboquant-jupyter 3_0_0`(testInfo: TestInfo) = runDrTest {
+        val root = doTestByFile(testInfo)
+        assertFiles(testInfo, root)
+    }
+
+    /**
+     * This test checks that project built-in properties are resolvable through alias pom.
+     *
+     *
+     * In particular, pom.xml of library 'org.apache.maven.wagon:wagon-http-lightweight:1.0-beta-2'
+     * declares the following dependency:
+     *
+     * <dependency>
+     *   <groupId>${pom.groupId}</groupId>
+     *   <artifactId>wagon-http-shared</artifactId>
+     *   <version>1.0-beta-2</version>
+     * </dependency>
+     */
+    @Test
+    fun `org_apache_maven_wagon wagon-http-lightweight 1_0-beta-2`(testInfo: TestInfo) = runDrTest {
+        val root = doTestByFile(testInfo)
+        assertFiles(testInfo, root)
+    }
+
+    /**
      * This test checks that the variable ${project.parent.version} from pom.xml
      * is resolved and substituted.
      */
@@ -343,6 +383,30 @@ class BuildGraphTest : BaseDRTest() {
      */
     @Test
     fun `myfaces myfaces-parent 1_1_0`(testInfo: TestInfo) = runDrTest {
+        val root = doTestByFile(testInfo)
+        assertFiles(testInfo, root)
+    }
+
+    /**
+     * This test checks that incorrectly declared arguments of maven-compiler-plugin don't prevent pom.xml
+     * from parsing.
+     *
+     * The following declaration is invalid because `Xlint:` got recognized as a namespace prefix by vanilla XML parser,
+     * which is unexpected by library authors.
+     * Maven parser relaxes restriction here on the consumer side and allows such tag names.
+     * So does Amper. Although it is not a generic behavior, but a case-by-case support (rare/unique examples).
+     * See [pomResolver.sanitizePom] for more details.
+     *
+     * ```
+     * <compilerArguments>
+     *   <Xlint/>
+     * 	 <Xlint:-unchecked/>
+     *   <Xmaxwarns>9999</Xmaxwarns>
+     * </compilerArguments>
+     * ```
+     */
+    @Test
+    fun `ch_cern_hadoop hadoop-dist 3_2_1`(testInfo: TestInfo) = runDrTest {
         val root = doTestByFile(testInfo)
         assertFiles(testInfo, root)
     }
@@ -2114,6 +2178,26 @@ class BuildGraphTest : BaseDRTest() {
             scope = ResolutionScope.RUNTIME,
             platform = setOf(ResolutionPlatform.IOS_ARM64),
             repositories = listOf(REDIRECTOR_MAVEN_CENTRAL, REDIRECTOR_JETBRAINS_KPM_PUBLIC, REDIRECTOR_MAVEN_GOOGLE),
+        )
+    }
+
+    /**
+     * This test checks that graph is resolved successfully
+     * if transitive dependency version is represented by range and it lower bound is absent in repository,
+     * but is overridden to by some version presented there.
+     *
+     * todo (AB) : "org.eclipse.platform:org.eclipse.e4.ui.workbench:1.18.100" should be resolved successful even
+     * todo (AB) : if "org.eclipse.platform:org.eclipse.e4.ui.workbench:1.18.100" is not provided explicitly.
+     * todo (AB) : Existing version should be resolved from range instead of missing version corresponding to the lower bound.
+     */
+    @Test
+    fun `dependency with version missing in repository but overridden by existing version is resolved successfully`(testInfo: TestInfo) = runDrTest {
+        doTestByFile(
+            testInfo,
+            dependency = listOf(
+                "org.eclipse.platform:org.eclipse.e4.ui.workbench:1.18.100",
+                "org.eclipse.emf:org.eclipse.emf.ecore.change:2.11.0",
+            ),
         )
     }
 
