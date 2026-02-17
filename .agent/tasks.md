@@ -1,0 +1,13 @@
+- [ ] Implementation
+    - [ ] Create Core Data Structures (`SourceConfig.kt`)
+        - [ ] Create `GitSourceConfig` data class for module.yaml parsing
+        - [ ] Add `sources` list to `ProjectModel`
+    - [ ] Implement Git Handling (`GitSourceResolver.kt`)
+        - [ ] Implement `cloneOrDataUpdate` method
+        - [ ] Implement `checkout` method (tag/commit)
+        - [ ] Implement `buildSource` method (recursive build)
+    - [ ] Integrate Dependency Resolution
+        - [ ] Update `DependencyResolution.kt` to call resolver
+        - [ ] Implement direct `.klib` injection logic
+    - [ ] CLI Integration
+        - [ ] Verify build lifecycle in `KargoBuild.kt`
