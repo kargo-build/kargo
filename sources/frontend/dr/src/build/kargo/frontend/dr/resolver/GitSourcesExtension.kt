@@ -1,13 +1,10 @@
-/*
- * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
- */
-
 package build.kargo.frontend.dr.resolver
 
 import build.kargo.frontend.schema.BitbucketSource
 import build.kargo.frontend.schema.GitHubSource
 import build.kargo.frontend.schema.GitLabSource
 import build.kargo.frontend.schema.GitSource
+import org.jetbrains.amper.frontend.GitSourcesModulePart
 import build.kargo.frontend.schema.GitUrlSource
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Platform
@@ -22,6 +19,7 @@ import java.nio.file.Path
 object GitSourcesExtension {
 
     private val artifactCache = mutableMapOf<String, List<GitSourceArtifact>>()
+    private val resolver = GitSourceResolver()
 
     /**
      * Process Git sources for a module and cache the results.
@@ -30,47 +28,44 @@ object GitSourcesExtension {
      * @param targetPlatforms The platforms to build for
      * @return List of built artifacts
      */
-    suspend fun processModuleGitSources(
+    fun processModuleGitSources(
         module: AmperModule,
         targetPlatforms: List<Platform>
     ): List<GitSourceArtifact> {
         val cacheKey = "${module.userReadableName}-${targetPlatforms.hashCode()}"
 
         return artifactCache.getOrPut(cacheKey) {
-            // TODO: Get sources from AmperModule
-            // Currently returns empty until schema binding is complete
-            emptyList()
+            val gitSources = getModuleGitSources(module)
+            gitSources.flatMap { source ->
+                processGitSource(source, targetPlatforms)
+            }
         }
     }
 
     /**
-     * Extracts Git sources from module configuration.
-     *
-     * TODO: Implement proper extraction from AmperModule
-     * This currently returns empty as the binding isn't complete.
+     * Extracts Git sources from module configuration via [GitSourcesModulePart].
      */
     private fun getModuleGitSources(module: AmperModule): List<GitSource> {
-        // TODO: Extract from module.parts or module schema
-        // For now, return empty until schema integration is complete
-        return emptyList()
+        return module.parts
+            .filterIsInstance<GitSourcesModulePart>()
+            .firstOrNull()
+            ?.gitSources
+            ?: emptyList()
     }
 
     /**
      * Process a single Git source.
      */
-    private suspend fun processGitSource(
+    private fun processGitSource(
         source: GitSource,
         targetPlatforms: List<Platform>
     ): List<GitSourceArtifact> {
         val platforms = source.platforms?.map { it.value } ?: targetPlatforms
 
-        // Skip if publishOnly is true
         if (source.publishOnly) {
             return emptyList()
         }
 
-        // Use resolver to build the source
-        val resolver = GitSourceResolver()
         val artifactPaths = resolver.resolve(source, platforms)
 
         return artifactPaths.map { path ->
@@ -121,3 +116,9 @@ object GitSourcesExtension {
         artifactCache.clear()
     }
 }
+
+data class GitSourceArtifact(
+    val source: GitSource,
+    val artifactPath: Path,
+    val platform: Platform
+)

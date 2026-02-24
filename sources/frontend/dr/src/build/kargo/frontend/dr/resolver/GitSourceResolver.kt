@@ -1,7 +1,3 @@
-/*
- * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
- */
-
 package build.kargo.frontend.dr.resolver
 
 import build.kargo.frontend.schema.BitbucketSource
@@ -10,16 +6,20 @@ import build.kargo.frontend.schema.GitLabSource
 import build.kargo.frontend.schema.GitSource
 import build.kargo.frontend.schema.GitUrlSource
 import org.jetbrains.amper.frontend.Platform
+import org.slf4j.LoggerFactory
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.io.path.*
 /**
  * Resolves Git-backed sources by cloning, checking out specific versions,
  * and building them locally using Kargo.
  */
 class GitSourceResolver(
-    // Use default user cache directory
-    private val cacheRoot: Path = Path(System.getProperty("user.home")).resolve(".amper/sources-cache")
+    private val cacheRoot: Path = Path(System.getProperty("user.home")).resolve(".kargo/sources-cache")
 ) {
+    // Per-cache-key locks to prevent concurrent clones to the same directory
+    private val resolveLocks = ConcurrentHashMap<String, ReentrantLock>()
 
     /**
      * Resolves a Git source to a set of built artifacts.
@@ -29,43 +29,64 @@ class GitSourceResolver(
      * @return Paths to the built artifacts (.klib files)
      */
     fun resolve(source: GitSource, platforms: List<Platform>): List<Path> {
-        // TODO: Implement credential management for private repos
         val repoUrl = extractRepositoryUrl(source)
+        val sourceName = extractSourceName(source)
         val version = source.version.toString()
         val subPath = source.path
 
-        // Resolve version to concrete commit hash
         val commitHash = resolveVersionToCommit(repoUrl, version)
 
-        // Create cache key based on repo URL and commit
         val cacheKey = generateCacheKey(repoUrl, commitHash)
         val cacheDir = cacheRoot.resolve(cacheKey)
 
-        // Check if already built
-        if (isCached(cacheDir, platforms)) {
-            return collectArtifacts(cacheDir, platforms)
+        val lock = resolveLocks.computeIfAbsent(cacheKey) { ReentrantLock() }
+        lock.lock()
+        try {
+            if (isCached(cacheDir, platforms)) {
+                logger.info("Using cached git source '$sourceName' ($version)")
+                return collectArtifacts(cacheDir, platforms)
+            }
+
+            logger.info("Fetching git source '$sourceName' ($version)...")
+            val repoDir = try {
+                cloneOrUpdate(repoUrl, cacheDir.resolve("repo"))
+            } catch (e: GitSourceException) {
+                throw e
+            } catch (e: Exception) {
+                throw GitSourceException(
+                    "Failed to fetch git source '$sourceName' from $repoUrl",
+                    details = e.message,
+                    cause = e
+                )
+            }
+
+            logger.info("Checking out git source '$sourceName' ($version)...")
+            try {
+                checkout(repoDir, commitHash)
+            } catch (e: Exception) {
+                throw GitSourceException(
+                    "Failed to checkout version '$version' for git source '$sourceName'",
+                    details = "Repository: $repoUrl\nVersion: $version\n${e.message}",
+                    cause = e
+                )
+            }
+
+            val projectDir = if (subPath != null) {
+                repoDir.resolve(subPath)
+            } else {
+                repoDir
+            }
+
+            logger.info("Building git source '$sourceName'...")
+            val artifacts = buildSource(projectDir, platforms, sourceName)
+
+            storeMetadata(cacheDir, repoUrl, version, commitHash, platforms)
+
+            logger.info("Installed git source '$sourceName' (${artifacts.size} artifact(s))")
+            return artifacts
+        } finally {
+            lock.unlock()
         }
-
-        // Clone or update repository
-        val repoDir = cloneOrUpdate(repoUrl, cacheDir.resolve("repo"))
-
-        // Checkout specific version
-        checkout(repoDir, commitHash)
-
-        // Determine actual project directory (consider subPath)
-        val projectDir = if (subPath != null) {
-            repoDir.resolve(subPath)
-        } else {
-            repoDir
-        }
-
-        // Build the source
-        val artifacts = buildSource(projectDir, platforms)
-
-        // Store metadata
-        storeMetadata(cacheDir, repoUrl, version, commitHash, platforms)
-
-        return artifacts
     }
 
     /**
@@ -80,19 +101,36 @@ class GitSourceResolver(
         }
     }
 
+    private fun extractSourceName(source: GitSource): String {
+        return when (source) {
+            is GitHubSource -> source.github
+            is GitLabSource -> source.gitlab
+            is BitbucketSource -> source.bitbucket
+            is GitUrlSource -> source.git.substringAfterLast('/').removeSuffix(".git")
+        }
+    }
+
     /**
      * Clones the repository or updates if it already exists.
      */
     private fun cloneOrUpdate(repoUrl: String, targetDir: Path): Path {
         if (targetDir.exists()) {
-            // Update existing repository
-            executeGitCommand(targetDir, "fetch", "--all")
+            val gitDir = targetDir.resolve(".git")
+            if (gitDir.exists() && gitDir.isDirectory()) {
+                executeGitCommand(targetDir, "fetch", "--all", "--quiet")
+            } else {
+                targetDir.toFile().deleteRecursively()
+                targetDir.parent.createDirectories()
+                executeGitCommand(
+                    workingDir = targetDir.parent,
+                    "clone", "--quiet", repoUrl, targetDir.name
+                )
+            }
         } else {
-            // Clone fresh
             targetDir.parent.createDirectories()
             executeGitCommand(
                 workingDir = targetDir.parent,
-                "clone", repoUrl, targetDir.name
+                "clone", "--quiet", repoUrl, targetDir.name
             )
         }
         return targetDir
@@ -117,20 +155,27 @@ class GitSourceResolver(
     /**
      * Builds the source using Kargo CLI.
      */
-    private fun buildSource(projectDir: Path, platforms: List<Platform>): List<Path> {
-        // Verify module.yaml exists
+    private fun buildSource(projectDir: Path, platforms: List<Platform>, sourceName: String): List<Path> {
         val moduleFile = projectDir.resolve("module.yaml")
-        require(moduleFile.exists()) {
-            "No module.yaml found in ${projectDir.absolute()}"
+        if (!moduleFile.exists()) {
+            throw GitSourceException(
+                "Git source '$sourceName' is not a valid Kargo project",
+                details = "No module.yaml found in ${projectDir.absolute()}\nGit sources must contain a valid module.yaml file."
+            )
         }
 
-        // Execute Kargo build
-        // TODO: Determine correct Kargo CLI path and build command
         val buildDir = projectDir.resolve("build")
 
-        executeKargoBuild(projectDir, platforms)
+        try {
+            executeKargoBuild(projectDir, platforms)
+        } catch (e: Exception) {
+            throw GitSourceException(
+                "Failed to build git source '$sourceName'",
+                details = "Project directory: ${projectDir.absolute()}\n${e.message}",
+                cause = e
+            )
+        }
 
-        // Collect artifacts
         return collectArtifacts(buildDir, platforms)
     }
 
@@ -147,7 +192,10 @@ class GitSourceResolver(
         val exitCode = process.waitFor()
 
         if (exitCode != 0) {
-            error("Git command failed: git ${args.joinToString(" ")}\nOutput: $output")
+            throw GitSourceException(
+                "Git command failed: git ${args.joinToString(" ")}",
+                details = output.trim()
+            )
         }
 
         return output
@@ -157,9 +205,7 @@ class GitSourceResolver(
      * Executes Kargo build command.
      */
     private fun executeKargoBuild(projectDir: Path, platforms: List<Platform>) {
-        // TODO: Implement actual Kargo CLI invocation
-        // For now, placeholder
-        val kargoCli = findKargoCli()
+        val kargoCli = findKargoCli(projectDir)
 
         val processBuilder = ProcessBuilder(
             kargoCli.absolutePathString(),
@@ -180,18 +226,26 @@ class GitSourceResolver(
     /**
      * Finds the Kargo CLI executable.
      */
-    private fun findKargoCli(): Path {
+    private fun findKargoCli(projectDir: Path): Path {
         // TODO: Implement proper CLI discovery
-        // For now, assume it's in PATH
-        return Path("./kargo")
+        return if (projectDir.resolve("kargo").exists()) {
+            Path(projectDir.absolutePathString(), "./kargo")
+        } else if (projectDir.resolve("amper").exists()) {
+            // Support older projects that still use 'amper' as the CLI name
+            Path(projectDir.absolutePathString(), "./amper")
+        } else {
+            throw GitSourceException(
+                "Kargo CLI not found in git source project",
+                details = "Expected 'kargo' or 'amper' executable in ${projectDir.absolute()}\n" +
+                        "Ensure that the project contains the Kargo CLI for building."
+            )
+        }
     }
 
     /**
      * Collects built artifacts from the build directory.
      */
     private fun collectArtifacts(buildDir: Path, platforms: List<Platform>): List<Path> {
-        // TODO: Implement artifact collection logic
-        // Look for .klib files in build directory
         val artifacts = mutableListOf<Path>()
 
         if (buildDir.exists()) {
@@ -200,8 +254,11 @@ class GitSourceResolver(
                 .forEach { artifacts.add(it) }
         }
 
-        require(artifacts.isNotEmpty()) {
-            "No artifacts produced in ${buildDir.absolute()}"
+        if (artifacts.isEmpty()) {
+            throw GitSourceException(
+                "No artifacts produced by git source build",
+                details = "Build directory: ${buildDir.absolute()}\nExpected .klib files but none were found."
+            )
         }
 
         return artifacts
@@ -251,4 +308,29 @@ class GitSourceResolver(
 
         metadataFile.writeText(metadata)
     }
+    companion object {
+        private val logger = LoggerFactory.getLogger(GitSourceResolver::class.java)
+    }
 }
+
+/**
+ * User-friendly exception for git source resolution failures.
+ */
+class GitSourceException(
+    message: String,
+    val details: String? = null,
+    cause: Throwable? = null
+) : RuntimeException(buildMessage(message, details), cause) {
+    companion object {
+        private fun buildMessage(message: String, details: String?): String = buildString {
+            appendLine()
+            appendLine("  Git Source Error: $message")
+            if (details != null) {
+                appendLine()
+                details.lines().forEach { appendLine("    $it") }
+            }
+            appendLine()
+        }
+    }
+}
+

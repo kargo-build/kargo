@@ -1,6 +1,6 @@
 package build.kargo.tasks.git
 
-import build.kargo.frontend.resolver.GitSourcesExtension
+import build.kargo.frontend.dr.resolver.GitSourcesExtension
 import org.jetbrains.amper.engine.BuildTask
 import org.jetbrains.amper.engine.TaskGraphExecutionContext
 import org.jetbrains.amper.frontend.AmperModule
@@ -20,7 +20,7 @@ import java.nio.file.Path
  * AdditionalClasspathProvider interface, requiring minimal changes
  * to the core build pipeline.
  */
-internal class ProcessGitSourcesTask(
+internal class ResolveGitSourcesDependenciesTask(
     override val module: AmperModule,
     override val taskName: TaskName,
     private val targetPlatforms: List<Platform>,
@@ -34,9 +34,8 @@ internal class ProcessGitSourcesTask(
         dependenciesResult: List<TaskResult>,
         executionContext: TaskGraphExecutionContext
     ): TaskResult {
-        logger.info("Processing Git sources for module: ${module.userReadableName}")
+        logger.info("Processing git sources for module: ${module.userReadableName}")
 
-        // Process Git sources and get artifacts
         val artifacts = GitSourcesExtension.processModuleGitSources(
             module = module,
             targetPlatforms = targetPlatforms
@@ -47,7 +46,7 @@ internal class ProcessGitSourcesTask(
         if (artifactPaths.isNotEmpty()) {
             logger.info("Git sources provided ${artifactPaths.size} artifacts for ${module.userReadableName}")
         } else {
-            logger.debug("No Git sources found for module: ${module.userReadableName}")
+            logger.debug("No git sources found for module: ${module.userReadableName}")
         }
 
         return Result(compileClasspath = artifactPaths)
@@ -58,6 +57,6 @@ internal class ProcessGitSourcesTask(
     ) : TaskResult, AdditionalClasspathProvider
 
     companion object {
-        private val logger = LoggerFactory.getLogger(ProcessGitSourcesTask::class.java)
+        private val logger = LoggerFactory.getLogger(ResolveGitSourcesDependenciesTask::class.java)
     }
 }

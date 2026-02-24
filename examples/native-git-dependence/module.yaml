@@ -4,12 +4,8 @@ product:
 
 settings:
   native:
-    entryPoint: 'org.jetbrains.amper.samples.cinterop.main'
-
-dependencies:
-  - io.ktor:ktor-server-core:3.2.3
-  - io.ktor:ktor-server-cio:3.2.3
+    entryPoint: 'build.kargo.samples.gitdependence.main'
 
 sources:
-  - github: JetBrains/kotlin
-    version: v1.9.20
+  - github: kargo-build/kargo-native-git-lib
+    version: main
