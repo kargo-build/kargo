@@ -17,9 +17,9 @@
 set -e -u
 
 # The version of the Kargo distribution to provision and use
-amper_version=0.10.0-dev-3674
+amper_version=@AMPER_VERSION@
 # Establish chain of trust from here by specifying exact checksum of Kargo distribution to be run
-amper_sha256=1a60d0979501429039778d746e5de4bcd540081f9ecdd0a801aa88cbca5d7cd2
+amper_sha256=@AMPER_DIST_TGZ_SHA256@
 
 AMPER_DOWNLOAD_ROOT="${AMPER_DOWNLOAD_ROOT:-https://github.com/leodouglas/kargo-build/releases/download}"
 AMPER_JRE_DOWNLOAD_ROOT="${AMPER_JRE_DOWNLOAD_ROOT:-https:/}"

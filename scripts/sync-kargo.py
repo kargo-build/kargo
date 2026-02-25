@@ -12,8 +12,9 @@ def copy_and_rebrand_wrappers(repo_root):
     wrappers = [
         ('amper', 'kargo'),
         ('amper.bat', 'kargo.bat'),
-        ('amper-from-sources', 'kargo-from-sources'),
-        ('amper-from-sources.bat', 'kargo-from-sources.bat')
+        ('amper-from-sources.bat', 'kargo-from-sources.bat'),
+        ('sources/amper-wrapper/resources/wrappers/amper.template.sh', 'sources/amper-wrapper/resources/wrappers/kargo.template.sh'),
+        ('sources/amper-wrapper/resources/wrappers/amper.template.bat', 'sources/amper-wrapper/resources/wrappers/kargo.template.bat')
     ]
     
     for amper_name, kargo_name in wrappers:
@@ -44,6 +45,14 @@ def copy_and_rebrand_wrappers(repo_root):
         content = content.replace("Amper project", "Kargo project")
         content = content.replace("./amper", "./kargo")
         
+        # GitHub Releases URL Rebranding
+        content = content.replace("https://packages.jetbrains.team/maven/p/amper/amper", "https://github.com/leodouglas/kargo-build/releases/download")
+        if kargo_name.endswith('.bat'):
+            content = content.replace("%AMPER_DOWNLOAD_ROOT%/org/jetbrains/amper/amper-cli/%amper_version%/amper-cli-%amper_version%-dist.tgz", "%AMPER_DOWNLOAD_ROOT%/%amper_version%/amper-cli-%amper_version%-dist.tgz")
+        else:
+            content = content.replace("$AMPER_DOWNLOAD_ROOT/org/jetbrains/amper/amper-cli/$amper_version/amper-cli-$amper_version-dist.tgz", "$AMPER_DOWNLOAD_ROOT/$amper_version/amper-cli-$amper_version-dist.tgz")
+
+        
         if content != old_content:
             with open(kargo_path, 'w', encoding='utf-8') as f:
                 f.write(content)
@@ -63,12 +72,7 @@ def rebrand_cli_strings(repo_root):
                 
             old_content = content
             
-            # Wrapper templates internally inside CLI sources
-            if 'amper.template.bat' in filepath or 'amper.template.sh' in filepath:
-                content = content.replace("Welcome to Amper", "Welcome to Kargo")
-                content = content.replace("Amper distribution v", "Kargo distribution v")
-                content = content.replace("Amper distribution", "Kargo distribution")
-            
+            # Wrapper templates generation logic is now handled in Step 1
             if filepath.endswith('.kt'):
                 opts = re.MULTILINE | re.DOTALL
                 
@@ -142,7 +146,7 @@ def rebrand_documentation(repo_root):
                     print(f"  [Error] Processing {filepath}: {e}")
 
 def main():
-    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+    repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
     
     print(f"Starting Kargo Synchronization Tool...")
     print(f"Repository Root: {repo_root}")

@@ -43,7 +43,7 @@ internal class InitCommand : AmperSubcommand(name = "init") {
 
         if (wrappersGenerated) {
             terminal.println()
-            val buildCommand = if (OsFamily.current.isWindows) "amper.bat build" else "./amper build"
+            val buildCommand = if (OsFamily.current.isWindows) "kargo.bat build" else "./kargo build"
             terminal.println(
                 "Now you may build your project with ${terminal.theme.info(buildCommand)} or open this folder in an " +
                         "IDE with the Kargo plugin"

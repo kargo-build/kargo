@@ -17,9 +17,9 @@
 setlocal
 
 @rem The version of the Kargo distribution to provision and use
-set amper_version=0.10.0-dev-3674
+set amper_version=@AMPER_VERSION@
 @rem Establish chain of trust from here by specifying exact checksum of Kargo distribution to be run
-set amper_sha256=1a60d0979501429039778d746e5de4bcd540081f9ecdd0a801aa88cbca5d7cd2
+set amper_sha256=@AMPER_DIST_TGZ_SHA256@
 
 if not defined AMPER_DOWNLOAD_ROOT set AMPER_DOWNLOAD_ROOT=https://github.com/leodouglas/kargo-build/releases/download
 if not defined AMPER_JRE_DOWNLOAD_ROOT set AMPER_JRE_DOWNLOAD_ROOT=https:/

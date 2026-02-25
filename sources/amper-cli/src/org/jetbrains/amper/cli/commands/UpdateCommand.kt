@@ -94,8 +94,8 @@ internal class UpdateCommand : AmperSubcommand(name = "update") {
         // break amper-from-sources.
         // Also, we would still have to respect an explicit --root option to allow users to update other projects.
         val targetDir = commonOptions.explicitProjectRoot ?: Path(".")
-        val amperBashPath = targetDir.resolve("amper")
-        val amperBatPath = targetDir.resolve("amper.bat")
+        val amperBashPath = targetDir.resolve("kargo")
+        val amperBatPath = targetDir.resolve("kargo.bat")
         checkNotDirectories(amperBashPath, amperBatPath)
         if (!create) {
             confirmCreateIfMissingWrappers(amperBashPath, amperBatPath)
