@@ -3,6 +3,9 @@ package build.kargo.frontend.dr.resolver
 import build.kargo.frontend.schema.GitSource
 import build.kargo.frontend.schema.GitSourceCloner
 import build.kargo.frontend.schema.GitSourceException
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.encodeToString
+import kotlinx.serialization.json.Json
 import org.jetbrains.amper.frontend.Platform
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
@@ -165,7 +168,7 @@ class GitSourceResolver(
 
     private fun isCached(cacheDir: Path): Boolean {
         val artifactsDir = cacheDir.resolve("artifacts")
-        return cacheDir.resolve("metadata.json").exists()
+        return cacheDir.resolve(METADATA_FILE_NAME).exists()
             && artifactsDir.exists()
             && artifactsDir.listDirectoryEntries("*.klib").isNotEmpty()
     }
@@ -181,28 +184,31 @@ class GitSourceResolver(
         cloner.executeGitCommand(repoDir, "rev-parse", "HEAD").trim()
 
     private fun readResolvedCommit(cacheDir: Path): String? {
-        val text = cacheDir.resolve("metadata.json").readText()
-        return Regex("\"resolvedCommit\":\\s*\"([^\"]+)\"")
-            .find(text)?.groupValues?.get(1)
+        val metadataFile = cacheDir.resolve(METADATA_FILE_NAME)
+        if (!metadataFile.exists()) return null
+        return try {
+            val metadata = json.decodeFromString<GitSourceMetadata>(metadataFile.readText())
+            metadata.resolvedCommit
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun invalidateCache(cacheDir: Path) {
         cacheDir.resolve("artifacts").toFile().deleteRecursively()
-        cacheDir.resolve("metadata.json").deleteIfExists()
+        cacheDir.resolve(METADATA_FILE_NAME).deleteIfExists()
     }
 
     private fun storeMetadata(cacheDir: Path, repoUrl: String, originalVersion: String, resolvedCommit: String, platforms: List<Platform>) {
         cacheDir.createDirectories()
-        // TODO: Use proper JSON serialization
-        cacheDir.resolve("metadata.json").writeText("""
-            {
-                "repositoryUrl": "$repoUrl",
-                "originalVersion": "$originalVersion",
-                "resolvedCommit": "$resolvedCommit",
-                "platforms": ${platforms.map { "\"$it\"" }},
-                "buildTimestamp": ${System.currentTimeMillis()}
-            }
-        """.trimIndent())
+        val metadata = GitSourceMetadata(
+            repositoryUrl = repoUrl,
+            originalVersion = originalVersion,
+            resolvedCommit = resolvedCommit,
+            platforms = platforms.map { it.name },
+            buildTimestamp = System.currentTimeMillis()
+        )
+        cacheDir.resolve(METADATA_FILE_NAME).writeText(json.encodeToString(metadata))
     }
 
     /** Returns true if [version] is a branch or tag name rather than a full commit SHA. */
@@ -218,5 +224,16 @@ class GitSourceResolver(
 
     companion object {
         private val logger = LoggerFactory.getLogger(GitSourceResolver::class.java)
+        private val json = Json { ignoreUnknownKeys = true; prettyPrint = true }
+        private const val METADATA_FILE_NAME = "metadata.json"
     }
 }
+
+@Serializable
+internal data class GitSourceMetadata(
+    val repositoryUrl: String,
+    val originalVersion: String,
+    val resolvedCommit: String,
+    val platforms: List<String>,
+    val buildTimestamp: Long
+)
