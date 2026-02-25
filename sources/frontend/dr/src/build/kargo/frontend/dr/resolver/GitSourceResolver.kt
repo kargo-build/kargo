@@ -212,15 +212,12 @@ class GitSourceResolver(
     }
 
     /** Returns true if [version] is a branch or tag name rather than a full commit SHA. */
-    private fun isMutableRef(version: String): Boolean =
-        !isCommitSha(version) && !isSemverTag(version)
+    private fun isMutableRef(version: String): Boolean = !isCommitSha(version) && !isSemverTag(version)
 
-    private fun isCommitSha(version: String) =
-        version.matches(Regex("[0-9a-f]{40}"))
+    private fun isCommitSha(version: String) = version.matches(Regex("[0-9a-f]{40}"))
 
     // Matches v1.0.0, v2.3.1-beta, 1.4.0, etc.
-    private fun isSemverTag(version: String) =
-        version.matches(Regex("v?\\d+\\.\\d+.*"))
+    private fun isSemverTag(version: String) = version.matches(Regex("v?\\d+\\.\\d+.*"))
 
     companion object {
         private val logger = LoggerFactory.getLogger(GitSourceResolver::class.java)
