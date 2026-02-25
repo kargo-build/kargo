@@ -85,15 +85,45 @@ download_and_extract() {
 
   if [ "$show_banner_on_cache_miss" = "true" ] && [ -z "${AMPER_NO_WELCOME_BANNER:-}" ]; then
       echo
-      echo '        _____  Welcome to                                  '
-      echo '       /:::::|  ____   ___     ____      ____    __  ___   '
-      echo '      /::/|::| |::::\_|:::\   |:::::\   /::::\  |::|/:::|  '
-      echo '     /::/ |::| |::|\:::|\::\  |::|\::\ /:/__\:\ |:::/      '
-      echo '    /::/__|::| |::| |::| |::| |::| |::|:::::::/ |::|       '
-      echo '   /:::::::::| |::| |::| |::| |::|/::/ \::\__   |::|       '
-      echo '  /::/    |::| |::| |::| |::| |:::::/   \::::|  |::|       '
-      echo '                              |::|                         '
-      echo "                              |::|  v.$amper_version       "
+      echo '                                       Welcome to'
+      echo -n '██╗  ██╗ '; sleep 0.02
+      echo -n '█████╗ '; sleep 0.02
+      echo -n '██████╗  '; sleep 0.02
+      echo -n '██████╗  '; sleep 0.02
+      echo '██████╗ '; sleep 0.05
+      
+      echo -n '██║ ██╔╝'; sleep 0.02
+      echo -n '██╔══██╗'; sleep 0.02
+      echo -n '██╔══██╗'; sleep 0.02
+      echo -n '██╔════╝ '; sleep 0.02
+      echo '██╔═══██╗'; sleep 0.05
+      
+      echo -n '█████╔╝ '; sleep 0.02
+      echo -n '███████║'; sleep 0.02
+      echo -n '██████╔╝'; sleep 0.02
+      echo -n '██║  ███╗'; sleep 0.02
+      echo '██║   ██║'; sleep 0.05
+      
+      echo -n '██╔═██╗ '; sleep 0.02
+      echo -n '██╔══██║'; sleep 0.02
+      echo -n '██╔══██╗'; sleep 0.02
+      echo -n '██║   ██║'; sleep 0.02
+      echo '██║   ██║'; sleep 0.05
+      
+      echo -n '██║  ██╗'; sleep 0.02
+      echo -n '██║  ██║'; sleep 0.02
+      echo -n '██║  ██║'; sleep 0.02
+      echo -n '╚██████╔╝'; sleep 0.02
+      echo '╚██████╔╝'; sleep 0.05
+      
+      echo -n '╚═╝  ╚═╝'; sleep 0.02
+      echo -n '╚═╝  ╚═╝'; sleep 0.02
+      echo -n '╚═╝  ╚═╝'; sleep 0.02
+      echo -n ' ╚═════╝ '; sleep 0.02
+      echo ' ╚═════╝ '; sleep 0.2
+      
+      echo ""
+      echo "   v.$amper_version"
       echo
       echo "This is the first run of this version, so we need to download the actual Kargo distribution."
       echo "Please give us a few seconds, subsequent runs will be faster."

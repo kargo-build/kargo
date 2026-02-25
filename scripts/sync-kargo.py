@@ -45,6 +45,59 @@ def copy_and_rebrand_wrappers(repo_root):
         content = content.replace("Amper project", "Kargo project")
         content = content.replace("./amper", "./kargo")
         
+        # ASCII Art Block Substitution
+        amper_ascii = r'''      echo '        _____  Welcome to                                  '
+      echo '       /:::::|  ____   ___     ____      ____    __  ___   '
+      echo '      /::/|::| |::::\_|:::\   |:::::\   /::::\  |::|/:::|  '
+      echo '     /::/ |::| |::|\:::|\::\  |::|\::\ /:/__\:\ |:::/      '
+      echo '    /::/__|::| |::| |::| |::| |::| |::|:::::::/ |::|       '
+      echo '   /:::::::::| |::| |::| |::| |::|/::/ \::\__   |::|       '
+      echo '  /::/    |::| |::| |::| |::| |:::::/   \::::|  |::|       '
+      echo '                              |::|                         '
+      echo "                              |::|  v.$amper_version       "'''
+
+        kargo_ascii = r'''      echo '                                       Welcome to'
+      echo -n '██╗  ██╗ '; sleep 0.02
+      echo -n '█████╗ '; sleep 0.02
+      echo -n '██████╗  '; sleep 0.02
+      echo -n '██████╗  '; sleep 0.02
+      echo '██████╗ '; sleep 0.05
+      
+      echo -n '██║ ██╔╝'; sleep 0.02
+      echo -n '██╔══██╗'; sleep 0.02
+      echo -n '██╔══██╗'; sleep 0.02
+      echo -n '██╔════╝ '; sleep 0.02
+      echo '██╔═══██╗'; sleep 0.05
+      
+      echo -n '█████╔╝ '; sleep 0.02
+      echo -n '███████║'; sleep 0.02
+      echo -n '██████╔╝'; sleep 0.02
+      echo -n '██║  ███╗'; sleep 0.02
+      echo '██║   ██║'; sleep 0.05
+      
+      echo -n '██╔═██╗ '; sleep 0.02
+      echo -n '██╔══██║'; sleep 0.02
+      echo -n '██╔══██╗'; sleep 0.02
+      echo -n '██║   ██║'; sleep 0.02
+      echo '██║   ██║'; sleep 0.05
+      
+      echo -n '██║  ██╗'; sleep 0.02
+      echo -n '██║  ██║'; sleep 0.02
+      echo -n '██║  ██║'; sleep 0.02
+      echo -n '╚██████╔╝'; sleep 0.02
+      echo '╚██████╔╝'; sleep 0.05
+      
+      echo -n '╚═╝  ╚═╝'; sleep 0.02
+      echo -n '╚═╝  ╚═╝'; sleep 0.02
+      echo -n '╚═╝  ╚═╝'; sleep 0.02
+      echo -n ' ╚═════╝ '; sleep 0.02
+      echo ' ╚═════╝ '; sleep 0.2
+      
+      echo ""
+      echo "   v.$amper_version"'''
+      
+        content = content.replace(amper_ascii, kargo_ascii)
+        
         # GitHub Releases URL Rebranding
         content = content.replace("https://packages.jetbrains.team/maven/p/amper/amper", "https://github.com/leodouglas/kargo-build/releases/download")
         if kargo_name.endswith('.bat'):
@@ -85,6 +138,9 @@ def rebrand_cli_strings(repo_root):
                 
                 # prints `terminal.print("...Amper...")`
                 content = re.sub(r'(terminal\.print[^)]*")([^"]*)Amper([^"]*)("\))', r'\1\2Kargo\3\4', content, flags=opts)
+                
+                # CLI command root names
+                content = content.replace('name = "amper"', 'name = "kargo"')
                 
                 # Specific known strings
                 content = content.replace('"JetBrains Amper version', '"Kargo version')

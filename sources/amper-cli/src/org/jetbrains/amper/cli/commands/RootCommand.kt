@@ -42,7 +42,7 @@ import org.tinylog.Level
 import java.io.PrintStream
 import java.nio.file.Path
 
-internal class RootCommand : SuspendingCliktCommand(name = "amper") {
+internal class RootCommand : SuspendingCliktCommand(name = "kargo") {
 
     init {
         versionOption(
