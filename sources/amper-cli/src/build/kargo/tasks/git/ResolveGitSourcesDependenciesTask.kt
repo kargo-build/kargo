@@ -1,6 +1,8 @@
 package build.kargo.tasks.git
 
 import build.kargo.frontend.dr.resolver.GitSourcesExtension
+import build.kargo.frontend.schema.GitSourceException
+import org.jetbrains.amper.cli.UserReadableError
 import org.jetbrains.amper.engine.BuildTask
 import org.jetbrains.amper.engine.TaskGraphExecutionContext
 import org.jetbrains.amper.frontend.AmperModule
@@ -34,17 +36,21 @@ internal class ResolveGitSourcesDependenciesTask(
         dependenciesResult: List<TaskResult>,
         executionContext: TaskGraphExecutionContext
     ): TaskResult {
-        logger.info("Processing git sources for module: ${module.userReadableName}")
+        logger.debug("Processing git sources for module: ${module.userReadableName}")
 
-        val artifacts = GitSourcesExtension.processModuleGitSources(
-            module = module,
-            targetPlatforms = targetPlatforms
-        )
+        val artifacts = try {
+            GitSourcesExtension.processModuleGitSources(
+                module = module,
+                targetPlatforms = targetPlatforms
+            )
+        } catch (e: GitSourceException) {
+            throw UserReadableError(e.message ?: "Git source resolution failed", exitCode = 1)
+        }
 
         val artifactPaths = artifacts.map { it.artifactPath }
 
         if (artifactPaths.isNotEmpty()) {
-            logger.info("Git sources provided ${artifactPaths.size} artifacts for ${module.userReadableName}")
+            logger.debug("Git sources provided ${artifactPaths.size} artifacts for ${module.userReadableName}")
         } else {
             logger.debug("No git sources found for module: ${module.userReadableName}")
         }

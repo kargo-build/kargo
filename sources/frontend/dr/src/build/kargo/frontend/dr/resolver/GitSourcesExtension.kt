@@ -9,6 +9,7 @@ import build.kargo.frontend.schema.GitUrlSource
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Platform
 import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Extension point for processing Git sources before dependency resolution.
@@ -18,7 +19,8 @@ import java.nio.file.Path
  */
 object GitSourcesExtension {
 
-    private val artifactCache = mutableMapOf<String, List<GitSourceArtifact>>()
+    private val artifactCache = ConcurrentHashMap<String, List<GitSourceArtifact>>()
+    private val cloner = build.kargo.frontend.schema.GitSourceCloner()
     private val resolver = GitSourceResolver()
 
     /**
@@ -85,18 +87,6 @@ object GitSourcesExtension {
         // TODO: Implement proper platform detection from .klib metadata
         // For now, return the first platform
         return candidatePlatforms.firstOrNull() ?: Platform.COMMON
-    }
-
-    /**
-     * Extract a display name from GitSource.
-     */
-    private fun extractSourceName(source: GitSource): String {
-        return when (source) {
-            is GitHubSource -> source.github
-            is GitLabSource -> source.gitlab
-            is BitbucketSource -> source.bitbucket
-            is GitUrlSource -> source.git
-        }
     }
 
     /**

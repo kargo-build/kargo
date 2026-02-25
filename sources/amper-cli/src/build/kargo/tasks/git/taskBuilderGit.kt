@@ -17,10 +17,10 @@ internal enum class GitSourcesTaskType(override val prefix: String) : PlatformTa
 fun ProjectTasksBuilder.setupGitTasks() {
     allModules()
         .alsoPlatforms()
-        .alsoTests()
+        // One git-sources task per (module × platform) — shared between test and non-test.
+        // This avoids fetching/building the same git dependency twice per build.
         .withEach {
-            // Register Git Sources task to process and provide Git-backed dependencies
-            val gitSourcesTaskName = GitSourcesTaskType.ProcessGitSources.getTaskName(module, platform, isTest)
+            val gitSourcesTaskName = GitSourcesTaskType.ProcessGitSources.getTaskName(module, platform)
             tasks.registerTask(
                 ResolveGitSourcesDependenciesTask(
                     module = module,
@@ -29,23 +29,27 @@ fun ProjectTasksBuilder.setupGitTasks() {
                 )
             )
 
-            // Wire git sources as dependency of compile tasks (generic - JVM + Native)
+            // Wire git sources as dependency of compile tasks (both test and non-test)
             if (platform.isDescendantOf(Platform.NATIVE)) {
                 for (buildType in BuildType.entries) {
+                    for (isTest in listOf(false, true)) {
+                        tasks.registerDependency(
+                            NativeTaskType.CompileKLib.getTaskName(module, platform, isTest, buildType),
+                            gitSourcesTaskName
+                        )
+                        tasks.registerDependency(
+                            NativeTaskType.Link.getTaskName(module, platform, isTest, buildType),
+                            gitSourcesTaskName
+                        )
+                    }
+                }
+            } else {
+                for (isTest in listOf(false, true)) {
                     tasks.registerDependency(
-                        NativeTaskType.CompileKLib.getTaskName(module, platform, isTest, buildType),
-                        gitSourcesTaskName
-                    )
-                    tasks.registerDependency(
-                        NativeTaskType.Link.getTaskName(module, platform, isTest, buildType),
+                        CommonTaskType.Compile.getTaskName(module, platform, isTest),
                         gitSourcesTaskName
                     )
                 }
-            } else {
-                tasks.registerDependency(
-                    CommonTaskType.Compile.getTaskName(module, platform, isTest),
-                    gitSourcesTaskName
-                )
             }
         }
 }
