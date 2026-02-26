@@ -242,7 +242,7 @@ amper_cache_dir="${AMPER_BOOTSTRAP_CACHE_DIR:-$default_amper_cache_dir}"
 
 # ********** Provision Kargo distribution **********
 
-amper_url="$AMPER_DOWNLOAD_ROOT/$amper_version/amper-cli-$amper_version-dist.tgz"
+amper_url="$AMPER_DOWNLOAD_ROOT/$amper_version/kargo-cli-$amper_version-dist.tgz"
 amper_target_dir="$amper_cache_dir/amper-cli-$amper_version"
 download_and_extract "Kargo distribution v$amper_version" "$amper_url" "$amper_sha256" 256 "$amper_cache_dir" "$amper_target_dir" "true"
 

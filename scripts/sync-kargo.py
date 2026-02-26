@@ -101,9 +101,9 @@ def copy_and_rebrand_wrappers(repo_root):
         # GitHub Releases URL Rebranding
         content = content.replace("https://packages.jetbrains.team/maven/p/amper/amper", "https://github.com/leodouglas/kargo-build/releases/download")
         if kargo_name.endswith('.bat'):
-            content = content.replace("%AMPER_DOWNLOAD_ROOT%/org/jetbrains/amper/amper-cli/%amper_version%/amper-cli-%amper_version%-dist.tgz", "%AMPER_DOWNLOAD_ROOT%/%amper_version%/amper-cli-%amper_version%-dist.tgz")
+            content = content.replace("%AMPER_DOWNLOAD_ROOT%/org/jetbrains/amper/amper-cli/%amper_version%/amper-cli-%amper_version%-dist.tgz", "%AMPER_DOWNLOAD_ROOT%/%amper_version%/kargo-cli-%amper_version%-dist.tgz")
         else:
-            content = content.replace("$AMPER_DOWNLOAD_ROOT/org/jetbrains/amper/amper-cli/$amper_version/amper-cli-$amper_version-dist.tgz", "$AMPER_DOWNLOAD_ROOT/$amper_version/amper-cli-$amper_version-dist.tgz")
+            content = content.replace("$AMPER_DOWNLOAD_ROOT/org/jetbrains/amper/amper-cli/$amper_version/amper-cli-$amper_version-dist.tgz", "$AMPER_DOWNLOAD_ROOT/$amper_version/kargo-cli-$amper_version-dist.tgz")
 
         
         if content != old_content:

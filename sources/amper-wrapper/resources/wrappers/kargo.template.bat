@@ -129,7 +129,7 @@ exit /b 1
 
 REM ********** Provision Kargo distribution **********
 
-set amper_url=%AMPER_DOWNLOAD_ROOT%/%amper_version%/amper-cli-%amper_version%-dist.tgz
+set amper_url=%AMPER_DOWNLOAD_ROOT%/%amper_version%/kargo-cli-%amper_version%-dist.tgz
 set amper_target_dir=%AMPER_BOOTSTRAP_CACHE_DIR%\amper-cli-%amper_version%
 call :download_and_extract "Kargo distribution v%amper_version%" "%amper_url%" "%amper_target_dir%" "%amper_sha256%" "256" "true"
 if errorlevel 1 goto fail
