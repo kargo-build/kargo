@@ -64,7 +64,7 @@ internal class NativeLinkTask(
         // In Kargo, we support an 'output' configuration for native products
         // Only applications should have their binary output copied (and not tests)
         if (delegate.module.type.isApplication() && !isTest) {
-            val outputSetting = delegate.module.fragments.firstNotNullOfOrNull { it.settings.native?.output } ?: "bin/"
+            val outputSetting = delegate.module.fragments.firstNotNullOfOrNull { it.settings.native?.output } ?: "dist/"
             val moduleRoot = delegate.module.source.moduleDir
 
             val destination = if (outputSetting.endsWith("/")) {

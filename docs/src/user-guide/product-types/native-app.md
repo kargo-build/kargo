@@ -53,7 +53,7 @@ settings:
 
 ## Output configuration
 
-By default, Kargo generates your native binary inside the `bin/` directory relative to your module. You can customize this by providing a specific `output` directory or file name path in the `settings`:
+By default, Kargo generates your native binary inside the `dist/` directory relative to your module. You can customize this by providing a specific `output` directory or file name path in the `settings`:
 
 ```yaml
 product: linux/app
