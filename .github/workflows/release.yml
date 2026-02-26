@@ -23,7 +23,9 @@ jobs:
           distribution: 'zulu'
 
       - name: Build Kargo Distribution
-        run: ./amper task :amper-cli:build@amper-distribution
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          GITHUB_REF_TAG_VERSION=$VERSION ./amper task :amper-cli:build@amper-distribution
 
       - name: Find Distribution Artifact
         id: find_dist
