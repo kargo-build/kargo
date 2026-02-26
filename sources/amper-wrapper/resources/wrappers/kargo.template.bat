@@ -6,7 +6,7 @@
 
 @rem Possible environment variables:
 @rem   AMPER_DOWNLOAD_ROOT        Maven repository to download Amper dist from
-@rem                              default: https://github.com/leodouglas/kargo-build/releases/download
+@rem                              default: https://github.com/kargo-build/kargo/releases/download
 @rem   AMPER_JRE_DOWNLOAD_ROOT    Url prefix to download Amper JRE from.
 @rem                              default: https:/
 @rem   AMPER_BOOTSTRAP_CACHE_DIR  Cache directory to store extracted JRE and Kargo distribution
@@ -21,7 +21,7 @@ set amper_version=@AMPER_VERSION@
 @rem Establish chain of trust from here by specifying exact checksum of Kargo distribution to be run
 set amper_sha256=@AMPER_DIST_TGZ_SHA256@
 
-if not defined AMPER_DOWNLOAD_ROOT set AMPER_DOWNLOAD_ROOT=https://github.com/leodouglas/kargo-build/releases/download
+if not defined AMPER_DOWNLOAD_ROOT set AMPER_DOWNLOAD_ROOT=https://github.com/kargo-build/kargo/releases/download
 if not defined AMPER_JRE_DOWNLOAD_ROOT set AMPER_JRE_DOWNLOAD_ROOT=https:/
 if not defined AMPER_BOOTSTRAP_CACHE_DIR set AMPER_BOOTSTRAP_CACHE_DIR=%LOCALAPPDATA%\JetBrains\Amper
 @rem remove trailing \ if present
@@ -129,7 +129,7 @@ exit /b 1
 
 REM ********** Provision Kargo distribution **********
 
-set amper_url=%AMPER_DOWNLOAD_ROOT%/%amper_version%/kargo-cli-%amper_version%-dist.tgz
+set amper_url=%AMPER_DOWNLOAD_ROOT%/v%amper_version%/kargo-cli-%amper_version%-dist.tgz
 set amper_target_dir=%AMPER_BOOTSTRAP_CACHE_DIR%\amper-cli-%amper_version%
 call :download_and_extract "Kargo distribution v%amper_version%" "%amper_url%" "%amper_target_dir%" "%amper_sha256%" "256" "true"
 if errorlevel 1 goto fail
