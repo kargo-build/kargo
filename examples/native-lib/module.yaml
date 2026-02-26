@@ -1,3 +1,7 @@
 product:
   type: lib
   platforms: [ linuxX64 ]
+
+settings:
+  native:
+    output: dist/
