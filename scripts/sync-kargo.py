@@ -10,8 +10,7 @@ def print_header(text):
 def copy_and_rebrand_wrappers(repo_root):
     print_header("Step 1: Generating Kargo Wrappers from Amper Wrappers")
     wrappers = [
-        ('amper', 'kargo'),
-        ('amper.bat', 'kargo.bat'),
+        ('amper-from-sources', 'kargo-from-sources'),
         ('amper-from-sources.bat', 'kargo-from-sources.bat'),
         ('sources/amper-wrapper/resources/wrappers/amper.template.sh', 'sources/amper-wrapper/resources/wrappers/kargo.template.sh'),
         ('sources/amper-wrapper/resources/wrappers/amper.template.bat', 'sources/amper-wrapper/resources/wrappers/kargo.template.bat')
@@ -57,40 +56,40 @@ def copy_and_rebrand_wrappers(repo_root):
       echo "                              |::|  v.$amper_version       "'''
 
         kargo_ascii = r'''      echo '                                       Welcome to'
-      echo -n '██╗  ██╗ '; sleep 0.02
-      echo -n '█████╗ '; sleep 0.02
-      echo -n '██████╗  '; sleep 0.02
-      echo -n '██████╗  '; sleep 0.02
-      echo '██████╗ '; sleep 0.05
+      echo -n '██╗  ██╗ '; sleep 0.01
+      echo -n '█████╗ '; sleep 0.01
+      echo -n '██████╗  '; sleep 0.01
+      echo -n '██████╗  '; sleep 0.01
+      echo '██████╗ '; sleep 0.03
       
-      echo -n '██║ ██╔╝'; sleep 0.02
-      echo -n '██╔══██╗'; sleep 0.02
-      echo -n '██╔══██╗'; sleep 0.02
-      echo -n '██╔════╝ '; sleep 0.02
-      echo '██╔═══██╗'; sleep 0.05
+      echo -n '██║ ██╔╝'; sleep 0.01
+      echo -n '██╔══██╗'; sleep 0.01
+      echo -n '██╔══██╗'; sleep 0.01
+      echo -n '██╔════╝ '; sleep 0.01
+      echo '██╔═══██╗'; sleep 0.03
       
-      echo -n '█████╔╝ '; sleep 0.02
-      echo -n '███████║'; sleep 0.02
-      echo -n '██████╔╝'; sleep 0.02
-      echo -n '██║  ███╗'; sleep 0.02
-      echo '██║   ██║'; sleep 0.05
+      echo -n '█████╔╝ '; sleep 0.01
+      echo -n '███████║'; sleep 0.01
+      echo -n '██████╔╝'; sleep 0.01
+      echo -n '██║  ███╗'; sleep 0.01
+      echo '██║   ██║'; sleep 0.03
       
-      echo -n '██╔═██╗ '; sleep 0.02
-      echo -n '██╔══██║'; sleep 0.02
-      echo -n '██╔══██╗'; sleep 0.02
-      echo -n '██║   ██║'; sleep 0.02
-      echo '██║   ██║'; sleep 0.05
+      echo -n '██╔═██╗ '; sleep 0.01
+      echo -n '██╔══██║'; sleep 0.01
+      echo -n '██╔══██╗'; sleep 0.01
+      echo -n '██║   ██║'; sleep 0.01
+      echo '██║   ██║'; sleep 0.03
       
-      echo -n '██║  ██╗'; sleep 0.02
-      echo -n '██║  ██║'; sleep 0.02
-      echo -n '██║  ██║'; sleep 0.02
-      echo -n '╚██████╔╝'; sleep 0.02
-      echo '╚██████╔╝'; sleep 0.05
+      echo -n '██║  ██╗'; sleep 0.01
+      echo -n '██║  ██║'; sleep 0.01
+      echo -n '██║  ██║'; sleep 0.01
+      echo -n '╚██████╔╝'; sleep 0.01
+      echo '╚██████╔╝'; sleep 0.03
       
-      echo -n '╚═╝  ╚═╝'; sleep 0.02
-      echo -n '╚═╝  ╚═╝'; sleep 0.02
-      echo -n '╚═╝  ╚═╝'; sleep 0.02
-      echo -n ' ╚═════╝ '; sleep 0.02
+      echo -n '╚═╝  ╚═╝'; sleep 0.01
+      echo -n '╚═╝  ╚═╝'; sleep 0.01
+      echo -n '╚═╝  ╚═╝'; sleep 0.01
+      echo -n ' ╚═════╝ '; sleep 0.01
       echo ' ╚═════╝ '; sleep 0.2
       
       echo ""
