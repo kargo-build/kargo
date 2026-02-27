@@ -1,4 +1,4 @@
-name: Publish Release
+name: publish-release
 
 on:
   push:
@@ -23,7 +23,9 @@ jobs:
           distribution: 'zulu'
 
       - name: Build Kargo Distribution
-        run: ./amper task :amper-cli:build@amper-distribution
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          GITHUB_REF_TAG_VERSION=$VERSION ./amper task :amper-cli:build@amper-distribution
 
       - name: Find Distribution Artifact
         id: find_dist
@@ -41,7 +43,7 @@ jobs:
           
           # Extract version from tag (e.g. refs/tags/v0.10.0-dev -> 0.10.0-dev)
           VERSION=${GITHUB_REF#refs/tags/v}
-          NEW_FILE_NAME="amper-cli-${VERSION}-dist.tgz"
+          NEW_FILE_NAME="kargo-cli-${VERSION}-dist.tgz"
           
           # Compute SHA-256 sum
           cd $DIST_DIR
@@ -55,7 +57,7 @@ jobs:
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
           
           # We also need to package the wrapper scripts
-          WRAPPER_ZIP="amper-wrapper-${VERSION}.zip"
+          WRAPPER_ZIP="kargo-wrapper-${VERSION}.zip"
           cd "$DIST_DIR/wrappers"
           zip -r "../../${WRAPPER_ZIP}" *
           cd -

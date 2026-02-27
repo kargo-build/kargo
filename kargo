@@ -6,7 +6,7 @@
 
 # Possible environment variables:
 #   AMPER_DOWNLOAD_ROOT        Maven repository to download Amper dist from.
-#                              default: https://github.com/leodouglas/kargo-build/releases/download
+#                              default: https://github.com/kargo-build/kargo/releases/download
 #   AMPER_JRE_DOWNLOAD_ROOT    Url prefix to download Amper JRE from.
 #                              default: https:/
 #   AMPER_BOOTSTRAP_CACHE_DIR  Cache directory to store extracted JRE and Kargo distribution
@@ -21,7 +21,7 @@ amper_version=0.10.0-dev-3680
 # Establish chain of trust from here by specifying exact checksum of Kargo distribution to be run
 amper_sha256=61d085f4203a04a8e769adf777c15421fe32e1d6633919a79ce70cb3f49e249a
 
-AMPER_DOWNLOAD_ROOT="${AMPER_DOWNLOAD_ROOT:-https://github.com/leodouglas/kargo-build/releases/download}"
+AMPER_DOWNLOAD_ROOT="${AMPER_DOWNLOAD_ROOT:-https://github.com/kargo-build/kargo/releases/download}"
 AMPER_JRE_DOWNLOAD_ROOT="${AMPER_JRE_DOWNLOAD_ROOT:-https:/}"
 
 die() {
@@ -242,7 +242,7 @@ amper_cache_dir="${AMPER_BOOTSTRAP_CACHE_DIR:-$default_amper_cache_dir}"
 
 # ********** Provision Kargo distribution **********
 
-amper_url="$AMPER_DOWNLOAD_ROOT/$amper_version/amper-cli-$amper_version-dist.tgz"
+amper_url="$AMPER_DOWNLOAD_ROOT/v$amper_version/kargo-cli-$amper_version-dist.tgz"
 amper_target_dir="$amper_cache_dir/amper-cli-$amper_version"
 download_and_extract "Kargo distribution v$amper_version" "$amper_url" "$amper_sha256" 256 "$amper_cache_dir" "$amper_target_dir" "true"
 

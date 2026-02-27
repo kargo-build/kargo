@@ -41,7 +41,7 @@ fun generateBuildProperties(@Output taskOutputDirectory: Path) {
     }
     val gitRoot = projectRoot.resolve(".git")
 
-    val version = getConfiguredPublishingVersion(commonModuleTemplate)
+    val version = System.getenv("GITHUB_REF_TAG_VERSION") ?: getConfiguredPublishingVersion(commonModuleTemplate)
 
     // .git is usually a directory, but can be a file in the case when `git worktree add` was used so exists check
     // is sufficient.

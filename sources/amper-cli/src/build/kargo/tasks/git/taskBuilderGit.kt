@@ -37,10 +37,12 @@ fun ProjectTasksBuilder.setupGitTasks() {
                             NativeTaskType.CompileKLib.getTaskName(module, platform, isTest, buildType),
                             gitSourcesTaskName
                         )
-                        tasks.registerDependency(
-                            NativeTaskType.Link.getTaskName(module, platform, isTest, buildType),
-                            gitSourcesTaskName
-                        )
+                        if (module.type.isApplication() || isTest) {
+                            tasks.registerDependency(
+                                NativeTaskType.Link.getTaskName(module, platform, isTest, buildType),
+                                gitSourcesTaskName
+                            )
+                        }
                     }
                 }
             } else {

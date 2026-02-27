@@ -2,7 +2,6 @@ package build.kargo.tasks.native
 
 import org.jetbrains.amper.ProcessRunner
 import org.jetbrains.amper.cli.AmperProjectTempRoot
-import org.jetbrains.amper.compilation.KotlinCompilationType
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.engine.BuildTask
 import org.jetbrains.amper.engine.TaskGraphExecutionContext
@@ -13,13 +12,16 @@ import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.jdk.provisioning.JdkProvider
 import org.jetbrains.amper.tasks.TaskOutputRoot
 import org.jetbrains.amper.tasks.TaskResult
-import org.jetbrains.amper.tasks.native.NativeLinkTask
+import org.jetbrains.amper.tasks.artifacts.api.Artifact
+import org.jetbrains.amper.tasks.artifacts.api.ArtifactSelector
+import org.jetbrains.amper.tasks.artifacts.api.ArtifactTask
+import org.jetbrains.amper.tasks.native.NativeCompileKlibTask
 import org.jetbrains.amper.util.BuildType
 import org.slf4j.LoggerFactory
 import kotlin.io.path.copyTo
 import kotlin.io.path.createDirectories
 
-internal class NativeLinkTask(
+internal class NativeCompileKlibTask(
     override val module: AmperModule,
     override val platform: Platform,
     private val userCacheRoot: AmperUserCacheRoot,
@@ -29,41 +31,46 @@ internal class NativeLinkTask(
     private val tempRoot: AmperProjectTempRoot,
     override val isTest: Boolean,
     override val buildType: BuildType,
-    val compilationType: KotlinCompilationType,
-    val compileKLibTaskName: TaskName,
-    val exportedKLibTaskNames: Set<TaskName>,
     private val jdkProvider: JdkProvider,
     private val processRunner: ProcessRunner,
-) : BuildTask {
+) : BuildTask, ArtifactTask {
 
-    val delegate = NativeLinkTask(
+    val delegate = NativeCompileKlibTask(
         module = module,
         platform = platform,
         userCacheRoot = userCacheRoot,
         taskOutputRoot = taskOutputRoot,
         incrementalCache = incrementalCache,
+        taskName = taskName,
         tempRoot = tempRoot,
         isTest = isTest,
         buildType = buildType,
-        compilationType = compilationType,
-        compileKLibTaskName = compileKLibTaskName,
-        exportedKLibTaskNames = exportedKLibTaskNames,
         jdkProvider = jdkProvider,
         processRunner = processRunner,
-        taskName = taskName
     )
+
+    override val consumes: List<ArtifactSelector<*, *>>
+        get() = delegate.consumes
+
+    override val produces: List<Artifact>
+        get() = delegate.produces
+
+    override fun injectConsumes(artifacts: Map<ArtifactSelector<*, *>, List<Artifact>>) {
+        delegate.injectConsumes(artifacts)
+    }
+
 
     override suspend fun run(
         dependenciesResult: List<TaskResult>,
         executionContext: TaskGraphExecutionContext,
     ): TaskResult {
-        // Run original Amper native linking
-        val result = delegate.run(dependenciesResult, executionContext) as NativeLinkTask.Result
-        val artifactPath = result.linkedBinary ?: return result
+        // Run original Amper native compilation
+        val result = delegate.run(dependenciesResult, executionContext) as NativeCompileKlibTask.Result
+        val artifactPath = result.compiledKlib ?: return result
 
         // In Kargo, we support an 'output' configuration for native products
-        // Only applications should have their binary output copied (and not tests)
-        if (delegate.module.type.isApplication() && !isTest) {
+        // Only libraries (and not tests) should have their klib output copied
+        if (delegate.module.type.isLibrary() && !isTest) {
             val outputSetting = delegate.module.fragments.firstNotNullOfOrNull { it.settings.native?.output } ?: "dist/"
             val moduleRoot = delegate.module.source.moduleDir
 
@@ -80,10 +87,14 @@ internal class NativeLinkTask(
             destination.parent.createDirectories()
             artifactPath.copyTo(destination, overwrite = true)
 
-            logger.info("Copied native distributable to $destination")
+            logger.info("Copied native library klib to $destination")
 
             // Return the new destination so subsequent tasks use it
-            return NativeLinkTask.Result(linkedBinary = destination)
+            return NativeCompileKlibTask.Result(
+                compiledKlib = destination,
+                dependencyKlibs = result.dependencyKlibs,
+                taskName = result.taskName
+            )
         }
 
         return result

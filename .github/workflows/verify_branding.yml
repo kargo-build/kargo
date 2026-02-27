@@ -1,4 +1,4 @@
-name: Verify Kargo Branding Sync
+name: verify-kargo-branding-sync
 on:
   push:
     branches: [ main ]
