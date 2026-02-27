@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend
@@ -83,6 +83,11 @@ interface AmperModule {
      */
     val userReadableName: String
 
+    /**
+     * An optional description for this module.
+     */
+    val description: String?
+
     val type: ProductType
 
     val source: AmperModuleFileSource
@@ -138,7 +143,13 @@ fun AmperModule.fragmentsTargeting(platform: Platform, includeTestFragments: Boo
 fun AmperModule.hasPublishingConfigured() = fragments.first().settings.publishing.enabled
 
 /**
- * Returns the JDK settings for this module.
+ * Returns the JDK settings for this module's production code.
  */
 // We don't have to go through all fragments, the JdkSettings are platform-agnostic.
 val AmperModule.jdkSettings: JdkSettings get() = fragments.first { !it.isTest }.settings.jvm.jdk
+
+/**
+ * Returns the JDK settings for this module's test code.
+ */
+// We don't have to go through all fragments, the JdkSettings are platform-agnostic.
+val AmperModule.testJdkSettings: JdkSettings get() = fragments.first { it.isTest }.settings.jvm.jdk
