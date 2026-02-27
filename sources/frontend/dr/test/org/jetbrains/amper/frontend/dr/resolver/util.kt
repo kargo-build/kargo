@@ -26,10 +26,19 @@ internal fun DependencyNode.fragmentDeps(module: String, fragment: String) =
 
 internal fun getTestProjectModel(testProjectName: String, testDataRoot: Path): Model {
     val projectPath = testDataRoot.resolve(testProjectName)
+    return getTestProjectModel(projectPath)
+}
+
+internal fun copyTestProjectTo(testProjectName: String, testDataRoot: Path, testProjectRoot: Path) {
+    val projectPath = testDataRoot.resolve(testProjectName)
+    projectPath.toFile().copyRecursively(testProjectRoot.toFile(), overwrite = true)
+}
+
+internal fun getTestProjectModel(testProjectRoot: Path): Model {
     val aom = with(NoopProblemReporter) {
-        val amperProjectContext = StandaloneAmperProjectContext.create(projectPath, null)
+        val amperProjectContext = StandaloneAmperProjectContext.create(testProjectRoot, null)
             ?: fail("Failed to create test project context")
-        amperProjectContext.readProjectModel(pluginData = emptyList(), mavenPluginsWithXmls = emptyList())
+        amperProjectContext.readProjectModel(pluginData = emptyList(), mavenPluginXmls = emptyList())
     }
     return aom
 }

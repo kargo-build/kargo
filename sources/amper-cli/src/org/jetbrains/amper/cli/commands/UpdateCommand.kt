@@ -13,6 +13,7 @@ import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.path
 import com.github.ajalt.mordant.terminal.prompt
 import com.github.ajalt.mordant.terminal.success
 import io.ktor.client.request.*
@@ -64,6 +65,20 @@ private sealed class DesiredVersion {
 
 internal class UpdateCommand : AmperSubcommand(name = "update") {
 
+    val targetDir by option(
+        "--target-dir",
+        help = "The directory in which to update (or create) the wrappers — usually a project's root directory. " +
+                "By default, wrappers are updated (or created) in the current directory.",
+    ).path(mustExist = true, canBeFile = false, canBeDir = true)
+        /*
+        We could also decide that the default is to update the currently running wrapper.
+        (it can be implemented using the `amper.wrapper.path` system prop),
+        but the benefit would be marginal, and it would break amper-from-sources.
+        Let's not do anything until we handle the global Amper installation / version in
+        project.yaml story. See AMPER-5156 and AMPER-4104.
+        */
+        .default(Path("."))
+
     private val repository by option(
         "-r", "--repository",
         help = "The URL of the maven repository to download the Kargo scripts from",
@@ -83,17 +98,15 @@ internal class UpdateCommand : AmperSubcommand(name = "update") {
     private val create by option("-c", "--create", help = "Create the Kargo scripts if they don't exist yet")
         .flag()
 
-    override fun help(context: Context): String = "Update Kargo to the latest version"
+    override fun help(context: Context): String = "Update Kargo to the latest version or a specific version."
+
+    override fun helpEpilog(context: Context): String =
+        "This command can also be used to create Kargo scripts in a directory if they don't exist yet."
 
     private val runningWrapper by lazy { Path(System.getProperty("amper.wrapper.path")).absolute() }
 
     @OptIn(ProcessLeak::class)
     override suspend fun run() {
-        // We could in theory find the parent dir of the actual script that launched Amper (even without project root
-        // discovery, by passing more info from the wrapper to Amper), but the benefit would be marginal, and it would
-        // break amper-from-sources.
-        // Also, we would still have to respect an explicit --root option to allow users to update other projects.
-        val targetDir = commonOptions.explicitProjectRoot ?: Path(".")
         val amperBashPath = targetDir.resolve("kargo")
         val amperBatPath = targetDir.resolve("kargo.bat")
         checkNotDirectories(amperBashPath, amperBatPath)
@@ -168,7 +181,7 @@ internal class UpdateCommand : AmperSubcommand(name = "update") {
         if (missingScripts.isEmpty()) {
             return
         }
-        val targetDirRef = commonOptions.explicitProjectRoot?.pathString ?: "the current directory"
+        val targetDirRef = targetDir.pathString.takeIf { it != "." } ?: "the current directory"
         val prompt = if (missingScripts.size == amperScriptPaths.size) {
             "Amper scripts were not found in $targetDirRef.\nWould you like to create them from scratch? (Y/n)"
         } else {

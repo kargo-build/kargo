@@ -31,7 +31,7 @@ class JdkProvider(
     private val incrementalCache: IncrementalCache,
 ) {
     private val javaHomeInfoProvider = JavaHomeInfoProvider(openTelemetry)
-    private val jdkProvisioner = JdkProvisioner(openTelemetry, userCacheRoot)
+    private val jdkProvisioner = JdkProvisioner(openTelemetry, userCacheRoot, incrementalCache)
 
     private val provisioningCache = AsyncConcurrentMap<JdkProvisioningCriteria, JdkResult>()
 
@@ -91,7 +91,7 @@ class JdkProvider(
                 jdkProviderLogger.debug("JAVA_HOME is not set (or empty). Amper will provision a JDK instead.")
             }
             is UnusableJavaHomeResult.Mismatch -> {
-                jdkProviderLogger.info("`JAVA_HOME` was found but doesn't match the JDK selection criteria: " +
+                jdkProviderLogger.debug("`JAVA_HOME` was found but doesn't match the JDK selection criteria: " +
                         "${unusableJavaHomeResult.reason}. Amper will provision a suitable JDK instead.")
             }
             is UnusableJavaHomeResult.Invalid -> Unit // already reported via messages (once and for all)

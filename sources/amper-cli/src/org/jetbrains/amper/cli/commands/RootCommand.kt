@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.cli.commands
@@ -14,6 +14,7 @@ import com.github.ajalt.clikt.parameters.groups.OptionGroup
 import com.github.ajalt.clikt.parameters.groups.provideDelegate
 import com.github.ajalt.clikt.parameters.options.convert
 import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.deprecated
 import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.versionOption
@@ -78,6 +79,7 @@ internal class RootCommand : SuspendingCliktCommand(name = "kargo") {
 
     private val root by option(help = "Kargo project root")
         .path(mustExist = true, canBeFile = false, canBeDir = true)
+        .deprecated("WARN: `--root` is deprecated. Use `--project-dir` after the Amper command instead")
 
     private val consoleLogLevel by option(
         "--log-level",
@@ -92,8 +94,8 @@ internal class RootCommand : SuspendingCliktCommand(name = "kargo") {
         ), ignoreCase = true
     ).default(Level.INFO)
 
-    private val sharedCachesRoot by option(
-        "--shared-caches-root",
+    private val sharedCacheDir by option(
+        "--shared-cache-dir",
         help = "Path to the cache directory shared between all Kargo projects",
     )
         .path(canBeFile = false)
@@ -102,23 +104,35 @@ internal class RootCommand : SuspendingCliktCommand(name = "kargo") {
         // Detecting this path eagerly allows showing the default value in the help.
         .default(AmperUserCacheRoot.fromCurrentUserResult().unwrap())
 
+    private val sharedCachesRoot by option(
+        "--shared-caches-root",
+        help = "Path to the cache directory shared between all Amper projects",
+    )
+        .path(canBeFile = false)
+        .convert { AmperUserCacheRoot(it.toAbsolutePath()) }
+        .deprecated("WARN: `--shared-caches-root` was renamed to `--shared-cache-dir`. " +
+                "Please use the new name instead. The old name will no longer be accepted in future versions.")
+
     private val buildOutputRoot by option(
         "--build-output",
         help = "Root directory for build outputs. By default, this is the `build` directory under the project root."
     ).path(mustExist = false, canBeFile = false, canBeDir = true)
+        .deprecated("WARN: `--build-output` is deprecated. Use `--build-dir` after the Amper command instead")
 
     private val debuggingOptions by DebuggingOptions()
 
     override suspend fun run() {
+        val effectiveSharedCacheDir = sharedCachesRoot ?: sharedCacheDir
+
         // Ensure we're writing traces to the configured user cache (we start with the default in early telemetry).
         // For commands that have a project context, the traces will eventually be moved to the project build logs dir.
-        TelemetryEnvironment.setUserCacheRoot(sharedCachesRoot)
+        TelemetryEnvironment.setUserCacheRoot(effectiveSharedCacheDir)
 
         currentContext.obj = CommonOptions(
             explicitProjectRoot = root,
             consoleLogLevel = consoleLogLevel,
             profilerEnabled = debuggingOptions.profilerEnabled,
-            sharedCachesRoot = sharedCachesRoot,
+            sharedCachesRoot = effectiveSharedCacheDir,
             explicitBuildOutputRoot = buildOutputRoot,
         )
 

@@ -19,7 +19,7 @@ import org.jetbrains.amper.engine.TestTask
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.TaskName
-import org.jetbrains.amper.frontend.jdkSettings
+import org.jetbrains.amper.frontend.testJdkSettings
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.jdk.provisioning.JdkProvider
 import org.jetbrains.amper.jvm.getJdkOrUserError
@@ -31,6 +31,7 @@ import org.jetbrains.amper.tasks.JvmTestRunSettings
 import org.jetbrains.amper.tasks.TaskOutputRoot
 import org.jetbrains.amper.tasks.TaskResult
 import org.jetbrains.amper.tasks.TestResultsFormat
+import org.jetbrains.amper.tasks.maven.MavenPhaseResult
 import org.jetbrains.amper.telemetry.setListAttribute
 import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.use
@@ -106,7 +107,7 @@ class JvmTestTask(
         // TODO use maven instead of packing this in the distribution?
         val amperJUnitListenersJars = extractJUnitListenersClasspath()
 
-        val jdk = jdkProvider.getJdkOrUserError(module.jdkSettings)
+        val jdk = jdkProvider.getJdkOrUserError(module.testJdkSettings)
 
         cleanDirectory(taskOutputRoot.path)
 
@@ -163,6 +164,12 @@ class JvmTestTask(
             addAll(runSettings.userJvmArgs)
         }
 
+        val additionalJvmArgsFromMaven = dependenciesResult
+            .filterIsInstance<MavenPhaseResult>()
+            .flatMap { it.additionalTestJvmArgs }
+        
+        val finalJvmArgs = jvmArgs + additionalJvmArgsFromMaven
+
         // We pass both the user classpath and the "infra" classpath (JUnit itself and our listeners) together
         // instead of using the separate --class-path option of the JUnit Console Launcher itself.
         // This is intentional, to work around this JUnit issue: https://github.com/junit-team/junit5/issues/4469.
@@ -186,6 +193,7 @@ class JvmTestTask(
             .setAttribute("working-dir", workingDirectory.pathString)
             .setListAttribute("tests-classpath", userTestRuntimeClasspath.map { it.pathString })
             .setListAttribute("jvm-args", jvmArgs)
+            .setListAttribute("jvm-args-from-maven", additionalJvmArgsFromMaven)
             .setListAttribute("junit-args", junitArgs)
             .use {
                 logger.info("Testing module '${module.userReadableName}' for platform '${platform.pretty}'...")
@@ -199,7 +207,7 @@ class JvmTestTask(
                     classpath = testJvmClasspath,
                     programArgs = listOf("execute") + junitArgs,
                     argsMode = ArgsMode.ArgFile(tempRoot = tempRoot),
-                    jvmArgs = jvmArgs,
+                    jvmArgs = finalJvmArgs,
                     environment = environment,
                     outputListener = PrintToTerminalProcessOutputListener(terminal),
                 )

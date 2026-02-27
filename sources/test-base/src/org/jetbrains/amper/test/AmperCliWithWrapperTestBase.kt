@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.test
@@ -31,6 +31,7 @@ import kotlin.io.path.isDirectory
 import kotlin.io.path.isExecutable
 import kotlin.io.path.isRegularFile
 import kotlin.io.path.listDirectoryEntries
+import kotlin.io.path.name
 import kotlin.io.path.pathString
 import kotlin.io.path.readLines
 import kotlin.test.assertEquals
@@ -173,13 +174,11 @@ abstract class AmperCliWithWrapperTestBase {
             )
         }
 
-        val buildOutputRoot = workingDir / findBuildDirRelativePath(args)
+        val buildDir = workingDir / findBuildDirRelativePath(args, environment)
         val amperResult = AmperCliResult(
-            projectRoot = workingDir,
-            buildOutputRoot = buildOutputRoot,
-            // Logs dirs contain the date, so max() gives the latest.
-            // This should be correct because we don't run the CLI concurrently in a single test.
-            logsDir = (buildOutputRoot / "logs").takeIf { it.exists() }?.listDirectoryEntries()?.maxOrNull(),
+            projectDir = workingDir,
+            buildDir = buildDir,
+            logsDir = logsDirForExecution(buildDir, amperWrapperPid = result.pid),
             pid = result.pid,
             exitCode = result.exitCode,
             stdout = result.stdout,
@@ -222,16 +221,27 @@ abstract class AmperCliWithWrapperTestBase {
         return amperResult
     }
 
-    private fun findBuildDirRelativePath(args: List<String>): Path {
-        val buildOutputArgIndex = args.indexOf("--build-output")
+    private fun findBuildDirRelativePath(args: List<String>, env: Map<String, String>): Path {
+        val buildOutputEnv = env["AMPER_BUILD_DIR"]
+        if (!buildOutputEnv.isNullOrBlank()) {
+            return Path(buildOutputEnv)
+        }
+        return findArgumentValue(args, "--build-dir")
+            ?: findArgumentValue(args, "--build-output-root")
+            ?: Path("build")
+    }
+
+    private fun findArgumentValue(args: List<String>, argName: String): Path? {
+        val buildOutputArgIndex = args.indexOf(argName)
+        @Suppress("ReplaceManualRangeWithIndicesCalls") // this range shouldn't be replaced (KTIJ-37692)
         if (buildOutputArgIndex in 0..<args.lastIndex) {
             return Path(args[buildOutputArgIndex + 1])
         }
-        val buildOutputArg = args.find { it.startsWith("--build-output=") }
+        val buildOutputArg = args.find { it.startsWith("$argName=") }
         if (buildOutputArg != null) {
             return Path(buildOutputArg.substringAfter("="))
         }
-        return Path("build")
+        return null
     }
 
     private fun publishLogs(amperResult: AmperCliResult) {
@@ -244,6 +254,26 @@ abstract class AmperCliWithWrapperTestBase {
         val stderr = stderr.prependIndentWithEmptyMark("[amper err] ")
         return if (expectedExitCode == 0) stderr else "$stdout\n$stderr"
     }
+}
+
+private val logsDirRegex = Regex("""amper_(?<datetime>\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2})_(?<pid>\d+)-(?<parentPid>\d+)_(?<command>.+)""")
+
+private fun logsDirForExecution(buildDir: Path, amperWrapperPid: Long): Path? =
+    (buildDir / "logs").takeIf { it.exists() }
+        ?.listDirectoryEntries()
+        ?.find { it.isLogsDirFor(amperWrapperPid) }
+
+private fun Path.isLogsDirFor(amperWrapperPid: Long): Boolean {
+    check(isDirectory()) { "Expected a directory, but got a file: $this" }
+    val match = logsDirRegex.matchEntire(name)
+        ?: error("The logs root dir contains an invalid logs directory name: $name")
+    val pid = match.groups["pid"]?.value?.toLong()
+        ?: error("The regex was matched but the 'pid' group is missing")
+    val parentPid = match.groups["parentPid"]?.value?.toLong()
+        ?: error("The regex was matched but the 'parentPid' group is missing")
+    // On Windows, the PID of the process we start (the wrapper) is the parent of the Amper Java process.
+    // On linux/macOS, the wrapper uses 'exec java' so the wrapper process is replaced with Java with the same PID.
+    return if (OsFamily.current.isWindows) parentPid == amperWrapperPid else pid == amperWrapperPid
 }
 
 /**
@@ -268,9 +298,13 @@ sealed class JavaHomeMode {
 }
 
 data class AmperCliResult(
-    val projectRoot: Path,
-    val buildOutputRoot: Path,
-    val logsDir: Path?, // null if it doesn't exist (e.g. the command didn't write logs)
+    val projectDir: Path,
+    val buildDir: Path,
+    /**
+     * The directory where the logs of this run are written, or `null` if it doesn't exist (most likely, the command
+     * didn't write logs).
+     */
+    val logsDir: Path?,
     val pid: Long,
     val exitCode: Int,
     val stdout: String,

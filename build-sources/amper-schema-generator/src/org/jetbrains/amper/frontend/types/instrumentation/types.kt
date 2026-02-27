@@ -18,12 +18,10 @@ import org.jetbrains.amper.frontend.api.TraceableString
 import org.jetbrains.amper.frontend.types.SchemaType
 import org.jetbrains.amper.frontend.types.SchemaTypeDeclaration
 import java.nio.file.Path
-import kotlin.collections.forEach
 import kotlin.reflect.KAnnotatedElement
 import kotlin.reflect.KClass
 import kotlin.reflect.KType
 import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.hasAnnotation
 
 /**
  * Instrumentation-time mirror for [org.jetbrains.amper.frontend.tree.TypeDescriptor] hierarchy.
@@ -110,7 +108,7 @@ internal fun schemaTypeExpression(
     // TODO: Use pre-created type instances where possible, like `SchemaType.Boolean` or `SchemaType.StringNullable`
     Int::class -> {
         val knownValues = annotated?.findAnnotation<KnownIntValues>()?.values
-        CodeBlock.builder().apply {
+        val expression = CodeBlock.builder().apply {
             add("%T(%L", SchemaType.IntType::class, type.isMarkedNullable)
             if (knownValues != null) {
                 add(", knownValues = setOf(")
@@ -120,7 +118,7 @@ internal fun schemaTypeExpression(
             add(")")
         }.build()
         ParsedType(
-            schemaTypeCreationExpression = CodeBlock.of("%T(%L)", SchemaType.IntType::class, type.isMarkedNullable),
+            schemaTypeCreationExpression = expression,
             descriptor = ParsedTypeDescriptor.Int,
         )
     }
@@ -225,7 +223,12 @@ internal fun schemaTypeExpression(
                 descriptor = ParsedTypeDescriptor.Variant(classifier.asClassName(), parsed.declarationName),
             )
         } else {
-            if (classifier.hasAnnotation<CustomSchemaDeclaration>()) {
+            val customDeclaration = classifier.findAnnotation<CustomSchemaDeclaration>()
+            if (customDeclaration != null) {
+                // First, we need to ensure that all referenced types have their
+                // type definitions generated.
+                customDeclaration.requiredReferences.forEach { parseAndGenerateSchemaNode(it) }
+                
                 val parameter = ParsedDeclaration.SchemaNode.Parameter(
                     schemaNodeClass = classifier,
                     parameterType = SchemaTypeDeclaration::class.asTypeName(),

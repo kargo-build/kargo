@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.diagnostics
@@ -16,12 +16,17 @@ import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.messages.extractPsiElement
 import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
+import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 import org.jetbrains.annotations.Nls
 
 object ModuleDependencyDoesntHaveNeededPlatformsFactory : AomSingleModuleDiagnosticFactory {
-    override val diagnosticId: BuildProblemId = ModuleDependencyDoesntHaveNeededPlatforms.ID
+    @Deprecated(
+        message = "Use ModuleDependencyDoesntHaveNeededPlatforms.ID",
+        replaceWith = ReplaceWith("ModuleDependencyDoesntHaveNeededPlatforms.ID"),
+    )
+    val diagnosticId: BuildProblemId = ModuleDependencyDoesntHaveNeededPlatforms.ID
 
     override fun analyze(module: AmperModule, problemReporter: ProblemReporter) {
         val reportedPlaces = mutableSetOf<Trace?>()
@@ -52,7 +57,9 @@ class ModuleDependencyDoesntHaveNeededPlatforms(
     override val element: PsiElement
         get() = dependency.extractPsiElement()
 
+    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
     override val buildProblemId: BuildProblemId = ID
+    override val diagnosticId: DiagnosticId = FrontendDiagnosticId.ModuleDependencyDoesntHaveNeededPlatforms
 
     override val message: @Nls String
         get() = SchemaBundle.message(

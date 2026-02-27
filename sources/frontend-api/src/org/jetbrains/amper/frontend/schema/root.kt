@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.schema
@@ -43,6 +43,10 @@ abstract class Base : SchemaNode() {
     @PlatformAgnostic
     @SchemaDoc("Plugins applied in `project.yaml` can be enabled and configured here")
     val plugins: PluginSettings by nested()
+    
+    @PlatformAgnostic
+    @SchemaDoc("Maven plugin mojos (from maven plugins applied in `project.yaml`) can be enabled and configured here")
+    val mavenPlugins: MavenPluginSettings by nested()
 
     @HiddenFromCompletion
     @SchemaDoc("Tasks settings. Experimental and will be replaced")
@@ -58,6 +62,9 @@ class Module : Base() {
 
     @SchemaDoc("Defines what should be produced out of the module. Read more about the [product types]($userGuideUrl/product-types/)")
     val product by value<ModuleProduct>()
+
+    @SchemaDoc("An optional description of the module.")
+    val description by nullableValue<String>()
 
     @SchemaDoc("Defines names for custom groups of platforms. This is useful to share code between platforms if the " +
             "group doesn't already exist in the default hierarchy. [Read more]($userGuideUrl/multiplatform/#aliases)")

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.diagnostics
@@ -17,9 +17,8 @@ import kotlin.io.path.exists
 import kotlin.io.path.extension
 import kotlin.io.path.pathString
 
-object TemplateNameWithoutPostfix : TreeDiagnostic {
-
-    override val diagnosticId: BuildProblemId = "template.name.without.postfix"
+object TemplateNameWithoutPostfix : TreeDiagnosticFactory {
+    const val diagnosticId: BuildProblemId = "template.name.without.postfix"
 
     override fun analyze(root: TreeNode, minimalModule: MinimalModule, problemReporter: ProblemReporter) =
         root.visitListProperties(Module::apply) { _, templatesRaw ->
@@ -30,6 +29,7 @@ object TemplateNameWithoutPostfix : TreeDiagnostic {
                 ) {
                     problemReporter.reportBundleError(
                         source = tValue.trace.asBuildProblemSource(),
+                        diagnosticId = FrontendDiagnosticId.TemplateNameWithoutPostfix,
                         messageKey = diagnosticId,
                     )
                 }
