@@ -8,6 +8,7 @@ import org.jetbrains.amper.tasks.PlatformTaskType
 import org.jetbrains.amper.tasks.ProjectTasksBuilder
 import org.jetbrains.amper.tasks.native.NativeTaskType
 import org.jetbrains.amper.util.BuildType
+import org.jetbrains.amper.dependency.resolution.ResolutionScope
 
 // Git Sources task type
 internal enum class GitSourcesTaskType(override val prefix: String) : PlatformTaskType {
@@ -52,6 +53,22 @@ fun ProjectTasksBuilder.setupGitTasks() {
                         gitSourcesTaskName
                     )
                 }
+            }
+        }
+
+    // Pass transitive Git source dependencies to the Native linker 
+    // so it can link KLibs downloaded/built by inner modules.
+    allModules()
+        .alsoPlatforms(Platform.NATIVE)
+        .alsoTests()
+        .alsoBuildTypes()
+        .selectModuleDependencies(ResolutionScope.RUNTIME)
+        .withEach {
+            if (module.type.isApplication() || isTest) {
+                tasks.registerDependency(
+                    NativeTaskType.Link.getTaskName(module, platform, isTest, buildType),
+                    GitSourcesTaskType.ProcessGitSources.getTaskName(dependsOn, platform)
+                )
             }
         }
 }
