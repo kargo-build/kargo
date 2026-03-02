@@ -730,6 +730,13 @@ enum class ResolutionState {
 }
 
 /**
+ * Describes the state of the dependencies' download.
+ */
+enum class DownloadState {
+    INITIAL, WITHOUT_SOURCES, COMPLETE
+}
+
+/**
  * Describes a level of the dependency resolution process.
  * [LOCAL] assumes that no network access is performed.
  * It gives a result faster, but it might be incomplete if not all dependencies were downloaded before.

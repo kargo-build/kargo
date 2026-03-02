@@ -337,7 +337,7 @@ class DependencyFileTest: BaseDRTest() {
 
     @Test
     fun `artifact is re-downloaded if it has incorrect checksum`() = runDrTest {
-        Context {
+        fun getDependencyNode() = Context {
             platforms = setOf(ResolutionPlatform.JVM)
             repositories = listOf(REDIRECTOR_MAVEN_CENTRAL)
             cache = {
@@ -345,38 +345,49 @@ class DependencyFileTest: BaseDRTest() {
                 localRepository = mavenLocalRepository()
                 readOnlyExternalRepositories = emptyList()
             }
-        }.also { context ->
-            val dependencyNode = MavenCoordinates(
-                "org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm", "1.8.0"
-            ).toMavenNode(context)
+        }.let {
+            MavenCoordinates("org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm", "1.8.0").toMavenNode(it)
+        )
 
-            Resolver().buildGraph(dependencyNode)
+        // 1. check that dependencies are resolved and downloaded sucessfully
+        val dependencyNode = getDependencyNode()
 
-            val errors = dependencyNode.dependency.messages.filter { it.severity == Severity.ERROR }
-            assertTrue(errors.isEmpty(), "There must be no errors: $errors")
+        Resolver().buildGraph(dependencyNode)
 
-            Resolver().downloadDependencies(dependencyNode)
+        val errors = dependencyNode.dependency.messages.filter { it.severity == Severity.ERROR }
+        assertTrue(errors.isEmpty(), "There must be no errors: $errors")
 
-            val dependencyFile = DependencyFileImpl(dependencyNode.dependency, getNameWithoutExtension(dependencyNode.dependency), "jar")
-            val path = dependencyFile.getPath()!!
-            assertTrue(path.startsWith(mavenLocalPath))
+        Resolver().downloadDependencies(dependencyNode)
 
-            val downloaded = dependencyFile.getPath()?.exists() == true
-            val hasMatchingChecksum = dependencyFile.isDownloadedWithVerification(settings = context.settings)
-            assertTrue(downloaded, "File must have been downloaded")
-            assertTrue(hasMatchingChecksum, "File must have matching checksum as it was just downloaded")
+        val dependencyFile = DependencyFileImpl(
+            dependencyNode.dependency, getNameWithoutExtension(dependencyNode.dependency), "jar")
+        val path = dependencyFile.getPath()!!
+        assertTrue(path.startsWith(mavenLocalPath))
 
-            // Update the locally stored file so that its checksum is no longer correct
-            path.appendText("Now artifact from local storage have incorrect checksum and should be re-downloaded")
-            val hasMatchingChecksumAfterCorruption =  dependencyFile.isDownloadedWithVerification(settings = context.settings)
-            assertFalse (hasMatchingChecksumAfterCorruption, "File was corrupted, checksum check should have failed")
+        val downloaded = dependencyFile.getPath()?.exists() == true
+        val hasMatchingChecksum = dependencyFile.isDownloadedWithVerification(settings = dependencyNode.context.settings)
+        assertTrue(downloaded, "File must have been downloaded")
+        assertTrue(hasMatchingChecksum, "File must have matching checksum as it was just downloaded")
 
-            // Check that the artifact was successfully re-downloaded
-            Resolver().downloadDependencies(dependencyNode)
-            assertTrue(dependencyNode.dependency.messages.none { it.severity == Severity.ERROR }, "There must be no errors: ${dependencyNode.dependency.messages}")
-            val hasMatchingChecksumAfterReDownloading = dependencyFile.isDownloadedWithVerification(settings = context.settings)
-            assertTrue(hasMatchingChecksumAfterReDownloading, "File must have been re-downloaded and should have valid checksum")
-        }
+        // 2. Update the locally stored file so that its checksum is no longer correct
+        path.appendText("Now artifact from local storage have incorrect checksum and should be re-downloaded")
+        val hasMatchingChecksumAfterCorruption =  dependencyFile.isDownloadedWithVerification(settings = dependencyNode.context.settings)
+        assertFalse (hasMatchingChecksumAfterCorruption, "File was corrupted, checksum check should have failed")
+
+        // 3. Check that the previous downloading result is cached for the dependency
+        Resolver().downloadDependencies(dependencyNode)
+        assertTrue(dependencyNode.dependency.messages.none { it.severity == Severity.ERROR },
+            "There must be no errors because downloading result mucst have been cached: ${dependencyNode.dependency.messages}")
+        val hasMatchingChecksumAfterCachedReDownloading = dependencyFile.isDownloadedWithVerification(settings = dependencyNode.context.settings)
+        assertFalse(hasMatchingChecksumAfterCachedReDownloading, "Downloading result (the error) was cached for the MavenDependency, file was not re-downloaded")
+
+        // 4. Check that the artifact was successfully re-downloaded for a new independent node
+        val dependencyNode2 = getDependencyNode()
+        Resolver().buildGraph(dependencyNode2)
+        Resolver().downloadDependencies(dependencyNode2)
+        assertTrue(dependencyNode2.dependency.messages.none { it.severity == Severity.ERROR }, "There must be no errors: ${dependencyNode2.dependency.messages}")
+        val hasMatchingChecksumAfterReDownloading = dependencyFile.isDownloadedWithVerification(settings = dependencyNode2.context.settings)
+        assertTrue(hasMatchingChecksumAfterReDownloading, "File must have been re-downloaded and should have valid checksum")
     }
 
     @Test

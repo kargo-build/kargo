@@ -701,6 +701,9 @@ class MavenDependencyImpl internal constructor(
         private set
 
     @Volatile
+    private var downloadState: DownloadState = DownloadState.INITIAL
+
+    @Volatile
     internal var variants: List<Variant> = emptyList()
 
     @Volatile
@@ -908,6 +911,9 @@ class MavenDependencyImpl internal constructor(
             ResolutionLevel.LOCAL -> ResolutionState.UNSURE
             ResolutionLevel.NETWORK -> if (transitive) ResolutionState.RESOLVED else ResolutionState.RESOLVED_WITHOUT_CHILDREN
         }
+
+    private fun getTargetDownloadState(downloadSources: Boolean): DownloadState =
+        if (downloadSources) DownloadState.WITHOUT_SOURCES else DownloadState.COMPLETE
 
     private fun resetMetadataDiagnostics() {
         metadataResolutionFailureMessage = null
@@ -2020,6 +2026,20 @@ class MavenDependencyImpl internal constructor(
         get() = filter { it.isDocumentation() }
 
     suspend fun downloadDependencies(context: Context, downloadSources: Boolean = false) {
+        if (downloadState < getTargetDownloadState(downloadSources)) {
+            mutex.withLock {
+                if (downloadState < getTargetDownloadState(downloadSources)) {
+                    context.debugSpanBuilder("MavenDependencyNode.downloadDependencies")
+                        .setAttribute("coordinates", this.toString())
+                        .use {
+                            downloadDependenciesImpl(context, downloadSources)
+                        }
+                }
+            }
+        }
+    }
+
+    private suspend fun downloadDependenciesImpl(context: Context, downloadSources: Boolean = false) {
         val withSources = downloadSources || alwaysDownloadSources()
 
         val allFiles = files(withSources)
@@ -2036,6 +2056,8 @@ class MavenDependencyImpl internal constructor(
         }
 
         allFiles.forEach { it.postProcess(context, withSources, ResolutionLevel.NETWORK, it.diagnosticsReporter) }
+
+        downloadState = getTargetDownloadState(downloadSources)
     }
 
     private fun alwaysDownloadSources() = isKotlinStdlib()
