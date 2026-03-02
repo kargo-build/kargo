@@ -11,12 +11,11 @@ class Cache : TypedKeyMap(), Closeable {
     private val logger = LoggerFactory.getLogger("dr/cache.kt")
 
     override fun close() {
-        val closeableEntries = map
-            .minus(httpClientKey)                 // calling side handles lifecycle of injected HttpClient
-            .filterValues { it is AutoCloseable }
+        map.forEach {
+            if (it !is AutoCloseable) return@forEach
+            if (it.key == httpClientKey) return@forEach  // calling side handles lifecycle of injected HttpClient
 
-        closeableEntries.forEach {
-            val closeable = it.value as AutoCloseable
+            val closeable = it/* as AutoCloseable*/
             map.remove(it.key)
             try {
                 closeable.close()
