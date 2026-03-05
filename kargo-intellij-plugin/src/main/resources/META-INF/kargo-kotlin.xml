@@ -1,0 +1,6 @@
+<idea-plugin>
+  <!-- Kotlin-specific extensions for Kargo go here -->
+  <extensions defaultExtensionNs="com.intellij">
+    <!-- If we had specific Kotlin-only features, they'd be here -->
+  </extensions>
+</idea-plugin>

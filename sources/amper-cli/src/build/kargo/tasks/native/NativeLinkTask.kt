@@ -80,7 +80,7 @@ internal class NativeLinkTask(
             destination.parent.createDirectories()
             artifactPath.copyTo(destination, overwrite = true)
 
-            logger.info("Copied native distributable to $destination")
+            logger.debug("Copied native distributable to $destination")
 
             // Return the new destination so subsequent tasks use it
             return NativeLinkTask.Result(linkedBinary = destination)

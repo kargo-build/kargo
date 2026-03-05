@@ -6,6 +6,7 @@ modules:
   - build-sources/dokka
   - build-sources/generate-build-properties
   - build-sources/generate-template-resources
+  - kargo-intellij-plugin
   - build-sources/protobuf
   - plugin-samples/grpc-hello-world
   - repository-restrictions
