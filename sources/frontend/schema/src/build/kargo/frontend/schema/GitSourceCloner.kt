@@ -80,6 +80,10 @@ class GitSourceCloner(
 
     fun checkout(repoDir: Path, ref: String) {
         executeGitCommand(repoDir, "checkout", ref)
+        try {
+            executeGitCommand(repoDir, "reset", "--hard", "origin/$ref")
+        } catch (_: Exception) {
+        }
     }
 
     fun executeGitCommand(workingDir: Path, vararg args: String): String {
