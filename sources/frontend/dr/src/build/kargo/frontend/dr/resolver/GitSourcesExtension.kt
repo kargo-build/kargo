@@ -92,11 +92,9 @@ object GitSourcesExtension {
     /**
      * Get artifact paths for a module (for compiler classpath injection).
      */
-    fun getArtifactPaths(module: AmperModule): List<Path> {
+    fun getArtifacts(module: AmperModule): List<GitSourceArtifact> {
         val allKeys = artifactCache.keys.filter { it.startsWith("${module.userReadableName}-") }
-        return allKeys
-            .flatMap { artifactCache[it] ?: emptyList() }
-            .map { it.artifactPath }
+        return allKeys.flatMap { artifactCache[it] ?: emptyList() }
     }
 
     /**
