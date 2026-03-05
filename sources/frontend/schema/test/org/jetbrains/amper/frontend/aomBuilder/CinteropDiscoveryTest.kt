@@ -53,7 +53,7 @@ class CinteropDiscoveryTest : BasePlatformTestCase() {
             assertions = { nativeSettings ->
                 val cinterop = nativeSettings.cinterop
                 assertNotNull(cinterop)
-                val module = cinterop.modules["mydef"]
+                val module = cinterop["mydef"]
                 assertNotNull(module)
                 assertEquals("resources/cinterop/mydef.def", module!!.defFile)
             }
@@ -82,14 +82,14 @@ class CinteropDiscoveryTest : BasePlatformTestCase() {
             assertions = { nativeSettings ->
                 val cinterop = nativeSettings.cinterop
                 assertNotNull(cinterop)
-                assertEquals(2, cinterop.modules.size)
+                assertEquals(2, cinterop.size)
 
-                val discoveredModule = cinterop.modules["discovered"]
+                val discoveredModule = cinterop["discovered"]
                 assertNotNull(discoveredModule)
                 assertEquals("resources/cinterop/discovered.def", discoveredModule!!.defFile)
                 assertEquals(listOf("src/c/discovered.c"), discoveredModule.linkerOpts)
 
-                val explicitModule = cinterop.modules["explicit"]
+                val explicitModule = cinterop["explicit"]
                 assertNotNull(explicitModule)
                 assertEquals("explicit.def", explicitModule!!.defFile)
             }
@@ -115,7 +115,7 @@ class CinteropDiscoveryTest : BasePlatformTestCase() {
             assertions = { nativeSettings ->
                 val cinterop = nativeSettings.cinterop
                 assertNotNull(cinterop)
-                val module = cinterop.modules["custom"]
+                val module = cinterop["custom"]
                 assertNotNull(module)
                 assertEquals("custom/path/custom.def", module!!.defFile)
                 assertEquals("com.example.custom", module.packageName)

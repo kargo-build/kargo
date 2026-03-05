@@ -29,6 +29,7 @@ import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.FragmentDependencyType
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.Platform
+import org.jetbrains.amper.frontend.GitSourcesModulePart
 import org.jetbrains.amper.frontend.dr.resolver.DependenciesFlowType
 import org.jetbrains.amper.frontend.dr.resolver.DirectFragmentDependencyNode
 import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencyNode
@@ -41,6 +42,15 @@ import java.io.File
 import java.lang.reflect.Array
 import java.nio.file.Files
 import java.nio.file.Paths
+import build.kargo.frontend.dr.resolver.GitSourcesExtension
+import build.kargo.frontend.schema.BitbucketSource
+import build.kargo.frontend.schema.GitHubSource
+import build.kargo.frontend.schema.GitLabSource
+import build.kargo.frontend.schema.GitUrlSource
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
+import com.intellij.openapi.wm.ToolWindowManager
 
 /**
  * Updates the IntelliJ WorkspaceModel based on the Kargo project model.
@@ -51,6 +61,56 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
     fun updateWorkspaceModel(model: Model) {
         val app = ApplicationManager.getApplication()
         logger.info("Kargo: Scheduling WorkspaceModel update with ${model.modules.size} modules")
+        
+        // 1. Process Git Sources synchronously on background thread
+        // We do this BEFORE invokeLater to prevent blocking the UI/EDT
+        val gitErrors = mutableListOf<String>()
+        model.modules.forEach { kargoModule ->
+            val allPlatforms = kargoModule.fragments.flatMap { it.platforms.toList() }.distinct()
+            // Inline git source extraction — stay within plugin boundary
+            val gitSources = kargoModule.parts
+                .filterIsInstance<GitSourcesModulePart>()
+                .firstOrNull()?.gitSources ?: emptyList()
+            
+            var processingFailed = false
+            gitSources.forEach { source ->
+                val repoRef = when (source) {
+                    is GitHubSource -> "github:${source.github}:${source.version.value}"
+                    is GitLabSource -> "gitlab:${source.gitlab}:${source.version.value}"
+                    is BitbucketSource -> "bitbucket:${source.bitbucket}:${source.version.value}"
+                    is GitUrlSource -> "${source.git}:${source.version.value}"
+                }
+                if (!processingFailed) {
+                    try {
+                        GitSourcesExtension.processModuleGitSources(kargoModule, allPlatforms)
+                        processingFailed = false
+                    } catch (e: Exception) {
+                        logger.warn("Kargo: Could not resolve Git dependency '$repoRef': ${e.message}")
+                        gitErrors.add("Could not resolve Git dependency '$repoRef'")
+                        processingFailed = true
+                    }
+                } else {
+                    gitErrors.add("Could not resolve Git dependency '$repoRef'")
+                }
+            }
+        }
+        
+        // If there are errors, show Balloon notification (Gradle-style)
+        if (gitErrors.isNotEmpty()) {
+            val message = gitErrors.joinToString("<br>") { "• $it" }
+            app.invokeLater {
+                if (!project.isDisposed) {
+                    NotificationGroupManager.getInstance()
+                        .getNotificationGroup("Kargo")
+                        .createNotification(
+                            "Kargo Sync: dependency resolution failed",
+                            message,
+                            NotificationType.ERROR
+                        )
+                        .notify(project)
+                }
+            }
+        }
         
         app.invokeLater {
             if (project.isDisposed) return@invokeLater
@@ -205,6 +265,102 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     }
                 }
                 modifiableModel.commit()
+            }
+        }
+        
+        // Inject Git Sources Dependencies
+        // Clean up old Kargo Git libraries from Module entries AND LibraryTable
+        val gitLibraryModel = libraryTable.modifiableModel
+        val gitLibsToRemove = libraryTable.libraries.filter { it.name?.startsWith("Kargo Git:") == true || it.name?.startsWith("Kargo Local Git:") == true }
+        
+        model.modules.forEach { kargoModule ->
+            kargoModule.fragments.forEach { fragment ->
+                val moduleName = "${kargoModule.userReadableName}.${fragment.name}"
+                val ideModule = nameToModule[moduleName] ?: return@forEach
+                val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
+                var moduleChanged = false
+                
+                modifiableModel.orderEntries.forEach { entry ->
+                    if (entry is LibraryOrderEntry) {
+                        val libName = entry.libraryName
+                        if (libName != null && (libName.startsWith("Kargo Git:") || libName.startsWith("Kargo Local Git:"))) {
+                            modifiableModel.removeOrderEntry(entry)
+                            moduleChanged = true
+                        }
+                    }
+                }
+                if (moduleChanged) modifiableModel.commit() else modifiableModel.dispose()
+            }
+        }
+
+        gitLibsToRemove.forEach { lib ->
+            gitLibraryModel.removeLibrary(lib)
+        }
+        gitLibraryModel.commit()
+        // 1. Create all Git libraries and commit the project library model
+        val gitLibMap = mutableMapOf<String, Library>()
+        val gitLibraryModelNew = libraryTable.modifiableModel
+        
+        model.modules.forEach { kargoModule ->
+            val gitArtifacts = GitSourcesExtension.getArtifacts(kargoModule)
+            gitArtifacts.forEach { artifact ->
+                val absPath = artifact.artifactPath.toAbsolutePath().toString()
+                val source = artifact.source
+                val repoName = when (source) {
+                    is GitHubSource -> source.github
+                    is GitLabSource -> source.gitlab
+                    is BitbucketSource -> source.bitbucket
+                    is GitUrlSource -> source.git.substringAfterLast("/").removeSuffix(".git")
+                }
+                val version = source.version.value
+                val libraryName = "Kargo Git: $repoName:$version"
+                
+                var library = gitLibMap[libraryName] ?: libraryTable.getLibraryByName(libraryName)
+                if (library == null) {
+                    library = gitLibraryModelNew.createLibrary(libraryName)
+                    val libModifiableModel = library.modifiableModel
+                    
+                    val url = VfsUtilCore.pathToUrl(absPath)
+                    val finalUrl = if (absPath.endsWith(".klib")) "jar://${absPath}!/" else url
+                    libModifiableModel.addRoot(finalUrl, OrderRootType.CLASSES)
+                    
+                    libModifiableModel.commit()
+                    gitLibMap[libraryName] = library
+                }
+            }
+        }
+        gitLibraryModelNew.commit()
+
+        // 2. Assign the created libraries to their respective modules
+        model.modules.forEach { kargoModule ->
+            val gitArtifacts = GitSourcesExtension.getArtifacts(kargoModule)
+            logger.info("Kargo: Module ${kargoModule.userReadableName} has ${gitArtifacts.size} Git artifacts to inject")
+            kargoModule.fragments.forEach { fragment ->
+                val moduleName = "${kargoModule.userReadableName}.${fragment.name}"
+                val ideModule = nameToModule[moduleName] ?: return@forEach
+                
+                val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
+                var changed = false
+                gitArtifacts.forEach { artifact ->
+                    val source = artifact.source
+                    val repoName = when (source) {
+                        is GitHubSource -> source.github
+                        is GitLabSource -> source.gitlab
+                        is BitbucketSource -> source.bitbucket
+                        is GitUrlSource -> source.git.substringAfterLast("/").removeSuffix(".git")
+                    }
+                    val version = source.version.value
+                    val libraryName = "Kargo Git: $repoName:$version"
+                    
+                    val library = gitLibMap[libraryName] ?: libraryTable.getLibraryByName(libraryName)
+                    val existingEntry = modifiableModel.orderEntries.find { it is LibraryOrderEntry && it.libraryName == libraryName }
+                    if (existingEntry == null && library != null) {
+                        modifiableModel.addLibraryEntry(library)
+                        changed = true
+                    }
+                }
+                
+                if (changed) modifiableModel.commit() else modifiableModel.dispose()
             }
         }
         

@@ -25,6 +25,7 @@
     <projectService serviceImplementation="build.kargo.intellij.sync.KargoProjectContextService" />
     <projectService serviceImplementation="build.kargo.intellij.sync.KargoSyncManager" />
     <postStartupActivity implementation="build.kargo.intellij.sync.KargoStartupActivity" />
+    <notificationGroup id="Kargo" displayType="BALLOON" isLogByDefault="true" />
   </extensions>
 
   <extensions defaultExtensionNs="com.intellij">
