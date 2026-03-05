@@ -27,7 +27,9 @@ import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.ResolutionLevel
 import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.FragmentDependencyType
+import org.jetbrains.amper.frontend.LocalModuleDependency
 import org.jetbrains.amper.frontend.Model
+import org.jetbrains.amper.frontend.fragmentsTargeting
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.GitSourcesModulePart
 import org.jetbrains.amper.frontend.dr.resolver.DependenciesFlowType
@@ -46,6 +48,7 @@ import build.kargo.frontend.dr.resolver.GitSourcesExtension
 import build.kargo.frontend.schema.BitbucketSource
 import build.kargo.frontend.schema.GitHubSource
 import build.kargo.frontend.schema.GitLabSource
+import build.kargo.frontend.schema.GitSource
 import build.kargo.frontend.schema.GitUrlSource
 import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroupManager
@@ -64,34 +67,22 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         
         // 1. Process Git Sources synchronously on background thread
         // We do this BEFORE invokeLater to prevent blocking the UI/EDT
+        // Clear stale cache so removed/added Git deps are detected on every sync
+        GitSourcesExtension.clearCache()
         val gitErrors = mutableListOf<String>()
         model.modules.forEach { kargoModule ->
             val allPlatforms = kargoModule.fragments.flatMap { it.platforms.toList() }.distinct()
-            // Inline git source extraction — stay within plugin boundary
-            val gitSources = kargoModule.parts
-                .filterIsInstance<GitSourcesModulePart>()
-                .firstOrNull()?.gitSources ?: emptyList()
             
-            var processingFailed = false
-            gitSources.forEach { source ->
+            GitSourcesExtension.processModuleGitSources(kargoModule, allPlatforms) { source, exception ->
                 val repoRef = when (source) {
                     is GitHubSource -> "github:${source.github}:${source.version.value}"
                     is GitLabSource -> "gitlab:${source.gitlab}:${source.version.value}"
                     is BitbucketSource -> "bitbucket:${source.bitbucket}:${source.version.value}"
                     is GitUrlSource -> "${source.git}:${source.version.value}"
+                    else -> "unknown source"
                 }
-                if (!processingFailed) {
-                    try {
-                        GitSourcesExtension.processModuleGitSources(kargoModule, allPlatforms)
-                        processingFailed = false
-                    } catch (e: Exception) {
-                        logger.warn("Kargo: Could not resolve Git dependency '$repoRef': ${e.message}")
-                        gitErrors.add("Could not resolve Git dependency '$repoRef'")
-                        processingFailed = true
-                    }
-                } else {
-                    gitErrors.add("Could not resolve Git dependency '$repoRef'")
-                }
+                logger.warn("Kargo: Could not resolve Git dependency '$repoRef': ${exception.message}")
+                gitErrors.add("Could not resolve Git dependency '$repoRef'")
             }
         }
         
@@ -367,7 +358,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         // Inject Native default KLIBs
         injectNativeLibraries(model, nameToModule, libraryTable)
 
-        // Module Dependencies
+        // Intra-module Fragment Dependencies (within same module)
         model.modules.forEach { kargoModule ->
             kargoModule.fragments.forEach { fragment ->
                 val moduleName = "${kargoModule.userReadableName}.${fragment.name}"
@@ -383,6 +374,49 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                         )
                     }
                 }
+            }
+        }
+
+        // Inter-module Dependencies (local module deps like ./shared, ./infrastructure/server)
+        applyLocalModuleDependencies(model, nameToModule)
+    }
+
+    /**
+     * Wires local module dependencies (e.g. `./shared`, `./infrastructure/server` declared
+     * in module.yaml) as IntelliJ module-to-module dependencies so that cross-module
+     * references are resolved in the IDE.
+     */
+    private fun applyLocalModuleDependencies(
+        model: Model,
+        nameToModule: Map<String, Module>
+    ) {
+        model.modules.forEach { kargoModule ->
+            kargoModule.fragments.forEach { fragment ->
+                val moduleName = "${kargoModule.userReadableName}.${fragment.name}"
+                val ideModule = nameToModule[moduleName] ?: return@forEach
+
+                fragment.externalDependencies
+                    .filterIsInstance<LocalModuleDependency>()
+                    .forEach { localDep ->
+                        val targetKargoModule = localDep.module
+                        // Find matching fragments in the target module that support this fragment's platforms
+                        val targetFragments = targetKargoModule
+                            .fragmentsTargeting(fragment.platforms, includeTestFragments = false)
+
+                        targetFragments.forEach { targetFragment ->
+                            val targetModuleName = "${targetKargoModule.userReadableName}.${targetFragment.name}"
+                            val targetIdeModule = nameToModule[targetModuleName]
+                            if (targetIdeModule != null) {
+                                val scope = if (localDep.compile) DependencyScope.COMPILE else DependencyScope.RUNTIME
+                                ModuleRootModificationUtil.addDependency(
+                                    ideModule, targetIdeModule, scope, localDep.exported
+                                )
+                                logger.info("Kargo: Wired local module dep: $moduleName -> $targetModuleName")
+                            } else {
+                                logger.warn("Kargo: Could not find IDE module for local dep target: $targetModuleName")
+                            }
+                        }
+                    }
             }
         }
     }

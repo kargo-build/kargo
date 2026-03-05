@@ -32,15 +32,26 @@ object GitSourcesExtension {
      */
     fun processModuleGitSources(
         module: AmperModule,
-        targetPlatforms: List<Platform>
+        targetPlatforms: List<Platform>,
+        onError: ((GitSource, Exception) -> Unit)? = null
     ): List<GitSourceArtifact> {
         val cacheKey = "${module.userReadableName}-${targetPlatforms.hashCode()}"
 
         return artifactCache.getOrPut(cacheKey) {
             val gitSources = getModuleGitSources(module)
-            gitSources.flatMap { source ->
-                processGitSource(source, targetPlatforms)
+            val successfulArtifacts = mutableListOf<GitSourceArtifact>()
+            for (source in gitSources) {
+                try {
+                    successfulArtifacts.addAll(processGitSource(source, targetPlatforms))
+                } catch (e: Exception) {
+                    if (onError != null) {
+                        onError(source, e)
+                    } else {
+                        throw e
+                    }
+                }
             }
+            successfulArtifacts
         }
     }
 
