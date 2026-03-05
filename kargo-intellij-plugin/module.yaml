@@ -1,0 +1,31 @@
+product: jvm/lib
+
+apply:
+  - ../sources/common.module-template.yaml
+  - ../sources/used-in-idea.module-template.yaml
+
+dependencies:
+  - ../sources/core
+  - ../sources/core-intellij
+  - ../sources/frontend-api
+  - ../sources/frontend/dr
+  - ../sources/frontend/schema
+  - ../sources/dependency-resolution
+  - ../sources/amper-problem-reporting
+  - $libs.intellij.platform.core
+  - $libs.intellij.platform.coreImpl
+  - $libs.intellij.platform.ideCore
+  - $libs.intellij.platform.ide
+  - $libs.intellij.platform.ideImpl
+  - $libs.intellij.platform.util
+  - $libs.intellij.platform.utilEx
+  - $libs.intellij.platform.execution
+  - $libs.intellij.platform.executionImpl
+  - $libs.intellij.platform.externalSystem
+  - $libs.intellij.platform.externalSystemImpl
+  - $libs.intellij.platform.projectModel
+
+  - $libs.intellij.platform.lang
+  - $libs.intellij.platform.langCore
+  - $libs.intellij.platform.langImpl
+  - $libs.intellij.platform.coreUi

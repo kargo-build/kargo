@@ -1,0 +1,36 @@
+<svg width="512" height="512" viewBox="140 140 232 280" xmlns="http://www.w3.org/2000/svg">
+
+  <defs>
+    <linearGradient id="amperGradientLeft" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#5F4BD6"/>
+      <stop offset="100%" stop-color="#3E6EDB"/>
+    </linearGradient>
+
+    <linearGradient id="amperGradientRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3E6EDB"/>
+      <stop offset="100%" stop-color="#009FD6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Parte interna dividida -->
+  <polygon points="140,200 256,260 256,140"
+           fill="url(#amperGradientRight)"/>
+
+  <polygon points="256,140 256,260 372,200"
+           fill="url(#amperGradientLeft)"/>
+
+  <!-- Lado esquerdo -->
+  <polygon points="140,200 140,350 256,420 256,260"
+           fill="#5A8CFF"/>
+
+  <!-- Lado direito -->
+  <polygon points="372,200 372,350 256,420 256,260"
+           fill="#00C2FF"/>
+
+  <!-- K estrutural -->
+  <g fill="white">
+    <polygon points="256,260 360,170 360,210 300,260"/>
+    <polygon points="256,260 300,260 360,320 360,360"/>
+  </g>
+
+</svg>

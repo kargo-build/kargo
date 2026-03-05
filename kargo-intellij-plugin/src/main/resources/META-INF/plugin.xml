@@ -1,0 +1,75 @@
+<idea-plugin>
+  <id>build.kargo.intellij</id>
+  <name>Kargo</name>
+  <vendor>Kargo Contributors</vendor>
+  <category>Build Tools</category>
+  <description><![CDATA[
+      Kargo IntelliJ integration. Provides code insight and external system support for project.yaml.
+    ]]></description>
+
+  <depends>com.intellij.modules.platform</depends>
+  <depends>com.intellij.modules.java</depends>
+  <depends>org.jetbrains.plugins.yaml</depends>
+  <depends>org.toml.lang</depends>
+  <depends optional="true" config-file="kargo-kotlin.xml">org.jetbrains.kotlin</depends>
+
+  <!-- Extension Points exposed for other plugins/modules to contribute Kargo-aware behaviour -->
+  <extensionPoints>
+    <extensionPoint qualifiedName="build.kargo.intellij.commandRunExtension"
+                    interface="build.kargo.intellij.execution.api.KargoCommandConfigurationExtension"
+                    dynamic="true" />
+  </extensionPoints>
+
+  <!-- Project-level services: must be declared here even when annotated with @Service -->
+  <extensions defaultExtensionNs="com.intellij">
+    <projectService serviceImplementation="build.kargo.intellij.sync.KargoProjectContextService" />
+    <projectService serviceImplementation="build.kargo.intellij.sync.KargoSyncManager" />
+    <postStartupActivity implementation="build.kargo.intellij.sync.KargoStartupActivity" />
+  </extensions>
+
+  <extensions defaultExtensionNs="com.intellij">
+
+    <!-- 1. WorkspaceModel synchronization (Amper Parity) -->
+    <!-- We will use a custom action to trigger sync manually initially -->
+
+    <!-- 2. Run Configurations -->
+    <configurationType implementation="build.kargo.intellij.execution.KargoRunConfigurationType" />
+    <runConfigurationProducer implementation="build.kargo.intellij.execution.run.KargoModuleFileConfigurationProducer" />
+
+    <!-- 3. Kargo command extensions (run / test hooks) -->
+    <build.kargo.intellij.commandRunExtension
+        implementation="build.kargo.intellij.execution.run.KargoRunExtension"
+        id="run" />
+    <build.kargo.intellij.commandRunExtension
+        implementation="build.kargo.intellij.execution.test.KargoTestExtension"
+        id="test" />
+
+    <!-- 4. Color settings page for project.yaml -->
+    <colorSettingsPage implementation="build.kargo.intellij.codeInsight.yaml.KargoYamlColorSettingsPage" />
+
+    <!-- 5. Removed Editor Sync Banner (Now using native ExternalSystemProjectTracker) -->
+
+    <!-- 6. Kotlin K2 Support -->
+    <org.jetbrains.kotlin.supportsKotlinPluginMode supportsK2="true" />
+
+    <!-- 7. UI Enhancements -->
+    <iconProvider implementation="build.kargo.intellij.project.KargoIconProvider" />
+    <projectViewNodeDecorator implementation="build.kargo.intellij.project.KargoProjectViewNodeDecorator" />
+
+  </extensions>
+
+  <applicationListeners>
+    <listener class="build.kargo.intellij.sync.KargoFileListener"
+              topic="com.intellij.openapi.vfs.newvfs.BulkFileListener"/>
+  </applicationListeners>
+
+  <actions>
+    <action id="Kargo.SyncProject" 
+            class="build.kargo.intellij.sync.KargoSyncProjectAction" 
+            text="Sync Kargo Project" 
+            description="Reloads Kargo model and updates IntelliJ workspace via WorkspaceModel">
+      <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+    </action>
+  </actions>
+
+</idea-plugin>
