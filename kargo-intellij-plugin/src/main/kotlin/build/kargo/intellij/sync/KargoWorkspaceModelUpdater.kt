@@ -9,6 +9,9 @@ import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.module.Module
 import com.intellij.openapi.module.ModuleManager
+import com.intellij.execution.RunManager
+import build.kargo.intellij.execution.KargoRunConfiguration
+import build.kargo.intellij.execution.KargoRunConfigurationType
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.DependencyScope
@@ -110,6 +113,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             app.runWriteAction {
                 try {
                     applyModel(model)
+                    createDefaultRunConfigurations(model)
                     logger.info("Kargo: WorkspaceModel update completed")
                 } catch (e: Exception) {
                     logger.error("Kargo: Failed to apply model to WorkspaceModel", e)
@@ -646,7 +650,43 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                 logger.warn("Kargo: No JDK found in the IDE. Please configure a JDK manually.")
             }
         } catch (e: Exception) {
-            logger.error("Kargo: Failed to ensure project SDK", e)
         }
+    }
+
+    private fun createDefaultRunConfigurations(model: Model) {
+        val runManager = RunManager.getInstance(project)
+        val kargoConfigType = KargoRunConfigurationType.ID
+        
+        // Only proceed if there are no existing Kargo run configurations
+        val existingConfigs = runManager.allSettings.filter { it.type.id == kargoConfigType }
+        if (existingConfigs.isNotEmpty()) {
+            logger.info("Kargo: Found ${existingConfigs.size} existing Run Configurations, skipping default creation")
+            return
+        }
+
+        val projectPath = project.basePath?.let { Paths.get(it) } ?: return
+        
+        // Find a module that is exactly at the project root
+        // We prioritize "app" over "lib" if multiple root modules are found (rare in Kargo)
+        val rootModules = model.modules.filter { it.source.moduleDir == projectPath }
+        if (rootModules.isEmpty()) {
+            logger.info("Kargo: No module found at project root $projectPath")
+            return
+        }
+
+        val targetModule = rootModules.find { !it.type.isLibrary() } ?: rootModules.first()
+        val isApp = !targetModule.type.isLibrary()
+        
+        val factory = KargoRunConfigurationType().configurationFactories.first()
+        val settings = runManager.createConfiguration("Run Kargo (Root)", factory)
+        val configuration = settings.configuration as KargoRunConfiguration
+        
+        configuration.command = if (isApp) "run" else "build"
+        configuration.workingDirectory = projectPath.toString()
+        configuration.name = (if (isApp) "Run " else "Build ") + targetModule.userReadableName
+
+        runManager.addConfiguration(settings)
+        runManager.selectedConfiguration = settings
+        logger.info("Kargo: Created default Run Configuration for root module: ${configuration.name}")
     }
 }
