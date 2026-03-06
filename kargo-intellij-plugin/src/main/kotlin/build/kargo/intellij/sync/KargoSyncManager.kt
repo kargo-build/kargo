@@ -34,7 +34,7 @@ class KargoSyncManager(
             override fun run(indicator: ProgressIndicator) {
                 try {
                     indicator.isIndeterminate = true
-                    indicator.text = "Reading Kargo project model..."
+                    indicator.text = "Kargo: Resolving dependencies..."
                     
                     if (project.isDisposed) return
                     
@@ -48,7 +48,7 @@ class KargoSyncManager(
                     }
                     
                     if (model != null && !project.isDisposed) {
-                        indicator.text = "Updating IntelliJ workspace..."
+                        indicator.text = "Kargo: Configuring modules..."
                         val updater = KargoWorkspaceModelUpdater(project)
                         updater.updateWorkspaceModel(model)
                     }

@@ -13,6 +13,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.projectRoots.ProjectJdkTable
 import com.intellij.openapi.roots.DependencyScope
 import com.intellij.openapi.roots.LibraryOrderEntry
+import com.intellij.openapi.roots.ModuleOrderEntry
 import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.openapi.roots.ModuleRootModificationUtil
 import com.intellij.openapi.roots.OrderRootType
@@ -236,6 +237,32 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         }
         projectLibraryModel.commit()
 
+        // --- Dependency Cleanup Phase ---
+        // Clean slate: sweep old Kargo-managed library entries and module-to-module dependencies
+        // before injecting the new dependency tree.
+        model.modules.forEach { kargoModule ->
+            kargoModule.fragments.forEach { fragment ->
+                val moduleName = "${kargoModule.userReadableName}.${fragment.name}"
+                val ideModule = nameToModule[moduleName] ?: return@forEach
+                val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
+                var moduleChanged = false
+                
+                modifiableModel.orderEntries.forEach { entry ->
+                    if (entry is ModuleOrderEntry) {
+                        modifiableModel.removeOrderEntry(entry)
+                        moduleChanged = true
+                    } else if (entry is LibraryOrderEntry) {
+                        val libName = entry.libraryName
+                        if (libName != null && libName.startsWith("Kargo")) {
+                            modifiableModel.removeOrderEntry(entry)
+                            moduleChanged = true
+                        }
+                    }
+                }
+                if (moduleChanged) modifiableModel.commit() else modifiableModel.dispose()
+            }
+        }
+
         // Apply external dependencies to modules
         model.modules.forEach { kargoModule ->
             kargoModule.fragments.forEach { fragment ->
@@ -260,29 +287,9 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         }
         
         // Inject Git Sources Dependencies
-        // Clean up old Kargo Git libraries from Module entries AND LibraryTable
+        // Clean up old Kargo Git libraries from the LibraryTable
         val gitLibraryModel = libraryTable.modifiableModel
         val gitLibsToRemove = libraryTable.libraries.filter { it.name?.startsWith("Kargo Git:") == true || it.name?.startsWith("Kargo Local Git:") == true }
-        
-        model.modules.forEach { kargoModule ->
-            kargoModule.fragments.forEach { fragment ->
-                val moduleName = "${kargoModule.userReadableName}.${fragment.name}"
-                val ideModule = nameToModule[moduleName] ?: return@forEach
-                val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
-                var moduleChanged = false
-                
-                modifiableModel.orderEntries.forEach { entry ->
-                    if (entry is LibraryOrderEntry) {
-                        val libName = entry.libraryName
-                        if (libName != null && (libName.startsWith("Kargo Git:") || libName.startsWith("Kargo Local Git:"))) {
-                            modifiableModel.removeOrderEntry(entry)
-                            moduleChanged = true
-                        }
-                    }
-                }
-                if (moduleChanged) modifiableModel.commit() else modifiableModel.dispose()
-            }
-        }
 
         gitLibsToRemove.forEach { lib ->
             gitLibraryModel.removeLibrary(lib)
