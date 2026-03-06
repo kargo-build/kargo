@@ -36,6 +36,7 @@
     <!-- 2. Run Configurations -->
     <configurationType implementation="build.kargo.intellij.execution.KargoRunConfigurationType" />
     <runConfigurationProducer implementation="build.kargo.intellij.execution.run.KargoModuleFileConfigurationProducer" />
+    <runLineMarkerContributor language="yaml" implementationClass="build.kargo.intellij.execution.run.KargoModuleLineMarkerContributor" />
 
     <!-- 3. Kargo command extensions (run / test hooks) -->
     <build.kargo.intellij.commandRunExtension

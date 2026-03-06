@@ -11,21 +11,22 @@ dependencies:
   - ../sources/frontend/dr
   - ../sources/frontend/schema
   - ../sources/dependency-resolution
+  - ../sources/frontend/plain/yaml-psi
   - ../sources/amper-problem-reporting
-  - $libs.intellij.platform.core
-  - $libs.intellij.platform.coreImpl
-  - $libs.intellij.platform.ideCore
-  - $libs.intellij.platform.ide
-  - $libs.intellij.platform.ideImpl
-  - $libs.intellij.platform.util
-  - $libs.intellij.platform.utilEx
-  - $libs.intellij.platform.execution
-  - $libs.intellij.platform.executionImpl
-  - $libs.intellij.platform.externalSystem
-  - $libs.intellij.platform.externalSystemImpl
-  - $libs.intellij.platform.projectModel
+  - $libs.intellij.platform.core: exported
+  - $libs.intellij.platform.coreImpl: exported
+  - $libs.intellij.platform.ideCore: exported
+  - $libs.intellij.platform.ide: exported
+  - $libs.intellij.platform.ideImpl: exported
+  - $libs.intellij.platform.util: exported
+  - $libs.intellij.platform.utilEx: exported
+  - $libs.intellij.platform.execution: exported
+  - $libs.intellij.platform.executionImpl: exported
+  - $libs.intellij.platform.externalSystem: exported
+  - $libs.intellij.platform.externalSystemImpl: exported
+  - $libs.intellij.platform.projectModel: exported
 
-  - $libs.intellij.platform.lang
-  - $libs.intellij.platform.langCore
-  - $libs.intellij.platform.langImpl
-  - $libs.intellij.platform.coreUi
+  - $libs.intellij.platform.lang: exported
+  - $libs.intellij.platform.langCore: exported
+  - $libs.intellij.platform.langImpl: exported
+  - $libs.intellij.platform.coreUi: exported
