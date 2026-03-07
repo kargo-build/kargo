@@ -9,9 +9,9 @@
 
   <depends>com.intellij.modules.platform</depends>
   <depends>com.intellij.modules.java</depends>
+  <depends>com.intellij.modules.lang</depends>
   <depends>org.jetbrains.plugins.yaml</depends>
   <depends>org.toml.lang</depends>
-  <depends optional="true" config-file="kargo-kotlin.xml">org.jetbrains.kotlin</depends>
 
   <!-- Extension Points exposed for other plugins/modules to contribute Kargo-aware behaviour -->
   <extensionPoints>
@@ -57,6 +57,10 @@
     <!-- 7. UI Enhancements -->
     <iconProvider implementation="build.kargo.intellij.project.KargoIconProvider" />
     <projectViewNodeDecorator implementation="build.kargo.intellij.project.KargoProjectViewNodeDecorator" />
+
+
+    <!-- 8. Project Wizard -->
+    <moduleBuilder builderClass="build.kargo.intellij.project.wizard.KargoNewProjectWizard$Builder"/>
 
   </extensions>
 

@@ -12,12 +12,15 @@ dependencies:
   - ../sources/frontend/schema
   - ../sources/dependency-resolution
   - ../sources/frontend/plain/yaml-psi
+  - ../sources/amper-project-templates
   - ../sources/amper-problem-reporting
+
   - $libs.intellij.platform.core: exported
   - $libs.intellij.platform.coreImpl: exported
   - $libs.intellij.platform.ideCore: exported
   - $libs.intellij.platform.ide: exported
   - $libs.intellij.platform.ideImpl: exported
+  - $libs.intellij.platform.ideObservable: exported
   - $libs.intellij.platform.util: exported
   - $libs.intellij.platform.utilEx: exported
   - $libs.intellij.platform.execution: exported
@@ -25,7 +28,6 @@ dependencies:
   - $libs.intellij.platform.externalSystem: exported
   - $libs.intellij.platform.externalSystemImpl: exported
   - $libs.intellij.platform.projectModel: exported
-
   - $libs.intellij.platform.lang: exported
   - $libs.intellij.platform.langCore: exported
   - $libs.intellij.platform.langImpl: exported
