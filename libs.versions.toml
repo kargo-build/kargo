@@ -77,6 +77,7 @@ intellij-platform-util = { module = "com.jetbrains.intellij.platform:util", vers
 intellij-platform-utilEx = { module = "com.jetbrains.intellij.platform:util-ex", version.ref = "intellij-platform" }
 intellij-platform-ide = { module = "com.jetbrains.intellij.platform:ide", version.ref = "intellij-platform" }
 intellij-platform-ideImpl = { module = "com.jetbrains.intellij.platform:ide-impl", version.ref = "intellij-platform" }
+intellij-platform-ideObservable = { module = "com.jetbrains.intellij.platform:ide-observable", version.ref = "intellij-platform" }
 intellij-platform-execution = { module = "com.jetbrains.intellij.platform:execution", version.ref = "intellij-platform" }
 intellij-platform-executionImpl = { module = "com.jetbrains.intellij.platform:execution-impl", version.ref = "intellij-platform" }
 intellij-platform-externalSystem = { module = "com.jetbrains.intellij.platform:external-system", version.ref = "intellij-platform" }
