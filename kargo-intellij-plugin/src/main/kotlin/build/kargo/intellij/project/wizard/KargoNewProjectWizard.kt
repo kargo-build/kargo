@@ -5,6 +5,7 @@ import com.intellij.ide.wizard.newProjectWizardBaseStepWithoutGap
 import com.intellij.ide.wizard.NewProjectWizardChainStep.Companion.nextStep
 import com.intellij.ide.wizard.NewProjectWizardStep
 import com.intellij.ide.wizard.GeneratorNewProjectWizard
+import com.intellij.ide.wizard.GitNewProjectWizardStep
 import com.intellij.ide.wizard.GeneratorNewProjectWizardBuilderAdapter
 import com.intellij.ide.wizard.RootNewProjectWizardStep
 import build.kargo.intellij.KargoIcons
@@ -18,6 +19,7 @@ class KargoNewProjectWizard : GeneratorNewProjectWizard {
     override fun createStep(context: WizardContext): NewProjectWizardStep {
         return RootNewProjectWizardStep(context)
             .nextStep(::newProjectWizardBaseStepWithoutGap)
+            .nextStep(::GitNewProjectWizardStep)
             .nextStep(::KargoProjectWizardStep)
     }
 

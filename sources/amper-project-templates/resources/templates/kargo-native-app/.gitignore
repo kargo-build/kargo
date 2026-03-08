@@ -1,0 +1,15 @@
+# Build and tool directories
+.kargo/
+.kotlin/
+build/
+dist/
+
+# IntelliJ IDEA
+.idea/
+*.iml
+
+# Local configuration
+local.properties
+
+# OS specific
+.DS_Store
