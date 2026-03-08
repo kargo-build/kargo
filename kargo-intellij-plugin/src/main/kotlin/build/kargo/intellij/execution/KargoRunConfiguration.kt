@@ -63,8 +63,23 @@ class KargoRunConfiguration(
                     .start()
 
                 val processHandler = object : ProcessHandler() {
-                    override fun destroyProcessImpl() { process.destroyForcibly() }
-                    override fun detachProcessImpl() { process.destroyForcibly() }
+                    override fun destroyProcessImpl() {
+                        destroyHierarchy(process)
+                    }
+
+                    override fun detachProcessImpl() {
+                        destroyHierarchy(process)
+                    }
+
+                    private fun destroyHierarchy(p: Process) {
+                        try {
+                            p.descendants().forEach { it.destroyForcibly() }
+                        } catch (e: Throwable) {
+                            // Ignore if not supported or failed
+                        }
+                        p.destroyForcibly()
+                    }
+
                     override fun detachIsDefault(): Boolean = false
                     override fun getProcessInput(): OutputStream? = process.outputStream
 
