@@ -2,6 +2,7 @@ package build.kargo.intellij.execution
 
 import build.kargo.intellij.KargoIcons
 import com.intellij.execution.configurations.ConfigurationTypeBase
+import com.intellij.execution.configurations.ConfigurationTypeUtil
 import com.intellij.openapi.util.NotNullLazyValue
 
 class KargoRunConfigurationType : ConfigurationTypeBase(
@@ -16,5 +17,12 @@ class KargoRunConfigurationType : ConfigurationTypeBase(
 
     companion object {
         const val ID = "KargoRunConfiguration"
+
+        fun getInstance(): KargoRunConfigurationType {
+            return ConfigurationTypeUtil.findConfigurationType(KargoRunConfigurationType::class.java)
+        }
     }
+
+    val factory: KargoRunConfigurationFactory
+        get() = configurationFactories.first() as KargoRunConfigurationFactory
 }
