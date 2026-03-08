@@ -14,7 +14,7 @@ import org.jetbrains.yaml.psi.YAMLMapping
 class KargoModuleFileConfigurationProducer : LazyRunConfigurationProducer<KargoRunConfiguration>() {
 
     override fun getConfigurationFactory(): ConfigurationFactory =
-        KargoRunConfigurationType().configurationFactories.first()
+        KargoRunConfigurationType.getInstance().factory
 
     override fun setupConfigurationFromContext(
         configuration: KargoRunConfiguration,
@@ -22,12 +22,10 @@ class KargoModuleFileConfigurationProducer : LazyRunConfigurationProducer<KargoR
         sourceElement: Ref<PsiElement>
     ): Boolean {
         val element = sourceElement.get() ?: return false
-        val keyValue = element.parent as? YAMLKeyValue ?: return false
-        if (keyValue.keyText != "product") return false
-
-        val file = keyValue.containingFile as? YAMLFile ?: return false
+        val file = element.containingFile as? YAMLFile ?: return false
         if (file.name != "module.yaml") return false
 
+        val keyValue = getProductKeyValue(element) ?: return false
         val productType = getProductType(keyValue) ?: return false
         val isApp = productType.endsWith("/app") || productType == "app"
 
@@ -43,16 +41,32 @@ class KargoModuleFileConfigurationProducer : LazyRunConfigurationProducer<KargoR
         context: ConfigurationContext
     ): Boolean {
         val element = context.psiLocation ?: return false
-        val keyValue = element.parent as? YAMLKeyValue ?: return false
-        if (keyValue.keyText != "product") return false
-
-        val file = keyValue.containingFile as? YAMLFile ?: return false
+        val file = element.containingFile as? YAMLFile ?: return false
         if (file.name != "module.yaml") return false
 
         val basePath = file.virtualFile?.parent?.path ?: return false
+        if (configuration.workingDirectory != basePath) return false
 
-        return configuration.workingDirectory == basePath &&
-            (configuration.command == "run" || configuration.command == "build")
+        val keyValue = getProductKeyValue(element) ?: return false
+        val productType = getProductType(keyValue) ?: return false
+        val isApp = productType.endsWith("/app") || productType == "app"
+        val expectedCommand = if (isApp) "run" else "build"
+
+        return configuration.command == expectedCommand
+    }
+
+    private fun getProductKeyValue(element: PsiElement): YAMLKeyValue? {
+        var current: PsiElement? = element
+        while (current != null && current !is YAMLFile) {
+            if (current is YAMLKeyValue && current.keyText == "product") {
+                return current
+            }
+            current = current.parent
+        }
+        // Fallback to searching the whole file if not under a specific key
+        val file = element.containingFile as? YAMLFile ?: return null
+        val mapping = file.documents.firstOrNull()?.topLevelValue as? YAMLMapping ?: return null
+        return mapping.keyValues.find { it.keyText == "product" }
     }
 
     private fun getProductType(productKv: YAMLKeyValue): String? {

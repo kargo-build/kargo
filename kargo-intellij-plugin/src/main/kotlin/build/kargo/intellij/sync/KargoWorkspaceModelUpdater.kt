@@ -90,6 +90,10 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             }
         }
         
+        // 2. Resolve External Dependencies (Maven) on background thread
+        // This is a heavy operation (uses runBlocking) so it MUST NOT be on EDT.
+        val fragmentToExternalDeps = resolveAllDependencies(model)
+
         // If there are errors, show Balloon notification (Gradle-style)
         if (gitErrors.isNotEmpty()) {
             val message = gitErrors.joinToString("<br>") { "• $it" }
@@ -112,7 +116,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             
             app.runWriteAction {
                 try {
-                    applyModel(model)
+                    applyModel(model, fragmentToExternalDeps)
                     createDefaultRunConfigurations(model)
                     logger.info("Kargo: WorkspaceModel update completed")
                 } catch (e: Exception) {
@@ -122,7 +126,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         }
     }
 
-    private fun applyModel(model: Model) {
+    private fun applyModel(model: Model, fragmentToExternalDeps: Map<Fragment, Set<MavenDependencyNode>>) {
         val moduleManager = ModuleManager.getInstance(project)
         
         ensureProjectSdk()
@@ -206,7 +210,6 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         modifiableModuleModel.commit()
 
         // External Dependencies (Maven)
-        val fragmentToExternalDeps = resolveAllDependencies(model)
         val allMavenNodes = fragmentToExternalDeps.values.flatten().toSet()
         
         val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
