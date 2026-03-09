@@ -93,7 +93,12 @@ class GitSourceCloner(
             .start()
         val output = process.inputStream.bufferedReader().readText()
         val exitCode = process.waitFor()
-        if (exitCode != 0) throw GitSourceException("Git command failed: git ${args.joinToString(" ")}", details = output.trim())
+        if (exitCode != 0) {
+            throw GitSourceException(
+                rawMessage = "Git command failed: git ${args.joinToString(" ")}",
+                details = output.trim()
+            )
+        }
         return output
     }
 
@@ -103,12 +108,14 @@ class GitSourceCloner(
  * User-friendly exception for git source resolution failures.
  */
 class GitSourceException(
-    message: String,
+    val rawMessage: String,
     val details: String? = null,
     cause: Throwable? = null,
-) : RuntimeException(buildString {
-    appendLine()
-    appendLine("  Git Source Error: $message")
-    if (details != null) details.lines().forEach { appendLine("    $it") }
-    appendLine()
-}, cause)
+) : RuntimeException(rawMessage, cause) {
+    val cliFormattedMessage: String get() = buildString {
+        appendLine()
+        appendLine("  Git Source Error: $rawMessage")
+        if (details != null) details.lines().forEach { appendLine("    $it") }
+        appendLine()
+    }
+}

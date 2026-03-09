@@ -16,10 +16,9 @@ class KargoRunConfigurationEditor(private val project: Project) : SettingsEditor
 
     override fun createEditor(): JComponent {
         workingDirectoryField.addBrowseFolderListener(
-            "Select Working Directory",
-            null,
             project,
             FileChooserDescriptorFactory.createSingleFolderDescriptor()
+                .withTitle("Select Working Directory")
         )
 
         return FormBuilder.createFormBuilder()

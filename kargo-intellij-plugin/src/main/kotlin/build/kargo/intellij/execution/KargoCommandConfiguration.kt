@@ -9,7 +9,6 @@ import com.intellij.execution.configurations.RunConfiguration
 import com.intellij.execution.configurations.RunConfigurationOptions
 import com.intellij.execution.configurations.RunProfileState
 import com.intellij.execution.filters.TextConsoleBuilderFactory
-import com.intellij.execution.process.ProcessAdapter
 import com.intellij.execution.process.ProcessEvent
 import com.intellij.execution.process.ProcessHandler
 import com.intellij.execution.runners.ExecutionEnvironment
@@ -47,7 +46,7 @@ class KargoCommandConfiguration(
 ) : LocatableConfigurationBase<KargoCommandOptions>(project, factory, "Kargo") {
 
     private val kargoOptions: KargoCommandOptions
-        get() = options as KargoCommandOptions
+        get() = state!!
 
     /** Kargo sub-command to run (e.g. "run", "test", "build"). */
     var command: String
