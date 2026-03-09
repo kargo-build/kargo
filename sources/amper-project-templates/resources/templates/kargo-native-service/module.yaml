@@ -11,13 +11,11 @@ sources:
   - github: kargo-build/ktor-client-native
     version: main
 dependencies:
-  - io.ktor:ktor-client-core:3.3.0
-  - io.ktor:ktor-client-content-negotiation:3.3.0
-  - io.ktor:ktor-server-core:3.3.0
-  - io.ktor:ktor-server-cio:3.3.0
-  - io.ktor:ktor-server-status-pages:3.3.0
-  - io.ktor:ktor-server-content-negotiation:3.3.0
-  - io.ktor:ktor-serialization-kotlinx-json:3.3.0
-  - io.ktor:ktor-utils:3.3.0
+  - io.ktor:ktor-client-core:3.4.1
+  - io.ktor:ktor-client-content-negotiation:3.4.1
+  - io.ktor:ktor-server-core:3.4.1
+  - io.ktor:ktor-server-cio:3.4.1
+  - io.ktor:ktor-server-content-negotiation:3.4.1
+  - io.ktor:ktor-serialization-kotlinx-json:3.4.1
+  - io.ktor:ktor-utils:3.4.1
   - co.touchlab:kermit:2.0.4
-  - io.ktor:ktor-server-host-common:3.3.0

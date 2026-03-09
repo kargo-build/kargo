@@ -71,7 +71,11 @@ class GitSourceResolver(
             } catch (e: GitSourceException) {
                 throw e
             } catch (e: Exception) {
-                throw GitSourceException("Failed to fetch git source '$sourceName' from $repoUrl", details = e.message, cause = e)
+                throw GitSourceException(
+                    rawMessage = "Failed to fetch git source",
+                    details = "Source: $sourceName\nRepository: $repoUrl\nError: ${e.message}",
+                    cause = e
+                )
             }
 
             logger.info("Checking out git source '$sourceName' ($version)...")
@@ -79,8 +83,8 @@ class GitSourceResolver(
                 cloner.checkout(repoDir, version)
             } catch (e: Exception) {
                 throw GitSourceException(
-                    "Failed to checkout version '$version' for git source '$sourceName'",
-                    details = "Repository: $repoUrl\nVersion: $version\n${e.message}",
+                    rawMessage = "Failed to checkout version",
+                    details = "Version: '$version'\nSource: '$sourceName'\nRepository: $repoUrl\n${e.message}",
                     cause = e
                 )
             }

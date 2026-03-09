@@ -16,12 +16,13 @@ class KargoModelReader {
     companion object {
         private val logger = Logger.getInstance(KargoModelReader::class.java)
 
-        fun readModel(projectPath: Path, project: Project): Model? {
+        fun readModel(projectPath: Path, project: Project, errorCollector: KargoSyncErrorCollector): Model? {
             logger.info("Kargo: Attempting to read model from $projectPath (Project: ${project.name})")
             
             val reporter = object : ProblemReporter {
                 override fun reportMessage(message: BuildProblem) {
                     logger.warn("Kargo Sync Problem: ${message.message}")
+                    errorCollector.reportProblem(message)
                 }
             }
             
@@ -32,6 +33,7 @@ class KargoModelReader {
                             StandaloneAmperProjectContext.create(projectPath, null, project)
                         } catch (t: Throwable) {
                             logger.error("Kargo: Error during StandaloneAmperProjectContext.create", t)
+                            errorCollector.reportException(t)
                             return@with null
                         }
                         
@@ -41,17 +43,16 @@ class KargoModelReader {
                             context.readProjectModel(pluginData = emptyList(), mavenPluginsWithXmls = emptyList())
                         } catch (t: Throwable) {
                             logger.error("Kargo: Error during context.readProjectModel", t)
+                            errorCollector.reportException(t)
                             return@with null
                         }
                         
-                        if (model != null) {
-                            logger.info("Kargo: Successfully read model with ${model.modules.size} modules")
-                        }
                         model
                     }
                 })
             } catch (t: Throwable) {
                 logger.error("Kargo: Unexpected FATAL error in readModel", t)
+                errorCollector.reportException(t)
                 null
             }
         }

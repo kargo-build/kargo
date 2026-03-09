@@ -44,7 +44,7 @@ internal class ResolveGitSourcesDependenciesTask(
                 targetPlatforms = targetPlatforms
             )
         } catch (e: GitSourceException) {
-            throw UserReadableError(e.message ?: "Git source resolution failed", exitCode = 1)
+            throw UserReadableError(e.cliFormattedMessage, exitCode = 1)
         }
 
         val artifactPaths = artifacts.map { it.artifactPath }

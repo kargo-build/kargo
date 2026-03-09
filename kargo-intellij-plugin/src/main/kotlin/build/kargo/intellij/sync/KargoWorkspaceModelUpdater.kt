@@ -28,7 +28,11 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
+import org.jetbrains.amper.dependency.resolution.diagnostics.Severity
+import org.jetbrains.amper.dependency.resolution.diagnostics.detailedMessage
 import org.jetbrains.amper.dependency.resolution.ResolutionLevel
+import org.jetbrains.amper.dependency.resolution.DependencyNode
+import org.jetbrains.amper.dependency.resolution.diagnostics.PlatformsAreNotSupported
 import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.FragmentDependencyType
 import org.jetbrains.amper.frontend.LocalModuleDependency
@@ -53,11 +57,12 @@ import build.kargo.frontend.schema.BitbucketSource
 import build.kargo.frontend.schema.GitHubSource
 import build.kargo.frontend.schema.GitLabSource
 import build.kargo.frontend.schema.GitSource
+import build.kargo.frontend.schema.GitSourceException
 import build.kargo.frontend.schema.GitUrlSource
-import com.intellij.notification.NotificationAction
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.wm.ToolWindowManager
+import build.kargo.intellij.sync.KargoSyncErrorCollector
 
 /**
  * Updates the IntelliJ WorkspaceModel based on the Kargo project model.
@@ -65,7 +70,7 @@ import com.intellij.openapi.wm.ToolWindowManager
 class KargoWorkspaceModelUpdater(private val project: Project) {
     private val logger = Logger.getInstance(KargoWorkspaceModelUpdater::class.java)
 
-    fun updateWorkspaceModel(model: Model) {
+    fun updateWorkspaceModel(model: Model, errorCollector: KargoSyncErrorCollector) {
         val app = ApplicationManager.getApplication()
         logger.info("Kargo: Scheduling WorkspaceModel update with ${model.modules.size} modules")
         
@@ -73,7 +78,6 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         // We do this BEFORE invokeLater to prevent blocking the UI/EDT
         // Clear stale cache so removed/added Git deps are detected on every sync
         GitSourcesExtension.clearCache()
-        val gitErrors = mutableListOf<String>()
         model.modules.forEach { kargoModule ->
             val allPlatforms = kargoModule.fragments.flatMap { it.platforms.toList() }.distinct()
             
@@ -83,50 +87,43 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     is GitLabSource -> "gitlab:${source.gitlab}:${source.version.value}"
                     is BitbucketSource -> "bitbucket:${source.bitbucket}:${source.version.value}"
                     is GitUrlSource -> "${source.git}:${source.version.value}"
-                    else -> "unknown source"
                 }
-                logger.warn("Kargo: Could not resolve Git dependency '$repoRef': ${exception.message}")
-                gitErrors.add("Could not resolve Git dependency '$repoRef'")
+                val cleanMessage = if (exception is GitSourceException) {
+                    val msg = exception.rawMessage.replace("\n", "<br>")
+                    val details = exception.details?.trim()?.replace("\n", "<br>")
+                    if (details != null) "$msg<br>$details" else msg
+                } else {
+                    exception.message?.replace("\n", "<br>") ?: "Unknown error"
+                }
+                
+                errorCollector.reportError("<b>Git Dependency:</b> Unable to resolve dependency $repoRef<br>$cleanMessage")
             }
         }
         
         // 2. Resolve External Dependencies (Maven) on background thread
         // This is a heavy operation (uses runBlocking) so it MUST NOT be on EDT.
-        val fragmentToExternalDeps = resolveAllDependencies(model)
+        val fragmentToExternalDeps = resolveAllDependencies(model, errorCollector)
 
-        // If there are errors, show Balloon notification (Gradle-style)
-        if (gitErrors.isNotEmpty()) {
-            val message = gitErrors.joinToString("<br>") { "• $it" }
-            app.invokeLater {
-                if (!project.isDisposed) {
-                    NotificationGroupManager.getInstance()
-                        .getNotificationGroup("Kargo")
-                        .createNotification(
-                            "Kargo Sync: dependency resolution failed",
-                            message,
-                            NotificationType.ERROR
-                        )
-                        .notify(project)
-                }
-            }
-        }
+        // Errors are now collected via errorCollector and handled by KargoSyncManager
+
         
         app.invokeLater {
             if (project.isDisposed) return@invokeLater
             
             app.runWriteAction {
                 try {
-                    applyModel(model, fragmentToExternalDeps)
+                    applyModel(model, fragmentToExternalDeps, errorCollector)
                     createDefaultRunConfigurations(model)
                     logger.info("Kargo: WorkspaceModel update completed")
                 } catch (e: Exception) {
                     logger.error("Kargo: Failed to apply model to WorkspaceModel", e)
+                    errorCollector.reportException(e)
                 }
             }
         }
     }
 
-    private fun applyModel(model: Model, fragmentToExternalDeps: Map<Fragment, Set<MavenDependencyNode>>) {
+    private fun applyModel(model: Model, fragmentToExternalDeps: Map<Fragment, Set<MavenDependencyNode>>, errorCollector: KargoSyncErrorCollector) {
         val moduleManager = ModuleManager.getInstance(project)
         
         ensureProjectSdk()
@@ -166,7 +163,6 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
 
                 try {
                     val ideModule = modifiableModuleModel.newModule(imlPath, "JAVA_MODULE")
-                    modifiableModuleModel.setModuleGroupPath(ideModule, arrayOf(kargoModule.userReadableName))
                     nameToModule[moduleName] = ideModule
 
                     val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
@@ -392,7 +388,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         }
 
         // Inter-module Dependencies (local module deps like ./shared, ./infrastructure/server)
-        applyLocalModuleDependencies(model, nameToModule)
+        applyLocalModuleDependencies(model, nameToModule, errorCollector)
     }
 
     /**
@@ -402,7 +398,8 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
      */
     private fun applyLocalModuleDependencies(
         model: Model,
-        nameToModule: Map<String, Module>
+        nameToModule: Map<String, Module>,
+        errorCollector: KargoSyncErrorCollector
     ) {
         model.modules.forEach { kargoModule ->
             kargoModule.fragments.forEach { fragment ->
@@ -428,6 +425,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                                 logger.info("Kargo: Wired local module dep: $moduleName -> $targetModuleName")
                             } else {
                                 logger.warn("Kargo: Could not find IDE module for local dep target: $targetModuleName")
+                                errorCollector.reportError("<b>Local Dependency:</b> $targetModuleName<br>Could not find IDE module for local dependency target.")
                             }
                         }
                     }
@@ -496,7 +494,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     } catch (e: ClassNotFoundException) {
                         // Kotlin 1.9- (NativePlatformsKt has top-level functions)
                         val platformsKtClass = Class.forName("org.jetbrains.kotlin.platform.konan.NativePlatformsKt", true, kotlinCL)
-                        val collectionMethod = platformsKtClass.methods.find { it.name == "nativePlatformByTargets" && it.parameterTypes.size == 1 && java.util.Collection::class.java.isAssignableFrom(it.parameterTypes[0]) }
+                        val collectionMethod = platformsKtClass.methods.find { it.name == "nativePlatformByTargets" && it.parameterTypes.size == 1 && Collection::class.java.isAssignableFrom(it.parameterTypes[0]) }
                         if (collectionMethod != null) {
                             nativePlatform = collectionMethod.invoke(null, listOf(konanTarget))
                         } else {
@@ -526,7 +524,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         }
     }
 
-    private fun resolveAllDependencies(model: Model): Map<Fragment, Set<MavenDependencyNode>> {
+    private fun resolveAllDependencies(model: Model, errorCollector: KargoSyncErrorCollector): Map<Fragment, Set<MavenDependencyNode>> {
         val fragmentToDeps = mutableMapOf<Fragment, MutableSet<MavenDependencyNode>>()
         
         val userCacheRootResult = AmperUserCacheRoot.fromCurrentUserResult()
@@ -548,6 +546,37 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             runBlocking {
                 val rootNode = moduleDependenciesResolver.run { model.modules.resolveDependencies(resolutionInput) }
                 
+                // Collect errors from all nodes in the resolution graph
+                rootNode.distinctBfsSequence().forEach { node ->
+                    node.messages.forEach { message ->
+                        if (message.severity >= Severity.WARNING) {
+                            val isPlatformMismatch = message.id == PlatformsAreNotSupported.ID
+                            
+                            val isDirect = node in rootNode.children
+                            val isRoot = node == rootNode
+                            val isTransitive = !isDirect && !isRoot
+                            
+                            // Align with CLI: only report transitive diagnostics if allowed
+                            if (isTransitive && !message.reportTransitive) return@forEach
+
+                            val label = if (isPlatformMismatch) "Platform Compatibility" else "Maven Dependency"
+                            
+                            val parent = node.parents.firstOrNull { it.graphEntryName.isNotBlank() }
+                            val transitiveInfo = if (isTransitive && parent != null && parent != rootNode) {
+                                " (transitive from ${parent.graphEntryName})"
+                            } else ""
+                            
+                            // Force platform mismatch to WARNING, otherwise follow message severity
+                            val severity = if (isPlatformMismatch) SyncSeverity.WARNING 
+                                           else if (message.severity == Severity.ERROR) SyncSeverity.ERROR 
+                                           else SyncSeverity.WARNING
+                            
+                            val content = message.detailedMessage.trim().replace("\n", "<br>")
+                            errorCollector.reportError("<b>$label:</b> $content$transitiveInfo", severity)
+                        }
+                    }
+                }
+
                 rootNode.children.filterIsInstance<ModuleDependencyNode>().forEach { moduleNode ->
                     val kargoModule = model.modules.find { it.userReadableName == moduleNode.moduleName }
                     moduleNode.children.filterIsInstance<DirectFragmentDependencyNode>().forEach { fragmentNode ->
@@ -568,6 +597,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             }
         } catch (e: Exception) {
             logger.error("Kargo: Failed to resolve external dependencies", e)
+            errorCollector.reportException(e)
         }
         
         return fragmentToDeps
@@ -625,7 +655,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                         }
                         
                         val existingEntry = modifiableModel.orderEntries.find { it is LibraryOrderEntry && it.libraryName == libraryName }
-                        if (existingEntry == null && library != null) {
+                        if (existingEntry == null) {
                             modifiableModel.addLibraryEntry(library)
                         }
                     }
