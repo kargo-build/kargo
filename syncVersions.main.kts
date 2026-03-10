@@ -22,7 +22,7 @@ This script is meant to be used to update several user-facing versions in:
 The source of truth is the list of versions at the top of this file.
  */
 
-val bootstrapAmperVersion = "0.10.0-dev-3680" // AUTO-UPDATED BY THE CI - DO NOT RENAME
+val bootstrapAmperVersion = "0.10.0-dev-3709" // AUTO-UPDATED BY THE CI - DO NOT RENAME
 
 /**
  * This is the version of the Zulu JRE that Amper wrappers use to run the Amper dist.
@@ -48,6 +48,7 @@ val kotlinxRpcVersion = "0.10.2"
 val kotlinxSerializationVersion = "1.10.0"
 val kspVersion = "2.3.6"
 val ktorVersion = "3.4.0"
+val lombokVersion = "1.18.38"
 val springBootVersion = "4.0.2"
 
 val amperMavenRepoUrl = "https://packages.jetbrains.team/maven/p/amper/amper"
@@ -94,6 +95,7 @@ fun updateDefaultVersionsKt() {
             .replaceDefaultVersionVariable(variableName = "kotlinxSerialization", newValue = kotlinxSerializationVersion)
             .replaceDefaultVersionVariable(variableName = "ksp", newValue = kspVersion)
             .replaceDefaultVersionVariable(variableName = "ktor", newValue = ktorVersion)
+            .replaceDefaultVersionVariable(variableName = "lombok", newValue = lombokVersion)
             .replaceDefaultVersionVariable(variableName = "springBoot", newValue = springBootVersion)
     }
 }

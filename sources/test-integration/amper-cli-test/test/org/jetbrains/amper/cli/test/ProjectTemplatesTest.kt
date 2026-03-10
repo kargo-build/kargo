@@ -1,13 +1,15 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.cli.test
 
+import org.jetbrains.amper.cli.test.utils.UpdatedAttribute
 import org.jetbrains.amper.cli.test.utils.readTelemetrySpans
 import org.jetbrains.amper.cli.test.utils.runSlowTest
 import org.jetbrains.amper.cli.test.utils.xcodeProjectManagementSpans
 import org.jetbrains.amper.system.info.OsFamily
+import org.jetbrains.amper.telemetry.getAttribute
 import org.jetbrains.amper.test.AmperCliResult
 import org.jetbrains.amper.test.Dirs
 import org.jetbrains.amper.test.MacOnly
@@ -20,6 +22,7 @@ import kotlin.io.path.name
 import kotlin.io.path.pathString
 import kotlin.test.Test
 import kotlin.test.assertContains
+import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 import kotlin.test.expect
 
@@ -68,7 +71,7 @@ class ProjectTemplatesTest : AmperCliTestBase() {
         // Can't easily get rid of output associated with
         // class 'World': expect and corresponding actual are declared in the same module, which will be prohibited in Kotlin 2.0.
         // See https://youtrack.jetbrains.com/issue/KT-55177
-        runCli(tempRoot, "build", assertEmptyStdErr = false, customAmperScriptPath = null)
+        runCli(tempRoot, "build", assertEmptyStdErr = false)
     }
 
     @Test
@@ -84,7 +87,7 @@ class ProjectTemplatesTest : AmperCliTestBase() {
     @MacOnly
     fun `compose-multiplatform - build debug with xcodebuild`(testInfo: TestInfo) = runSlowTest {
         val initResult = runInitForTemplateFromTestName(testInfo)
-        val buildDir = initResult.buildOutputRoot / "xcode"
+        val buildDir = initResult.buildDir / "xcode"
         val result = runXcodebuild(
             "-project", "ios-app/module.xcodeproj",
             "-scheme", "app",
@@ -104,7 +107,7 @@ class ProjectTemplatesTest : AmperCliTestBase() {
     @MacOnly
     fun `compose-multiplatform - build release with xcodebuild`(testInfo: TestInfo) = runSlowTest {
         val initResult = runInitForTemplateFromTestName(testInfo)
-        val buildDir = initResult.buildOutputRoot / "xcode"
+        val buildDir = initResult.buildDir / "xcode"
         val result = runXcodebuild(
             "-project", "ios-app/module.xcodeproj",
             "-scheme", "app",
@@ -149,7 +152,7 @@ class ProjectTemplatesTest : AmperCliTestBase() {
     @MacOnly
     fun `compose-ios - build debug with xcodebuild`(testInfo: TestInfo) = runSlowTest {
         val initResult = runInitForTemplateFromTestName(testInfo)
-        val buildDir = initResult.buildOutputRoot / "xcode"
+        val buildDir = initResult.buildDir / "xcode"
         val result = runXcodebuild(
             "-project", "module.xcodeproj",
             "-scheme", "app",
@@ -191,6 +194,6 @@ class ProjectTemplatesTest : AmperCliTestBase() {
 
     private fun SpansTestCollector.assertXcodeProjectIsValid() {
         // Xcode project should be generated correctly by `init` and thus not updated by the build.
-        xcodeProjectManagementSpans.assertNone()
+        assertFalse { xcodeProjectManagementSpans.assertSingle().getAttribute(UpdatedAttribute) }
     }
 }

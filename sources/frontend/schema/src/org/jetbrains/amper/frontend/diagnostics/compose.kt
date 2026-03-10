@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.diagnostics
@@ -17,11 +17,16 @@ import org.jetbrains.amper.frontend.messages.extractPsiElement
 import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
+import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 
 object ComposeVersionWithDisabledCompose : AomSingleModuleDiagnosticFactory {
-    override val diagnosticId: BuildProblemId = "compose.version.without.compose"
+    @Deprecated(
+        message = "Use ComposeVersionWithoutCompose.ID",
+        replaceWith = ReplaceWith("ComposeVersionWithoutCompose.ID"),
+    )
+    val diagnosticId: BuildProblemId = ComposeVersionWithoutCompose.ID
 
     override fun analyze(module: AmperModule, problemReporter: ProblemReporter) {
         val reportedPlaces = mutableSetOf<Trace?>()
@@ -44,14 +49,17 @@ class ComposeVersionWithoutCompose(
     @UsedInIdePlugin
     val versionProp: SchemaValueDelegate<String>,
 ) : PsiBuildProblem(Level.Warning, BuildProblemType.InconsistentConfiguration) {
+    companion object {
+        const val ID = "compose.version.without.compose"
+    }
+
     override val element: PsiElement
         get() = versionProp.extractPsiElement()
 
-    override val buildProblemId: BuildProblemId =
-        ComposeVersionWithDisabledCompose.diagnosticId
+    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
+    override val buildProblemId: BuildProblemId = ID
+    override val diagnosticId: DiagnosticId = FrontendDiagnosticId.ComposeVersionWithoutCompose
 
     override val message: String
-        get() = SchemaBundle.message(
-            messageKey = buildProblemId
-        )
+        get() = SchemaBundle.message("compose.version.without.compose")
 }

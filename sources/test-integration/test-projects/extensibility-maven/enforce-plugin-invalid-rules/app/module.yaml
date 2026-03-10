@@ -1,0 +1,8 @@
+product: 
+  type: jvm/app
+
+mavenPlugins:
+  maven-enforcer-plugin.enforce:
+    enabled: true
+    configuration:
+      rules: "<this is an invalid xml<//>>>"

@@ -11,6 +11,7 @@ import org.jetbrains.amper.cli.test.utils.runSlowTest
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.condition.DisabledOnOs
 import org.junit.jupiter.api.condition.OS
+import java.io.File
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.div
@@ -25,7 +26,7 @@ class MavenPluginsTest : AmperCliTestBase() {
     @Test
     fun `surefire plugin test goal exists as task`() = runSlowTest {
         runCli(
-            projectRoot = testProject("extensibility-maven/surefire-plugin"),
+            projectDir = testProject("extensibility-maven/surefire-plugin"),
             "show", "tasks",
             copyToTempDir = true,
         ).assertStdoutContains("maven-surefire-plugin.test")
@@ -35,7 +36,7 @@ class MavenPluginsTest : AmperCliTestBase() {
     fun `no maven tasks appear on the task list if no maven plugins are specified`() = runSlowTest {
         runCli(
             // Just some project with java source code.
-            projectRoot = testProject("java-kotlin-mixed"),
+            projectDir = testProject("java-kotlin-mixed"),
             "show", "tasks",
             copyToTempDir = true,
         ).assertStdoutDoesNotContain("maven")
@@ -68,6 +69,32 @@ class MavenPluginsTest : AmperCliTestBase() {
     }
 
     @Test
+    fun `surefire with jacoco test goal executes with argLine passing`() = runSlowTest {
+        val result = runTask(
+            projectWithMavenPath = "surefire-plugin-with-jacoco",
+            taskName = "jacoco-maven-plugin.report"
+        )
+
+        result.assertStdoutContains("Hello from surefire execution")
+        val mavenBuildDir = result.buildDir / "maven-target"
+        assertExists(mavenBuildDir / "jacoco.exec")
+        assertExists(mavenBuildDir / "reports" / "jacoco" / "index.html")
+    }
+
+    @Test
+    fun `only jacoco executes with argLine passing to amper tests`() = runSlowTest {
+        val result = runTask(
+            projectWithMavenPath = "only-jacoco",
+            taskName = "jacoco-maven-plugin.report"
+        )
+
+        result.assertStdoutContains("Hello from Amper test")
+        val mavenBuildDir = result.buildDir / "maven-target"
+        assertExists(mavenBuildDir / "jacoco.exec")
+        assertExists(mavenBuildDir / "reports" / "jacoco" / "index.html")
+    }
+
+    @Test
     @DisabledOnOs(
         OS.WINDOWS,
         disabledReason = "Need to support long executable paths or shorten them for Win: " +
@@ -85,7 +112,7 @@ class MavenPluginsTest : AmperCliTestBase() {
     )
     fun `compilation and running with protobuf generated sources`() = runSlowTest {
         runCli(
-            projectRoot = testProject("extensibility-maven/protobuf-maven-plugin"),
+            projectDir = testProject("extensibility-maven/protobuf-maven-plugin"),
             "run"
         ).assertStdoutContains("Hello from the proto test! Request value is 42")
     }
@@ -98,11 +125,11 @@ class MavenPluginsTest : AmperCliTestBase() {
     )
     fun `compilation and testing with protobuf generated sources`() = runSlowTest {
         runCli(
-            projectRoot = testProject("extensibility-maven/protobuf-maven-plugin"),
+            projectDir = testProject("extensibility-maven/protobuf-maven-plugin"),
             "test"
         ).assertStdoutContains("Hello from the proto test! Request value is 47")
     }
-    
+
     @Test
     fun `checkstyle plugin performs a report`() = runSlowTest {
         val testProject = "checkstyle-plugin"
@@ -110,20 +137,20 @@ class MavenPluginsTest : AmperCliTestBase() {
             projectWithMavenPath = testProject,
             taskName = "maven-checkstyle-plugin.checkstyle",
         )
-        
-        val checkstyleTaskOutput = result.buildOutputRoot / "tasks" / "_app_maven-checkstyle-plugin.checkstyle/maven-build"
-        assertExists(checkstyleTaskOutput / "checkstyle.html")
-        
-        val checkstyleResult = checkstyleTaskOutput / "checkstyle-result.xml"
+
+        val mavenBuildDir = result.buildDir / "maven-target"
+        assertExists(mavenBuildDir / "reports" / "checkstyle.html")
+
+        val checkstyleResult = mavenBuildDir / "checkstyle-result.xml"
         assertExists(checkstyleResult)
-        
+
         val checkstyleResultText = checkstyleResult.readText()
         val pathToJavaFile = emptyPath / testProject / "app" / "src" / "Foo.java"
         assertContains(checkstyleResultText, pathToJavaFile.toString())
         assertContains(checkstyleResultText, "File does not end with a newline.")
         assertContains(checkstyleResultText, "Missing package-info.java file.")
-    }    
-    
+    }
+
     @Test
     fun `checkstyle plugin with nohttp dependency performs a report`() = runSlowTest {
         val testProject = "checkstyle-plugin-with-dependency"
@@ -131,13 +158,35 @@ class MavenPluginsTest : AmperCliTestBase() {
             projectWithMavenPath = testProject,
             taskName = "maven-checkstyle-plugin.checkstyle",
         )
-        
-        val checkstyleResult = result.buildOutputRoot / "tasks" / "_app_maven-checkstyle-plugin.checkstyle" / "maven-build" / "checkstyle-result.xml"
+
+        val checkstyleResult = result.buildDir / "maven-target" / "checkstyle-result.xml"
         assertExists(checkstyleResult)
         val checkstyleResultText = checkstyleResult.readText()
         val pathToJavaFile = emptyPath / testProject / "app" / "src" / "dummy.txt"
         assertContains(checkstyleResultText, pathToJavaFile.toString())
         assertContains(checkstyleResultText, "http:// URLs are not allowed but got &apos;http://not.allowed.com&apos;")
+    }
+
+    @Test
+    fun `maven enforcer plugin invalid XML is validated`() = runSlowTest {
+        val testProject = "enforce-plugin-invalid-rules"
+        val result = runTask(
+            projectWithMavenPath = testProject,
+            taskName = "maven-enforcer-plugin.enforce",
+            expectedExitCode = 1,
+        )
+        result.assertStderrContains("app${File.separator}module.yaml:8:14: Expected a valid XML object for `PlexusConfiguration`, but the provided value is not valid XML")
+    }
+    
+    @Test
+    fun `maven enforcer plugin always fail rule`() = runSlowTest {
+        val testProject = "enforce-plugin"
+        val result = runTask(
+            projectWithMavenPath = testProject,
+            taskName = "maven-enforcer-plugin.enforce",
+            expectedExitCode = 1,
+        )
+        result.assertStderrContains("This rule should fail")
     }
 
     private fun assertExists(path: Path) = assertTrue(path.exists()) { 
@@ -150,7 +199,7 @@ class MavenPluginsTest : AmperCliTestBase() {
      * An empty path for convenient construction with [Path.div]
      */
     private val emptyPath = Path("")
-    
+
     /**
      * Run `:app:maven-surefire-plugin.test` task for the specified project from `extensibility-maven` directory.
      */
@@ -168,7 +217,7 @@ class MavenPluginsTest : AmperCliTestBase() {
         taskName: String,
         expectedExitCode: Int = 0,
     ) = runCli(
-        projectRoot = testProject("extensibility-maven/$projectWithMavenPath"),
+        projectDir = testProject("extensibility-maven/$projectWithMavenPath"),
         "task", ":app:$taskName",
         copyToTempDir = true,
         expectedExitCode = expectedExitCode,
