@@ -13,7 +13,7 @@ import com.intellij.util.Alarm
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicBoolean
 
-class KargoFileListener : BulkFileListener { 
+class KargoFileListener : BulkFileListener {
 
     override fun after(events: MutableList<out VFileEvent>) {
         val openProjects = ProjectManager.getInstance().openProjects
