@@ -16,38 +16,40 @@ class KargoModelReader {
     companion object {
         private val logger = Logger.getInstance(KargoModelReader::class.java)
 
-        fun readModel(projectPath: Path, project: Project, errorCollector: KargoSyncErrorCollector): Model? {
+        fun readModel(
+            projectPath: Path,
+            project: Project,
+            errorCollector: KargoSyncErrorCollector
+        ): Model? {
+
             logger.info("Kargo: Attempting to read model from $projectPath (Project: ${project.name})")
-            
+
             val reporter = object : ProblemReporter {
                 override fun reportMessage(message: BuildProblem) {
                     logger.warn("Kargo Sync Problem: ${message.message}")
                     errorCollector.reportProblem(message)
                 }
             }
-            
+
             return try {
                 ApplicationManager.getApplication().runReadAction(Computable {
                     with(reporter) {
-                        val context = try {
+                        val context = runCatching {
                             StandaloneAmperProjectContext.create(projectPath, null, project)
-                        } catch (t: Throwable) {
-                            logger.error("Kargo: Error during StandaloneAmperProjectContext.create", t)
-                            errorCollector.reportException(t)
-                            return@with null
-                        }
-                        
-                        if (context == null) return@with null
-                        
-                        val model = try {
-                            context.readProjectModel(pluginData = emptyList(), mavenPluginXmls = emptyList())
-                        } catch (t: Throwable) {
-                            logger.error("Kargo: Error during context.readProjectModel", t)
-                            errorCollector.reportException(t)
-                            return@with null
-                        }
-                        
-                        model
+                        }.onFailure {
+                            logger.error("Kargo: Error during StandaloneAmperProjectContext.create", it)
+                            errorCollector.reportException(it)
+                        }.getOrNull() ?: return@Computable null
+
+                        runCatching {
+                            context.readProjectModel(
+                                pluginData = emptyList(),
+                                mavenPluginXmls = emptyList()
+                            )
+                        }.onFailure {
+                            logger.error("Kargo: Error during context.readProjectModel", it)
+                            errorCollector.reportException(it)
+                        }.getOrNull()
                     }
                 })
             } catch (t: Throwable) {

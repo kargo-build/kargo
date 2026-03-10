@@ -38,12 +38,12 @@ class KargoSyncManager(
                 try {
                     indicator.isIndeterminate = true
                     indicator.text = "Kargo: Resolving dependencies..."
-                    
+
                     if (project.isDisposed) return
-                    
+
                     val projectPath = project.basePath?.let { java.nio.file.Path.of(it) } ?: return
                     val errorCollector = KargoSyncErrorCollector()
-                    
+
                     val model = try {
                         KargoModelReader.readModel(projectPath, project, errorCollector)
                     } catch (t: Throwable) {
@@ -51,7 +51,7 @@ class KargoSyncManager(
                         errorCollector.reportException(t)
                         null
                     }
-                    
+
                     if (model != null && !project.isDisposed) {
                         indicator.text = "Kargo: Configuring modules..."
                         val updater = KargoWorkspaceModelUpdater(project)
@@ -61,7 +61,7 @@ class KargoSyncManager(
                     if (errorCollector.hasAnyMessages()) {
                         val hasErrors = errorCollector.hasErrors()
                         val title = if (hasErrors) "Kargo Sync: failed" else "Kargo Sync: completed with warnings"
-                        val msg = if (hasErrors) "Kargo sync completed with errors. Check details for more information." 
+                        val msg = if (hasErrors) "Kargo sync completed with errors. Check details for more information."
                                       else "Kargo sync completed with warnings. Check details for more information."
                         val type = if (hasErrors) ERROR
                                    else WARNING
@@ -76,11 +76,11 @@ class KargoSyncManager(
                                         msg,
                                         type
                                     )
-                                
+
                                 notification.addAction(NotificationAction.createSimple("Show Details") {
                                     KargoSyncErrorDialog(project, errorCollector.messages).show()
                                 })
-                                
+
                                 notification.notify(project)
                             }
                         }

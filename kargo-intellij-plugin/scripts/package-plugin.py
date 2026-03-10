@@ -11,8 +11,8 @@ VERSION = "1.0-SNAPSHOT"
 # Jars que sabemos que a IntelliJ Platform fornece e não devemos incluir no plugin
 # para evitar conflitos de classloader.
 IDEA_PROVIDED_JAR_PATTERNS = [
-    r"intellij-.*",
-    r"platform-.*",
+    r"^intellij-.*",
+    r"^platform-.*",
     r"analysis-.*",
     r"andel-.*",
     r"backend-workspace-.*",
@@ -57,8 +57,8 @@ IDEA_PROVIDED_JAR_PATTERNS = [
     r"bootstrap\.jar$",
     r"resources\.jar$",
     r"external-system-.*",
-    r"service-messages-.*",
-    r"serviceMessages-.*",
+    r"^service-messages-.*",
+    r"^serviceMessages-.*",
     r"netty-.*",
     r"protobuf-.*",
     r"jackson-.*",
@@ -94,9 +94,9 @@ IDEA_PROVIDED_JAR_PATTERNS = [
     r"fastutil-.*",
     r"trove4j-.*",
     r"ktor-.*",
-    r"maven-.*",
-    r"plexus-.*",
-    r"sisu-.*",
+    r"^maven-.*",
+    r"^plexus-.*",
+    r"^sisu-.*",
     r"ddmlib-.*",
     r"sdklib-.*",
     r"dvlib-.*",
@@ -187,7 +187,7 @@ def main():
     # Output do plugin principal
     plugin_artifact = artifacts_root / f"{PLUGIN_NAME}jvm"
     plugin_classes = plugin_artifact / "kotlin-output"
-    plugin_resources = plugin_src / "src" / "main" / "resources"
+    plugin_resources = plugin_src / "resources"
 
     if not plugin_classes.exists():
         print(f"ERROR: classes não encontradas em {plugin_classes}", file=sys.stderr)
@@ -213,6 +213,12 @@ def main():
     # 2. JARs de todos os módulos Kargo compilados que o plugin possa precisar
     bundled_normalized_names = {normalize_name(PLUGIN_NAME)}
     
+    # Módulos do source que sabemos que conflitam com plugins do IDEA ou são apps
+    SOURCE_MODULE_EXCLUSIONS = {
+        "ampercli", "amperwrapper", "amperdistribution",
+        "yamlpsi", "tomlpsi"
+    }
+
     for module_dir in sorted(artifacts_root.iterdir()):
         if not module_dir.is_dir() or module_dir.name.endswith("Test"):
             continue
@@ -222,10 +228,18 @@ def main():
 
         # Nome do módulo (ex: amper-problem-reportingjvm)
         module_name = module_dir.name
+        norm_name = normalize_name(module_name)
         jar_name = f"{module_name}.jar"
 
-        # Exclui se for um módulo "fat" ou provido/conflituoso
-        if is_idea_provided(module_name) or is_idea_provided(jar_name):
+        # Nunca incluímos apps ou módulos que conflitam com plugins obrigatórios do IDEA
+        should_exclude = False
+        for excl in SOURCE_MODULE_EXCLUSIONS:
+            if norm_name.startswith(excl):
+                should_exclude = True
+                break
+        
+        if should_exclude:
+            # print(f"  (excluding source module: {module_name})")
             continue
         
         classes_dirs = [module_dir / "kotlin-output", module_dir / "java-output"]
@@ -234,7 +248,7 @@ def main():
         if any(d.exists() for d in classes_dirs):
             print(f"→ {jar_name} (BASED ON SOURCE)")
             create_jar(lib_dir / jar_name, classes_dirs, res_dirs)
-            bundled_normalized_names.add(normalize_name(module_name))
+            bundled_normalized_names.add(norm_name)
 
     # 3. JARs externos da distribuição do Amper (Ktor, Clikt, etc.)
     if amper_dist is not None:

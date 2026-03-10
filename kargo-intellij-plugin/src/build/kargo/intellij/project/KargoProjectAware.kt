@@ -6,12 +6,13 @@ import com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectAware
 import com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectId
 import com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectListener
 import com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectReloadContext
+import com.intellij.openapi.externalSystem.autoimport.ExternalSystemSettingsFilesReloadContext
 import com.intellij.openapi.externalSystem.model.ProjectSystemId
 import com.intellij.openapi.project.Project
 import java.nio.file.Files
-import java.nio.file.Path
+import kotlin.io.path.Path
+import kotlin.io.path.exists
 import kotlin.io.path.name
-import kotlin.streams.toList
 
 /**
  * Integrates Kargo with IntelliJ's Native External System Auto-Import feature.
@@ -19,13 +20,12 @@ import kotlin.streams.toList
  */
 class KargoProjectAware(private val project: Project) : ExternalSystemProjectAware {
 
-    override val projectId: ExternalSystemProjectId = 
-        ExternalSystemProjectId(ProjectSystemId("Kargo"), project.name)
+    override val projectId: ExternalSystemProjectId = ExternalSystemProjectId(ProjectSystemId("Kargo"), project.name)
 
     override val settingsFiles: Set<String>
         get() {
-            val root = project.basePath?.let { Path.of(it) } ?: return emptySet()
-            if (!Files.exists(root)) return emptySet()
+            val root = project.basePath?.let { Path(it) } ?: return emptySet()
+            if (!root.exists()) return emptySet()
             
             return try {
                 Files.walk(root, 4).use { stream ->
@@ -44,8 +44,14 @@ class KargoProjectAware(private val project: Project) : ExternalSystemProjectAwa
         // For now, the basic integration just schedules a standard sync.
     }
 
-    override fun reloadProject(context: ExternalSystemProjectReloadContext) {
-        // Trigger the actual Kargo model read and workspace model update
-        KargoSyncManager.getInstance(project).scheduleSync()
+    private fun settingsFilesChanged(modifications: ExternalSystemSettingsFilesReloadContext): Boolean {
+        return !(modifications.created.isEmpty() && modifications.deleted.isEmpty() && modifications.updated.isEmpty())
     }
+
+    override fun reloadProject(context: ExternalSystemProjectReloadContext) {
+        if(context.isExplicitReload || settingsFilesChanged(context.settingsFilesContext)) {
+            KargoSyncManager.getInstance(project).scheduleSync()
+        }
+    }
+
 }
