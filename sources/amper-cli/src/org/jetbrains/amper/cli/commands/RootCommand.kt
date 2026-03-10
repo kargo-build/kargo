@@ -106,7 +106,7 @@ internal class RootCommand : SuspendingCliktCommand(name = "kargo") {
 
     private val sharedCachesRoot by option(
         "--shared-caches-root",
-        help = "Path to the cache directory shared between all Amper projects",
+        help = "Path to the cache directory shared between all Kargo projects",
     )
         .path(canBeFile = false)
         .convert { AmperUserCacheRoot(it.toAbsolutePath()) }

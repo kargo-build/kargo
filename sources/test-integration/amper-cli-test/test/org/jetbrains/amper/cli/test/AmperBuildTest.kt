@@ -211,7 +211,7 @@ class AmperBuildTest : AmperCliTestBase() {
         // We compile for linuxX64 explicitly in case the host is Mac/Windows, to ensure predictable extensions.
         // Wait, cross-compilation on Native is not supported generally unless on Mac for iOS/Linux.
         // Actually, simple multiplatform cli test used --platform=mingwX64. We will just 'build'.
-        val result = runCli(projectRoot = projectRoot, "build")
+        val result = runCli(projectDir = projectRoot, "build")
 
         assertTrue("build must generate a 'myapp.kexe' file inside 'dist' directory") {
             val distDir = projectRoot.resolve("dist")

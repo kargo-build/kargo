@@ -173,7 +173,7 @@ Supported product types and platforms:
 | `android/app`      | An Android VM application.                                                | `android`                                                        |
 | `ios/app`          | An iOS application.                                                       | device: `iosArm64`<br> simulators: `iosX64`, `iosSimulatorArm64` |
 | `js/app`           | A JavaScript application.                                                 | `js`                                                             |
-| `jvm/amper-plugin` | A plugin for Amper (see [Plugins](../user-guide/plugins/quick-start.md)). | `jvm`                                                            |
+| `jvm/amper-plugin` | A plugin for Kargo (see [Plugins](../user-guide/plugins/quick-start.md)). | `jvm`                                                            |
 | `jvm/app`          | A JVM application (console, desktop, server...).                          | `jvm`                                                            |
 | `jvm/lib`          | A JVM library that other modules can depend on.                           | `jvm`                                                            |
 | `lib`              | A reusable multiplatform library that other modules can depend on.        | any (the list must be specified explicitly)                      |

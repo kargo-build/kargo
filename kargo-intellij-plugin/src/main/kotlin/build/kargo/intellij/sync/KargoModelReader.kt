@@ -40,7 +40,7 @@ class KargoModelReader {
                         if (context == null) return@with null
                         
                         val model = try {
-                            context.readProjectModel(pluginData = emptyList(), mavenPluginsWithXmls = emptyList())
+                            context.readProjectModel(pluginData = emptyList(), mavenPluginXmls = emptyList())
                         } catch (t: Throwable) {
                             logger.error("Kargo: Error during context.readProjectModel", t)
                             errorCollector.reportException(t)
