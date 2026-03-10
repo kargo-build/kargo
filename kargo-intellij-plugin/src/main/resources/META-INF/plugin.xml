@@ -1,11 +1,31 @@
 <idea-plugin>
-  <id>build.kargo.intellij</id>
+  <id>build.kargo</id>
   <name>Kargo</name>
+  <version>0.1.0</version>
   <vendor>Kargo Contributors</vendor>
   <category>Build Tools</category>
   <description><![CDATA[
-      Kargo IntelliJ integration. Provides code insight and external system support for project.yaml.
-    ]]></description>
+      Kargo is a high-performance, lightweight build system for Kotlin/Native and JVM projects.
+      <h1>🚀 Kargo: Next-Gen Kotlin Build System ⚡</h1>
+      <p>
+        Experience the future of Kotlin development! <b>Kargo</b> is designed for speed, simplicity, and pure native power. Say goodbye to XML or Groovy bloat—just pure productivity.
+      </p>
+      <h2>🌟 Awesome Features</h2>
+      <ul>
+        <li><b>🏎️ Blazing Fast Sync:</b> Initialize your project and dependencies in a heartbeat.</li>
+        <li><b>🤯 Native First:</b> First-class support for <b>Kotlin/Native</b> and standalone binaries.</li>
+        <li><b>📦 Zero Config Git Dependencies:</b> Fetch source code directly from GitHub with zero friction.</li>
+        <li><b>🔗 Mixed Dependency Resolution:</b> Seamlessly mix Git sources with traditional Maven packages.</li>
+        <li><b>🪄 Clean & Simple:</b> Intuitive <code>module.yaml</code> syntax that stays out of your way.</li>
+        <li><b>🛠️ Deep IDE Integration:</b> Gutter run icons, project wizards, and rich diagnostic reporting.</li>
+      </ul>
+      <h2>🏎️ Why Kargo?</h2>
+      <p>
+        Kargo eliminates the traditional "build tax." Whether you're building high-performance Linux microservices, standalone tools, or native libraries, Kargo provides a modern workflow that feels alive. 🚀🎉
+      </p>
+  ]]></description>
+
+  <idea-version since-build="252"/>
 
   <depends>com.intellij.modules.platform</depends>
   <depends>com.intellij.modules.java</depends>
