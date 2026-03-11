@@ -84,7 +84,7 @@ class GitSourceResolver(
             } catch (e: Exception) {
                 throw GitSourceException(
                     rawMessage = "Failed to checkout version",
-                    details = "Version: '$version'\nSource: '$sourceName'\nRepository: $repoUrl\n${e.message}",
+                    details = "Repository: $repoUrl\n${e.message}",
                     cause = e
                 )
             }

@@ -19,6 +19,7 @@ class KargoSyncManager(
 ) {
     private val logger = Logger.getInstance(KargoSyncManager::class.java)
     private val isSyncRunning = AtomicBoolean(false)
+    var projectAware: build.kargo.intellij.project.KargoProjectAware? = null
 
     companion object {
         fun getInstance(project: Project): KargoSyncManager =
@@ -32,9 +33,11 @@ class KargoSyncManager(
         }
 
         logger.info("Kargo: scheduleSync triggered for project ${project.name}")
+        projectAware?.notifySyncStarted()
         
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Kargo Sync", false) {
             override fun run(indicator: ProgressIndicator) {
+                var success = false
                 try {
                     indicator.isIndeterminate = true
                     indicator.text = "Kargo: Resolving dependencies..."
@@ -85,8 +88,10 @@ class KargoSyncManager(
                             }
                         }
                     }
+                    success = !errorCollector.hasErrors()
                 } finally {
                     isSyncRunning.set(false)
+                    projectAware?.notifySyncFinished(success)
                 }
             }
         })

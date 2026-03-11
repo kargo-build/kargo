@@ -24,8 +24,8 @@ class KargoSyncErrorDialog(project: Project, private val messages: List<SyncMess
             append("<html><body style='font-family: sans-serif; padding: 10px;'>")
             messages.forEach { msg ->
                 val severityLabel = when (msg.severity) {
-                    SyncSeverity.ERROR -> "<span style='color: #e53935; font-weight: bold;'>[Error]</span>"
-                    SyncSeverity.WARNING -> "<span style='color: #fb8c00; font-weight: bold;'>[Warning]</span>"
+                    SyncSeverity.ERROR -> "<span>[Error]</span>"
+                    else -> {}
                 }
                 append("<div style='margin-bottom: 15px;'>$severityLabel ${msg.content}</div>")
             }

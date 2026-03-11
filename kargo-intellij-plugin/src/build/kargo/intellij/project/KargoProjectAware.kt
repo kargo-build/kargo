@@ -6,13 +6,17 @@ import com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectAware
 import com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectId
 import com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectListener
 import com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectReloadContext
+import com.intellij.openapi.externalSystem.autoimport.ExternalSystemRefreshStatus
 import com.intellij.openapi.externalSystem.autoimport.ExternalSystemSettingsFilesReloadContext
 import com.intellij.openapi.externalSystem.model.ProjectSystemId
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Disposer
+import com.intellij.project.stateStore
 import java.nio.file.Files
 import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.name
+import kotlin.io.path.pathString
 
 /**
  * Integrates Kargo with IntelliJ's Native External System Auto-Import feature.
@@ -20,7 +24,7 @@ import kotlin.io.path.name
  */
 class KargoProjectAware(private val project: Project) : ExternalSystemProjectAware {
 
-    override val projectId: ExternalSystemProjectId = ExternalSystemProjectId(ProjectSystemId("Kargo"), project.name)
+    override val projectId: ExternalSystemProjectId = ExternalSystemProjectId(ProjectSystemId("Kargo"), project.stateStore.projectBasePath.pathString)
 
     override val settingsFiles: Set<String>
         get() {
@@ -39,9 +43,22 @@ class KargoProjectAware(private val project: Project) : ExternalSystemProjectAwa
             }
         }
 
+    private val listeners = mutableListOf<ExternalSystemProjectListener>()
+
     override fun subscribe(listener: ExternalSystemProjectListener, parentDisposable: Disposable) {
-        // We can publish sync events here if we want the floating button to show a spinning progress icon.
-        // For now, the basic integration just schedules a standard sync.
+        listeners.add(listener)
+        Disposer.register(parentDisposable) {
+            listeners.remove(listener)
+        }
+    }
+
+    fun notifySyncStarted() {
+        listeners.forEach { it.onProjectReloadStart() }
+    }
+
+    fun notifySyncFinished(success: Boolean) {
+        val status = if (success) ExternalSystemRefreshStatus.SUCCESS else ExternalSystemRefreshStatus.FAILURE
+        listeners.forEach { it.onProjectReloadFinish(status) }
     }
 
     private fun settingsFilesChanged(modifications: ExternalSystemSettingsFilesReloadContext): Boolean {
@@ -49,8 +66,13 @@ class KargoProjectAware(private val project: Project) : ExternalSystemProjectAwa
     }
 
     override fun reloadProject(context: ExternalSystemProjectReloadContext) {
-        if(context.isExplicitReload || settingsFilesChanged(context.settingsFilesContext)) {
-            KargoSyncManager.getInstance(project).scheduleSync()
+        notifySyncStarted()
+        try {   
+            if (context.isExplicitReload || settingsFilesChanged(context.settingsFilesContext)) {
+                KargoSyncManager.getInstance(project).scheduleSync()
+            }
+        } finally {
+            notifySyncFinished(true)
         }
     }
 

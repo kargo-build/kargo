@@ -31,10 +31,12 @@ class KargoStartupActivity : ProjectActivity {
         }
 
         if (hasKargoFiles && !project.isDisposed) {
-            KargoSyncManager.getInstance(project).scheduleSync()
-            
             // Register Kargo to use IntelliJ's native floating sync action
             val projectAware = KargoProjectAware(project)
+            KargoSyncManager.getInstance(project).projectAware = projectAware
+            
+            KargoSyncManager.getInstance(project).scheduleSync()
+            
             val projectTracker = ExternalSystemProjectTracker.getInstance(project)
             projectTracker.register(projectAware, project)
             projectTracker.activate(projectAware.projectId)
