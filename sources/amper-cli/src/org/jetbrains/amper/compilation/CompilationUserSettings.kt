@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.compilation
@@ -102,7 +102,7 @@ private fun Fragment.serializableJavaSettings(): JavaUserSettings = JavaUserSett
 )
 
 /**
- * Returns the single leaf fragment of this list, or throws an exception if there isn't exactly one leaf fragments.
+ * Returns the single leaf fragment of this list or throws an exception if there isn't exactly one leaf fragment.
  */
 internal fun List<Fragment>.singleLeafFragment(): Fragment = singleOrNull { it is LeafFragment }
     ?: error("Expected one single leaf fragment, got: ${map { it.name }}")
