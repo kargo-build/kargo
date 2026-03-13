@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.tasks.ksp
@@ -52,6 +52,7 @@ import org.jetbrains.amper.tasks.artifacts.api.Quantifier
 import org.jetbrains.amper.tasks.identificationPhrase
 import org.jetbrains.amper.tasks.jvm.JvmCompileTask
 import org.jetbrains.amper.tasks.native.NativeCompileKlibTask
+import org.jetbrains.amper.tasks.web.WebCompileKlibTask
 import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.use
 import org.slf4j.Logger
@@ -132,10 +133,12 @@ internal class KspTask(
         val compileJvmModuleDependencies = dependenciesResult.filterIsInstance<JvmCompileTask.Result>().flatMap { it.classesOutputRoots }
         val compileNativeModuleDependencies = dependenciesResult.filterIsInstance<NativeCompileKlibTask.Result>()
             .flatMap { it.dependencyKlibs + listOfNotNull(it.compiledKlib) }
+        val compileWebModuleDependencies = dependenciesResult.filterIsInstance<WebCompileKlibTask.Result>()
+            .mapNotNull { it.compiledKlib }
         val additionalClasspath = dependenciesResult.filterIsInstance<AdditionalClasspathProvider>()
             .flatMap { it.compileClasspath }
-        val compileLibraries =
-            externalDependencies + compileJvmModuleDependencies + compileNativeModuleDependencies + additionalClasspath
+        val compileLibraries = externalDependencies + compileJvmModuleDependencies + compileNativeModuleDependencies +
+                compileWebModuleDependencies + additionalClasspath
 
         val kspOutputs = KspOutputPaths(
             moduleBaseDir = module.source.moduleDir,
