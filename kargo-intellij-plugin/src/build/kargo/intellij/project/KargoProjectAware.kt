@@ -17,6 +17,7 @@ import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.name
 import kotlin.io.path.pathString
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Integrates Kargo with IntelliJ's Native External System Auto-Import feature.
@@ -24,7 +25,7 @@ import kotlin.io.path.pathString
  */
 class KargoProjectAware(private val project: Project) : ExternalSystemProjectAware {
 
-    override val projectId: ExternalSystemProjectId = ExternalSystemProjectId(ProjectSystemId("Kargo"), project.stateStore.projectBasePath.pathString)
+    override val projectId = ExternalSystemProjectId(ProjectSystemId("Kargo"), project.stateStore.projectBasePath.pathString)
 
     override val settingsFiles: Set<String>
         get() {

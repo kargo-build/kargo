@@ -78,7 +78,7 @@ class GitSourceResolver(
                 )
             }
 
-            logger.info("Checking out git source '$sourceName' ($version)...")
+            logger.debug("Checking out git source '$sourceName' ($version)...")
             try {
                 cloner.checkout(repoDir, version)
             } catch (e: Exception) {
@@ -101,7 +101,7 @@ class GitSourceResolver(
             val cachedArtifacts = storeArtifacts(cacheDir, builtArtifacts)
             storeMetadata(cacheDir, repoUrl, version, resolvedSha, platforms)
 
-            logger.info("Installed git source '$sourceName' (${cachedArtifacts.size} artifact(s))")
+            logger.debug("Installed git source '$sourceName' (${cachedArtifacts.size} artifact(s))")
             return cachedArtifacts
         } finally {
             lock.unlock()
