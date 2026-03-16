@@ -5,6 +5,7 @@
 package org.jetbrains.amper.frontend.tree.reading
 
 import com.intellij.psi.PsiElement
+import org.jetbrains.amper.core.UsedInIdePlugin
 import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.tree.TreeDiagnosticId
@@ -17,7 +18,9 @@ import org.jetbrains.annotations.Nls
 
 class MissingValue(
     override val element: PsiElement,
+    @UsedInIdePlugin
     val expectedType: SchemaType,
+    typeString: String,
 ) : PsiBuildProblem(level = Level.Error, type = BuildProblemType.Generic) {
     companion object {
         const val ID = "validation.structure.missing.value"
@@ -26,7 +29,7 @@ class MissingValue(
     @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
     override val buildProblemId get() = ID
     override val diagnosticId get() = TreeDiagnosticId.MissingValue
-    override val message get() = SchemaBundle.message(ID)
+    override val message = SchemaBundle.message(ID, typeString)
 }
 
 class InvalidTaskActionType(

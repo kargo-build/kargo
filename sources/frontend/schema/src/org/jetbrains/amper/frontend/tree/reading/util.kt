@@ -63,13 +63,24 @@ internal fun reportUnexpectedValue(
     expectedType: SchemaType,
     renderOnlyNestedTypeSyntax: Boolean = true,
 ) {
+    val typeString by lazy {
+        expectedType.render(
+            onlyNested = renderOnlyNestedTypeSyntax,
+        )
+    }
     val valueForMessage = when (unexpected) {
         is YamlValue.Mapping -> "mapping {}"
         is YamlValue.Scalar -> "scalar"
         is YamlValue.Sequence -> "sequence []"
         is YamlValue.UnknownCompound -> "compound value {}"
         is YamlValue.Missing -> {
-            reporter.reportMessage(MissingValue(element = unexpected.psi, expectedType = expectedType))
+            reporter.reportMessage(
+                MissingValue(
+                    element = unexpected.psi,
+                    expectedType = expectedType,
+                    typeString = typeString,
+                )
+            )
             return
         }
         is YamlValue.Alias -> {
@@ -77,9 +88,6 @@ internal fun reportUnexpectedValue(
             return
         }
     }
-    val typeString = expectedType.render(
-        onlyNested = renderOnlyNestedTypeSyntax,
-    )
     reportParsing(
         unexpected, TreeDiagnosticId.TypeMismatch, "validation.types.unexpected.value",
         typeString, valueForMessage,

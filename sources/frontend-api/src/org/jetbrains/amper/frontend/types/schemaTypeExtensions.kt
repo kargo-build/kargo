@@ -66,11 +66,18 @@ fun SchemaType.render(
             }
         }
         is SchemaType.ObjectType -> {
-            // TODO: Introduce a public-name concept?
-            // e.g. Dependency ( string | { string: ( "exported" | DependencyScope | {:} } ) )
-            append(declaration.displayName)
+            // e.g. Dependency ( string | { string: ( "exported" | DependencyScope | {..} } ) )
+            val fromKeyProperty = declaration.getFromKeyAndTheRestNestedProperty()
+            val onlyNestedInEffect = fromKeyProperty != null && onlyNested
+
+            if (!onlyNestedInEffect) {
+                // Skip the name, if rendering only nested part
+                append(declaration.displayName)
+                if (includeSyntax) {
+                    append(" ")
+                }
+            }
             if (includeSyntax) {
-                append(" ")
                 fun appendPossibleSyntax() {
                     val possibleSyntax = buildList {
                         declaration.getBooleanShorthand()?.let {
@@ -92,13 +99,12 @@ fun SchemaType.render(
                     } else {
                         possibleSyntax.joinTo(
                             buffer = this,
-                            prefix = "( ",
-                            postfix = " )",
+                            prefix = if (onlyNestedInEffect) "" else "( ",
+                            postfix = if (onlyNestedInEffect) "" else " )",
                             separator = " | ",
                         )
                     }
                 }
-                val fromKeyProperty = declaration.getFromKeyAndTheRestNestedProperty()
                 if (fromKeyProperty != null && !onlyNested) {
                     append("( ")
                     val fromKeyPropertyType = fromKeyProperty.type.render(false)
@@ -111,7 +117,6 @@ fun SchemaType.render(
             }
         }
         is SchemaType.VariantType -> {
-            // TODO: Introduce a public-name concept?
             append(declaration.displayName)
             if (includeSyntax) {
                 declaration.variantTree.joinTo(

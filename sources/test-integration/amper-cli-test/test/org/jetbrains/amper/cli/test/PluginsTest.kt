@@ -400,11 +400,13 @@ class PluginsTest : AmperCliTestBase() {
                 "${projectDir / "no-tasks-plugin" / "plugin.yaml"}: Plugin doesn't register any tasks, so it will have no effect when applied",
             )
             assertErrors(
-                "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:2:3: Expected a value",
+                "${projectDir / "invalid-plugin-yaml-2" / "plugin.yaml"}:3:5: Expected a value: `existingTaskAction {..}`",
+                "${projectDir / "invalid-plugin-yaml-2" / "plugin.yaml"}:5:13: Expected a value: `existingTaskAction {..}`",
+                "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:2:3: Expected a value: `Task {..}`",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:5:16: Unexpected custom YAML type tag",
-                "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:5:3: Expected a value",
+                "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:5:3: Expected a value: `Task {..}`",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:6:22: Unexpected custom YAML type tag",
-                "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:6:3: Expected a value",
+                "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:6:3: Expected a value: `Task {..}`",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:8:13: The task action function specifier 'com.example.nonExistentTask' doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:10:13: The task action function specifier 'com.example.nonExistentTask' doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:4:13: Missing task action function specifier. Add the `!<fully-qualified-task-action-function-name>` YAML type tag to the mapping. Available task action functions: <none>",

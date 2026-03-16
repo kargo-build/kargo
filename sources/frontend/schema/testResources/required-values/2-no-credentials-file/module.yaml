@@ -4,4 +4,4 @@ product:
 repositories:
   - url: https://com.example
     credentials:
-      <![Error] Expected a value!><![Error] No value for required property 'passwordKey'.!><![Error] No value for required property 'usernameKey'.!>file:<!><!><!>
+      <![Error] Expected a value: `path`!><![Error] No value for required property 'passwordKey'.!><![Error] No value for required property 'usernameKey'.!>file:<!><!><!>
