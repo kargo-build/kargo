@@ -25,6 +25,7 @@ import org.jetbrains.amper.problems.reporting.MultipleLocationsBuildProblemSourc
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 import org.jetbrains.amper.problems.reporting.replayProblemsTo
 import org.jetbrains.amper.stdlib.collections.joinToString
+import org.jetbrains.amper.stdlib.collections.zipWithNextOrNull
 import java.nio.file.InvalidPathException
 import kotlin.io.path.Path
 import kotlin.io.path.pathString
@@ -129,10 +130,10 @@ private class TreeReferencesResolver(
         }
 
         val allResolvedValues = mutableListOf<Traceable>()
-        val interpolated = node.parts.map { part ->
+        val resolvedParts = node.parts.map { part ->
             when (part) {
                 is StringInterpolationNode.Part.Reference -> {
-                    val resolved = resolve(node, part.referencePath) ?: return node
+                    val resolved = resolve(node, part.referencePath) ?: return@map null
                     val converted = resolved.cast(SchemaType.StringType) ?: run {
                         reporter.reportBundleError(
                             source = node.trace.asBuildProblemSource(),
@@ -140,14 +141,16 @@ private class TreeReferencesResolver(
                             messageKey = "validation.reference.unexpected.type.interpolation",
                             renderTypeOf(resolved),
                         )
-                        return node
+                        return@map null
                     }
                     allResolvedValues += converted
                     (converted as StringNode).value
                 }
                 is StringInterpolationNode.Part.Text -> part.text
             }
-        }.joinToString("")
+        }
+        if (null in resolvedParts) return node
+        val interpolated = resolvedParts.joinToString("")
 
         val trace = TransformedValueTrace(
             description = "string interpolation: ${node.parts.joinToString("") {
@@ -203,7 +206,7 @@ private class TreeReferencesResolver(
         val firstElement = referencePath.first()
         val reversedPath = currentPath.asReversed()
 
-        val resolutionRoot = reversedPath.find { it[firstElement] != null } ?: run {
+        val resolutionRoot: RefinedTreeNode = reversedPath.find { it[firstElement] != null } ?: run {
             reporter.reportBundleError(
                 origin.trace.asBuildProblemSource(),
                 diagnosticId = TreeDiagnosticId.ReferenceResolutionRootNotFound,
@@ -213,31 +216,35 @@ private class TreeReferencesResolver(
             return null
         }
 
-        val resolved = referencePath.foldIndexed(resolutionRoot as RefinedTreeNode) { i, value, refPart ->
+        val resolved = referencePath.zipWithNextOrNull().fold(resolutionRoot) { value, (refPart, nextRefPart) ->
             check(value is RefinedMappingNode)
             val valueProperty = value.refinedChildren[refPart]
             val propertyDeclaration = valueProperty?.propertyDeclaration
             val newValue = valueProperty?.value
 
             if (newValue == null) {
+                val where = when (val type = value.type) {
+                    is SchemaType.MapType -> "the map"
+                    is SchemaType.ObjectType -> "type ${type.withNullability(false).render(includeSyntax = false)}"
+                }
                 reporter.reportBundleError(
                     source = origin.trace.asBuildProblemSource(),
                     diagnosticId = TreeDiagnosticId.UnresolvedReference,
                     messageKey = "validation.reference.resolution.not.found",
-                    refPart
+                    refPart, where,
                 )
                 return null
             }
-            if (i != referencePath.lastIndex && newValue !is RefinedMappingNode) {
+            if (nextRefPart != null && newValue !is RefinedMappingNode) {
                 reporter.reportBundleError(
                     source = origin.trace.asBuildProblemSource(),
                     diagnosticId = TreeDiagnosticId.ReferenceSegmentIsNotMapping,
-                    messageKey = "validation.reference.resolution.not.a.mapping", refPart
+                    messageKey = "validation.reference.resolution.not.a.mapping", nextRefPart, refPart,
                 )
                 return null
             }
 
-            if (i == referencePath.lastIndex
+            if (nextRefPart == null
                 && propertyDeclaration != null && !propertyDeclaration.canBeReferenced
             ) {
                 reporter.reportBundleError(

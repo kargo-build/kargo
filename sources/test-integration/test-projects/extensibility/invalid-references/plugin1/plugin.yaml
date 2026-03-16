@@ -16,6 +16,7 @@ tasks:
         - foo:bar:12:compile
         - ${markOutputsAs}
         - []
+      requiredString2: ${pluginSettings.requiredString.missing}-${pluginSettings.unknown}-${unknownRoot.a}"
     taskOutputDir: ./hack/ed
 
 module: {}

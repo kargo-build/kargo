@@ -508,9 +508,9 @@ class PluginsTest : AmperCliTestBase() {
         with(result) {
             val pluginYaml = projectDir / "plugin1" / "plugin.yaml"
             assertErrors(
-                "${pluginYaml}:19:5: Cannot assign to property `taskOutputDir` - it is a built-in property available for reference only",
+                "${pluginYaml}:20:5: Cannot assign to property `taskOutputDir` - it is a built-in property available for reference only",
                 "${pluginYaml}:18:11: Expected `Dependency.Maven ( maven-coordinates | maven-coordinates: {..} )`, but got `sequence []`",
-                "${pluginYaml}:21:1: Cannot assign to property `module` - it is a built-in property available for reference only",
+                "${pluginYaml}:22:1: Cannot assign to property `module` - it is a built-in property available for reference only",
                 "${pluginYaml}:17:11: Referencing `markOutputsAs` is not allowed",
                 "${pluginYaml}:14:11: Maven coordinates should not contain slashes",
                 "${pluginYaml}:15:11: Maven coordinates one-part should contain at least two parts separated by ':', but got 1",
@@ -521,6 +521,9 @@ class PluginsTest : AmperCliTestBase() {
                 "${pluginYaml}:7:23: The value of type `boolean` cannot be used in string interpolation",
                 "${pluginYaml}:4:13: No value for required task action parameter 'int'.",
                 "${pluginYaml}:4:13: No value for required property 'classpath.dependencies'.",
+                "${pluginYaml}:19:24: Unable to find reference's starting element `unknownRoot` in the current context",
+                "${pluginYaml}:19:24: Unable to resolve `missing`: its parent (`requiredString`) is not a mapping",
+                "${pluginYaml}:19:24: Unable to resolve `unknown`: no such key/property is found in type Settings",
             )
             assertWarnings(
                 "${pluginYaml}:16:11: Maven classifiers are currently not supported",
