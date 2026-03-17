@@ -93,7 +93,7 @@ private class RefineRequest(
         return when (node) {
             is RefinedTreeNode -> node
             is ListNode -> RefinedListNode(
-                children = node.children.filterByContexts().map(::refine),
+                children = node.children.filterByContexts().map { refine(it) },
                 type = node.type,
                 trace = node.trace,
                 contexts = node.contexts,
@@ -113,51 +113,60 @@ private class RefineRequest(
     private fun List<KeyValue>.refineProperties(): Map<String, RefinedKeyValue> =
         filterByContexts().run {
             // Do actual overriding for key-value pairs.
-            val refinedProperties = refineOrReduceByKeys {
-                it.sortedWith(::compareAndReport).reduceProperties { first: TreeNode, second: TreeNode ->
-                    val newTrace = second.trace.let { trace ->
-                        if (trace.isDefault) {
-                            trace // Defaults with higher priority just replace each other without a trace
-                        } else trace.withPrecedingValue(first)
+            val refinedProperties = refineOrReduceByKeys { props ->
+                val sorted = props.sortedWith(::compareAndReport)
+
+                val mostSpecificKeyValue = sorted.last()
+                val newTrace = reduceTrace(sorted)
+                // We consider the most specific key value as the source of truth for the type of the node and contexts.
+                val refinedValue = when (val value = mostSpecificKeyValue.value) {
+                    is ErrorNode -> {
+                        // We try recovering as much information for the invalid but "best-effort" tree by finding
+                        // last non-error node.
+                        val lastNonErrorNode = sorted.lastOrNull { it.value !is ErrorNode }
+                        lastNonErrorNode?.let { refine(it.value) } ?: ErrorNode(newTrace)
                     }
-                    when (second) {
-                        is ErrorNode -> {
-                            // If `first` is not an error - use it
-                            // to recover as much information for the invalid but "best-effort" tree.
-                            if (first is ErrorNode) ErrorNode(trace = newTrace) else refine(first)
-                        }
-                        is LeafTreeNode -> second.copyWithTrace(trace = newTrace)
-                        is ListNode -> {
-                            val firstChildren = (first as? ListNode)?.children.orEmpty()
-                            RefinedListNode(
-                                children = firstChildren.plus(second.children).filterByContexts().map(::refine),
-                                type = second.type,
-                                trace = second.trace.withPrecedingValue(first),
-                                contexts = second.contexts,
-                            )
-                        }
-                        is MappingNode -> {
-                            val firstChildren = (first as? MappingNode)?.children.orEmpty()
-                            val trace = second.trace.let { trace ->
-                                if (trace.isDefault) {
-                                    trace // Defaults with higher priority just replace each other without a trace
-                                } else trace.withPrecedingValue(first)
-                            }
-                            refinedMappingNodeWithDefaults(
-                                refinedChildren = (firstChildren + second.children).refineProperties(),
-                                type = second.type,
-                                trace = trace,
-                                contexts = second.contexts,
-                            )
-                        }
+                    is LeafTreeNode -> value.copyWithTrace(newTrace)
+                    is ListNode -> {
+                        val children = sorted.flatMap { (it.value as? ListNode)?.children.orEmpty() }
+                        RefinedListNode(
+                            children = children.filterByContexts().map { refine(it) },
+                            type = value.type,
+                            trace = newTrace,
+                            contexts = value.contexts,
+                        )
+                    }
+                    is MappingNode -> {
+                        val children = sorted.flatMap { (it.value as? MappingNode)?.children.orEmpty() }
+                        refinedMappingNodeWithDefaults(
+                            refinedChildren = children.refineProperties(),
+                            type = value.type,
+                            trace = newTrace,
+                            contexts = value.contexts,
+                        )
                     }
                 }
+                mostSpecificKeyValue.copyWithValue(refinedValue)
             }
 
             // Restore order. Also, ignore NoValues if anything is overwriting them.
             val unordered = refinedProperties.associateBy { it.key }
             return mapTo(mutableSetOf()) { it.key }.associateWith { unordered[it]!! }
         }
+
+    /**
+     * Reduces the traces of sorted list of key-value pairs by merging them into a single trace
+     * with the chain of preceding values.
+     */
+    private fun reduceTrace(sorted: List<KeyValue>): Trace {
+        var trace = sorted[0].value.trace
+        for (i in 1 until sorted.size) {
+            val newTrace = sorted[i].value.trace
+            // Defaults with higher priority just replace each other without saving preceding value
+            trace = if (newTrace.isDefault) newTrace else newTrace.withPrecedingValue(sorted[i - 1].value)
+        }
+        return trace
+    }
 
     private fun refinedMappingNodeWithDefaults(
         refinedChildren: Map<String, RefinedKeyValue>,
@@ -198,14 +207,6 @@ private class RefineRequest(
             // TODO AMPER-4516 Report unable to sort. Maybe even same contexts? See [asCompareResult].
             0
         }
-
-    // Do not call on collections without at least two elements.
-    private fun List<KeyValue>.reduceProperties(block: (TreeNode, TreeNode) -> RefinedTreeNode): RefinedKeyValue {
-        val initial = this[1].copyWithValue(value = block(this[0].value, this[1].value))
-        return drop(2).fold(initial) { first, second ->
-            second.copyWithValue(block(first.value, second.value))
-        }
-    }
 
     /**
      * Refines the element if it is single or applies [reduce] to a collection of properties grouped by keys.
