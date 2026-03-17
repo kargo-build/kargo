@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.tree
@@ -190,11 +190,11 @@ private class RefineRequest(
 
     /**
      * Compares two nodes by their contexts.
-     * If they are not comparable ([isMoreSpecificThan] had returned null), then the problem is reported.
+     * If they are not comparable ([compareContexts] had returned null), then the problem is reported.
      * Node is treated as "greater than" another node if its contexts can be inherited from other node contexts.
      */
     fun compareAndReport(first: KeyValue, second: KeyValue): Int =
-        (first.value.contexts.isMoreSpecificThan(second.value.contexts)).asCompareResult ?: run {
+        (first.value.contexts.compareContexts(second.value.contexts)).asCompareResult ?: run {
             // TODO AMPER-4516 Report unable to sort. Maybe even same contexts? See [asCompareResult].
             0
         }
@@ -217,5 +217,5 @@ private class RefineRequest(
         }
 
     private fun <T : WithContexts> List<T>.filterByContexts() =
-        filter { selectedContexts.isMoreSpecificThan(it.contexts).sameOrMoreSpecific }
+        filter { selectedContexts.compareContexts(it.contexts).sameOrMoreSpecific }
 }

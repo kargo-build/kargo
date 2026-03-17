@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.contexts
@@ -27,7 +27,7 @@ class PathInheritance(
     private fun Collection<PathCtx>.pathIndices() = 
         map { orderAsStrings.indexOf(it.path.path) }.filterNot { it == -1 }.sorted()
 
-    override fun Collection<PathCtx>.isMoreSpecificThan(other: Collection<PathCtx>): ContextsInheritance.Result {
+    override fun Collection<PathCtx>.compareContexts(other: Collection<PathCtx>): ContextsInheritance.Result {
         val thisIndices = pathIndices()
         val otherIndices = other.pathIndices()
 
