@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 package org.jetbrains.amper.frontend.dr.resolver
 
@@ -157,7 +157,7 @@ internal class SerializableModuleDependencyNodeWithModule internal constructor(
     private val graphContext: DependencyGraphContext = currentGraphContext(),
 ): ModuleDependencyNode, SerializableDependencyNodeHolderBase(graphContext) {
 
-    override val messages: List<Message> = listOf()
+    override val messages: List<Message> = emptyList()
 
     @Transient
     override var notation: LocalModuleDependency? = null

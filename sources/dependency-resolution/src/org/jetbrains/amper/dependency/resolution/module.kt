@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.dependency.resolution
@@ -32,7 +32,7 @@ abstract class DependencyNodeHolderWithContext(
 
     override val context: Context = templateContext.copyWithNewNodeCache(parentNodes)
     override val key: Key<*> = Key<DependencyNodeHolder>(graphEntryName)
-    override val messages: List<Message> = listOf()
+    override val messages: List<Message> = emptyList()
 
     override fun toString(): String = graphEntryName
 
@@ -117,6 +117,6 @@ class SerializableRootDependencyNode internal constructor(
     private val graphContext: DependencyGraphContext = currentGraphContext(),
 ): RootDependencyNode, SerializableDependencyNodeHolderBase(graphContext) {
     override val parentsRefs = mutableSetOf<DependencyNodeReference>()
-    override val messages: List<Message> = listOf()
+    override val messages: List<Message> = emptyList()
 
 }

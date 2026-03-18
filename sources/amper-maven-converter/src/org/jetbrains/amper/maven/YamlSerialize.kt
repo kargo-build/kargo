@@ -32,7 +32,7 @@ internal fun MappingNode.serializeToYaml(comments: YamlComments = emptyMap()): S
     val refinedMain = context(NoopProblemReporter) {
         treeRefiner.refineTree(
             this@serializeToYaml,
-            listOf(),
+            emptyList(),
             withDefaults = false,
         )
     }

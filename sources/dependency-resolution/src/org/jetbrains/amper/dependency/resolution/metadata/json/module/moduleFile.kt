@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.dependency.resolution.metadata.json.module
@@ -18,7 +18,7 @@ internal data class Module(
     val formatVersion: String,
     val component: Component,
     val createdBy: CreatedBy? = null,
-    val variants: List<Variant> = listOf(),
+    val variants: List<Variant> = emptyList(),
 )
 
 @Serializable
@@ -52,11 +52,11 @@ internal data class Maven(
 internal data class Variant(
     val name: String,
     val attributes: Map<String, String> = mapOf(),
-    val dependencies: List<Dependency> = listOf(),
-    val dependencyConstraints: List<Dependency> = listOf(),
-    val files: List<File> = listOf(),
+    val dependencies: List<Dependency> = emptyList(),
+    val dependencyConstraints: List<Dependency> = emptyList(),
+    val files: List<File> = emptyList(),
     val `available-at`: AvailableAt? = null,
-    val capabilities: List<Capability> = listOf(),
+    val capabilities: List<Capability> = emptyList(),
 )
 
 @Serializable

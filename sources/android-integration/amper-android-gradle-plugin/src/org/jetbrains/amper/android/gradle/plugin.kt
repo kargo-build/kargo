@@ -223,7 +223,7 @@ class AmperAndroidIntegrationProjectPlugin @Inject constructor(private val probl
                 }
 
                 // set inter-module dependencies between android modules
-                val androidDependencyPaths = project.gradle.knownModel?.let { _ ->
+                val androidDependencyPaths = if (project.gradle.knownModel != null) {
                     androidFragment
                         .externalDependencies
                         .asSequence()
@@ -233,7 +233,9 @@ class AmperAndroidIntegrationProjectPlugin @Inject constructor(private val probl
                         .mapNotNull { project.gradle.moduleFilePathToProject[it.buildDir] }
                         .filter { it in requestedModules }
                         .toList()
-                } ?: listOf()
+                } else {
+                    emptyList()
+                }
 
                 for (path in androidDependencyPaths) {
                     variant.runtimeConfiguration.dependencies.add(project.dependencies.project(mapOf("path" to path)))

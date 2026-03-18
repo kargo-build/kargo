@@ -1,6 +1,7 @@
 <component name="InspectionProjectProfileManager">
   <profile version="1.0">
     <option name="myName" value="Project Default" />
+    <inspection_tool class="0c135031-7957-32f2-970e-871154660972" enabled="true" level="WARNING" enabled_by_default="true" />
     <inspection_tool class="ConvertCallChainIntoSequence" enabled="true" level="INFORMATION" enabled_by_default="true" />
     <inspection_tool class="CustomRegExpInspection" enabled="true" level="WARNING" enabled_by_default="true">
       <option name="myConfigurations">
@@ -47,6 +48,22 @@
                   <option name="_fileType" value="Kotlin" />
                   <option name="searchContext" value="ANY" />
                   <option name="replacement" value="error(&quot;$1&quot;)" />
+                </InspectionPattern>
+              </list>
+            </option>
+          </RegExpInspectionConfiguration>
+          <RegExpInspectionConfiguration>
+            <option name="cleanup" value="true" />
+            <option name="description" value="listOf() doesn't express the intent as well as emptyList()" />
+            <option name="name" value="listOf() could be replaced with emptyList()" />
+            <option name="uuid" value="0c135031-7957-32f2-970e-871154660972" />
+            <option name="patterns">
+              <list>
+                <InspectionPattern>
+                  <option name="regExp" value="\blistOf\(\)" />
+                  <option name="_fileType" value="UNKNOWN" />
+                  <option name="searchContext" value="ANY" />
+                  <option name="replacement" value="emptyList()" />
                 </InspectionPattern>
               </list>
             </option>

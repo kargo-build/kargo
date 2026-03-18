@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.tasks.android
@@ -56,7 +56,7 @@ abstract class AndroidDelegatedGradleTask(
         val moduleGradlePath = module.gradlePath(projectRoot)
         val androidModuleData = AndroidModuleData(
             modulePath = moduleGradlePath,
-            moduleClasses = listOf(),
+            moduleClasses = emptyList(),
             resolvedAndroidRuntimeDependencies = runtimeClasspath.map {
                 ResolvedDependency("group", "artifact", "version", it)
             },
@@ -85,7 +85,7 @@ abstract class AndroidDelegatedGradleTask(
                 "jdk.home" to jdk.homeDir.pathString,
                 "androidConfig" to fragments.joinToString { it.settings.android.toStableJsonLikeString() },
             ),
-            inputFiles = runtimeClasspath + additionalInputFiles + (googleServicesJson?.let { listOf(it) } ?: listOf()),
+            inputFiles = runtimeClasspath + additionalInputFiles + listOfNotNull(googleServicesJson),
         ) {
             val gradleProjectPath = (taskOutputPath.path / "gradle-project").also { path -> path.createDirectories() }
             googleServicesJson?.let {
@@ -121,7 +121,7 @@ abstract class AndroidDelegatedGradleTask(
 
     protected abstract val phase: AndroidBuildRequest.Phase
 
-    protected open val additionalInputFiles: List<Path> = listOf()
+    protected open val additionalInputFiles: List<Path> = emptyList()
     protected open fun outputFilterPredicate(path: Path): Boolean = true
     protected open fun result(artifacts: List<Path>): TaskResult = Result(artifacts)
     protected open fun runtimeClasspath(dependenciesResult: List<TaskResult>): List<Path> {

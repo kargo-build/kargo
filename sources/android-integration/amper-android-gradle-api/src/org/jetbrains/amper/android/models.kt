@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.android
@@ -20,7 +20,7 @@ data class ResolvedDependency(
 data class AndroidModuleData(
     val modulePath: String, // relative module path from root in Gradle format ":path:to:module"
     val moduleClasses: List<SerializablePath> = emptyList(),
-    val resolvedAndroidRuntimeDependencies: List<ResolvedDependency> = listOf()
+    val resolvedAndroidRuntimeDependencies: List<ResolvedDependency> = emptyList()
 )
 
 @Serializable

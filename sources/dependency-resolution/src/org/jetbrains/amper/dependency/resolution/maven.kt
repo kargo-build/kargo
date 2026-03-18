@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.dependency.resolution
@@ -639,11 +639,11 @@ class MavenDependencyImpl internal constructor(
         private set
 
     @Volatile
-    internal var variants: List<Variant> = listOf()
+    internal var variants: List<Variant> = emptyList()
 
     @Volatile
 
-    internal var sourceSetsFiles: List<DependencyFileImpl> = listOf()
+    internal var sourceSetsFiles: List<DependencyFileImpl> = emptyList()
         private set
 
     @Volatile
@@ -651,11 +651,11 @@ class MavenDependencyImpl internal constructor(
         private set
 
     @Volatile
-    var children: List<MavenDependencyImpl> = listOf()
+    var children: List<MavenDependencyImpl> = emptyList()
         private set
 
     @Volatile
-    internal var dependencyConstraints: List<MavenDependencyConstraintImpl> = listOf()
+    internal var dependencyConstraints: List<MavenDependencyConstraintImpl> = emptyList()
         private set
 
     internal var metadataResolutionFailureMessage: Message? = null
@@ -1883,7 +1883,7 @@ class MavenDependencyImpl internal constructor(
             dependencyConstraints = project.resolveDependenciesConstraints(context)
         } else {
             if (transitive) {
-                (project.dependencies?.dependencies ?: listOf()).filter {
+                (project.dependencies?.dependencies ?: emptyList()).filter {
                     context.settings.scope.matches(it)
                 }.filterNot {
                     shouldIgnoreDependency(it.groupId, it.artifactId, context)
@@ -1929,7 +1929,7 @@ class MavenDependencyImpl internal constructor(
         ?: emptyList()
 
     private fun Project.resolveDependenciesConstraints(context: Context): List<MavenDependencyConstraintImpl> {
-        return (dependencyManagement?.dependencies?.dependencies ?: listOf()).filter {
+        return (dependencyManagement?.dependencies?.dependencies ?: emptyList()).filter {
             it.version != null && it.optional != true
         }.map {
             context.createOrReuseDependencyConstraint(it.groupId, it.artifactId, Version(requires = it.version))

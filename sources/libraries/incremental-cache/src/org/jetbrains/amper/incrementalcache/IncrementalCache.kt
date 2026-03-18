@@ -124,7 +124,7 @@ class IncrementalCache(
                     DynamicInputsTracker.getCurrentTracker()?.addFrom(cachedState.state.dynamicInputs)
 
                     span.addResult(existingResult, cachedState.state.dynamicInputs)
-                    return@withLock IncrementalExecutionResult(existingResult, listOf())
+                    return@withLock IncrementalExecutionResult(existingResult, emptyList())
                 } else {
                     span.setAttribute("status", "requires-building")
                     span.setAttribute("forceRecalculation", "$forceRecalculation")
