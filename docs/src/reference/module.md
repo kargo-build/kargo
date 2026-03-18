@@ -596,6 +596,21 @@ settings:
       presets: [ spring ]
 ```
 
+#### `settings.kotlin.compilerPlugins`
+
+`settings.kotlin.compilerPlugins` allows adding 
+[third-party compiler plugins](../user-guide/advanced/kotlin-compiler-plugins.md#third-party-compiler-plugins) to your 
+compilation.
+
+| Attribute                      |      | Description                                                                                                                                                                                                                                                                                                                             |
+|:-------------------------------|------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id: string`                   |      | The ID of this compiler plugin, used to pass options. It is defined by the `pluginId` property in the `CommandLineProcessor` implementation of the plugin. If the plugin is also implemented as a Gradle plugin, its ID can also be found in `getCompilerPluginId()` in the corresponding `KotlinCompilerPluginSupportPlugin` subclass. |
+| `dependency: string`           |      | The compiler plugin dependency, in the form of `groupId:artifactId:version` Maven coordinates, or a catalog reference.                                                                                                                                                                                                                  |
+| `options: map<string, string>` | `{}` | The options to pass to this compiler plugin, as a key-value map.                                                                                                                                                                                                                                                                        |
+
+Check the [third-party compiler plugins](../user-guide/advanced/kotlin-compiler-plugins.md#third-party-compiler-plugins)
+section for more information and examples.
+
 #### `settings.kotlin.noArg`
 
 `settings.kotlin.noArg` configures the [Kotlin no-arg compiler plugin](https://kotlinlang.org/docs/no-arg-plugin.html),
