@@ -5,7 +5,6 @@
 package org.jetbrains.amper.cli.profiling
 
 import one.profiler.AsyncProfiler
-import org.jetbrains.amper.cli.AmperBuildLogsRoot
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.core.extract.cleanDirectory
 import org.jetbrains.amper.stdlib.hashing.sha256String
@@ -24,17 +23,9 @@ internal object Profiler {
 
     /**
      * Starts the Async Profiler, extracting the native library to the [userCacheRoot] if it wasn't done before.
-     * The snapshot file will be placed in the build logs directory defined by [logsRoot].
-     */
-    fun start(userCacheRoot: AmperUserCacheRoot, logsRoot: AmperBuildLogsRoot) {
-        start(userCacheRoot, logsRoot.path.resolve("async-profiler-snapshot.jfr"))
-    }
-
-    /**
-     * Starts the Async Profiler, extracting the native library to the [userCacheRoot] if it wasn't done before.
      * The results will be written to the given [snapshotFile].
      */
-    private fun start(userCacheRoot: AmperUserCacheRoot, snapshotFile: Path) {
+    fun start(userCacheRoot: AmperUserCacheRoot, snapshotFile: Path) {
         val profiler = getInstanceWithCachedLib(userCacheRoot = userCacheRoot)
         val snapshotFile = snapshotFile.absolute()
         val startCommand = "start,file=${snapshotFile.pathString},event=wall,interval=10ms,jfr,jfrsync=profile"

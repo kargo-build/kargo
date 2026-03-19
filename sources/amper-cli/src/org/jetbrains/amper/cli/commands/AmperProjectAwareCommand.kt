@@ -8,7 +8,6 @@ import com.github.ajalt.clikt.parameters.groups.provideDelegate
 import org.jetbrains.amper.cli.CliContext
 import org.jetbrains.amper.cli.logging.LoggingInitializer
 import org.jetbrains.amper.cli.options.ProjectLayoutOptions
-import org.jetbrains.amper.cli.profiling.Profiler
 import org.jetbrains.amper.cli.telemetry.TelemetryEnvironment
 import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.use
@@ -32,12 +31,6 @@ internal abstract class AmperProjectAwareCommand(name: String) : AmperSubcommand
 
         spanBuilder("Setup file logging and monitoring").use {
             LoggingInitializer.setupFileLogging(cliContext.currentLogsRoot)
-        }
-
-        if (commonOptions.profilerEnabled) {
-            spanBuilder("Setup profiler").use {
-                Profiler.start(userCacheRoot = cliContext.userCacheRoot, logsRoot = cliContext.currentLogsRoot)
-            }
         }
 
         run(cliContext)
