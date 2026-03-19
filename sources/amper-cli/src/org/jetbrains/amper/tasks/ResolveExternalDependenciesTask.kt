@@ -7,7 +7,7 @@
 package org.jetbrains.amper.tasks
 
 import kotlinx.serialization.Serializable
-import org.jetbrains.amper.cli.logging.DoNotLogToTerminalCookie
+import org.jetbrains.amper.cli.logging.withoutConsoleLogging
 import org.jetbrains.amper.cli.telemetry.setAmperModule
 import org.jetbrains.amper.cli.telemetry.setFragments
 import org.jetbrains.amper.core.AmperUserCacheRoot
@@ -227,7 +227,7 @@ class ResolveExternalDependenciesTask(
                 } catch (t: CancellationException) {
                     throw t
                 } catch (t: Throwable) {
-                    DoNotLogToTerminalCookie.use {
+                    withoutConsoleLogging {
                         logger.error(
                             "resolve dependencies of module '${module.userReadableName}' failed\n" +
                                     "fragments: ${fragments.userReadableList()}\n" +

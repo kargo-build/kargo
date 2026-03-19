@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.cli
@@ -10,7 +10,7 @@ import com.github.ajalt.clikt.parsers.CommandLineParser
 import com.github.ajalt.mordant.terminal.Terminal
 import org.jetbrains.amper.buildinfo.AmperBuild
 import org.jetbrains.amper.cli.commands.RootCommand
-import org.jetbrains.amper.cli.logging.DoNotLogToTerminalCookie
+import org.jetbrains.amper.cli.logging.withoutConsoleLogging
 import org.jetbrains.amper.cli.telemetry.TelemetryEnvironment
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.telemetry.setListAttribute
@@ -122,7 +122,7 @@ private fun printInternalError(e: Exception) {
         // we avoid showing a scary stacktrace in the terminal, but we still provide it in the logs
         printRedToStderr("\nInternal error: $e\n\nPlease check the build logs for the full stacktrace, " +
                 "and if possible file a bug report at https://youtrack.jetbrains.com/newIssue?project=AMPER")
-        DoNotLogToTerminalCookie.use {
+        withoutConsoleLogging {
             LoggerFactory.getLogger("main").error("Internal error:", e)
         }
     }
