@@ -108,7 +108,7 @@ settings@jvm:
     enabled: true  # module.yaml
     experimental:
       hotReload:
-        version: 1.0.0-rc01  # default
+        version: 1.0.0  # default
     resources:
       enabled: false  # default
       exposedAccessors: false  # default
@@ -208,7 +208,7 @@ settings@jvm+android:
     enabled: true  # module.yaml
     experimental:
       hotReload:
-        version: 1.0.0-rc01  # default
+        version: 1.0.0  # default
     resources:
       enabled: false  # default
       exposedAccessors: false  # default
@@ -297,7 +297,7 @@ settings@jvm:
     enabled: true  # module.yaml
     experimental:
       hotReload:
-        version: 1.0.0-rc01  # default
+        version: 1.0.0  # default
     resources:
       enabled: false  # default
       exposedAccessors: false  # default

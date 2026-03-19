@@ -3,7 +3,7 @@ settings@jvm:
     enabled: false  # default
     experimental:
       hotReload:
-        version: 1.0.0-rc01  # default
+        version: 1.0.0  # default
     resources:
       enabled: false  # default
       exposedAccessors: false  # default

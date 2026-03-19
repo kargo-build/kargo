@@ -33,7 +33,7 @@ val bootstrapAmperVersion = "0.10.0-dev-3745" // AUTO-UPDATED BY THE CI - DO NOT
 val amperJreZuluVersion = "25.32.21"
 val amperJreJavaVersion = "25.0.2"
 
-val composeHotReloadVersion = "1.0.0-rc01"
+val composeHotReloadVersion = "1.0.0"
 val composeVersion = "1.10.1"
 val jdkVersion = "21" // TODO bump to 25 when Kotlin supports it
 val junitPlatformVersion = "6.0.1"
