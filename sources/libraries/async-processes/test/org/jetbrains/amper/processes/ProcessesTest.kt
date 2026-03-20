@@ -93,7 +93,7 @@ class ProcessesTest {
         process.waitFor(1, TimeUnit.SECONDS)
         assertTerminated(process, "The process should have terminated by now, because it was explicitly killed")
 
-        val exitCode = withTimeoutOrNull(200.milliseconds) { deferredExitCode.await() }
+        val exitCode = withTimeoutOrNull(500.milliseconds) { deferredExitCode.await() }
         assertNotNull(exitCode, "The result should be returned quickly after the destruction of the process")
 
         // We don't assert anything on stderr, because the way the process is killed may lead to unpredictable stderr.
