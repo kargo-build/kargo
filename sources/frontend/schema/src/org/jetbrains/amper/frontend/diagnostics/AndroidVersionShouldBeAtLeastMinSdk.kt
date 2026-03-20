@@ -14,7 +14,6 @@ import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.messages.extractPsiElement
 import org.jetbrains.amper.frontend.schema.AndroidVersion
 import org.jetbrains.amper.frontend.types.generated.*
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
@@ -27,15 +26,10 @@ class AndroidVersionShouldBeAtLeastMinSdk(
     @UsedInIdePlugin
     val minSdkVersion: AndroidVersion
 ) : PsiBuildProblem(Level.Error, BuildProblemType.InconsistentConfiguration) {
-    companion object {
-        const val ID = "android.version.should.be.at.least.min.sdk"
-    }
 
     override val element: PsiElement
         get() = versionProp.extractPsiElement()
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.AndroidVersionShouldBeAtLeastMinSdk
 
     override val message: @Nls String
@@ -48,11 +42,6 @@ class AndroidVersionShouldBeAtLeastMinSdk(
 }
 
 object AndroidVersionShouldBeAtLeastMinSdkFactory : AomSingleModuleDiagnosticFactory {
-    @Deprecated(
-        message = "Use AndroidVersionShouldBeAtLeastMinSdk.ID",
-        replaceWith = ReplaceWith("AndroidVersionShouldBeAtLeastMinSdk.ID"),
-    )
-    val diagnosticId: BuildProblemId = AndroidVersionShouldBeAtLeastMinSdk.ID
 
     override fun analyze(module: AmperModule, problemReporter: ProblemReporter) {
         val reportedPlaces = mutableSetOf<Trace?>()

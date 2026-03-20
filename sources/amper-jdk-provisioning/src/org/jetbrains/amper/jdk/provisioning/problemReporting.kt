@@ -6,7 +6,6 @@
 package org.jetbrains.amper.jdk.provisioning
 
 import org.jetbrains.amper.problems.reporting.BuildProblem
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemSource
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
@@ -23,10 +22,6 @@ abstract class ProvisioningProblem(
     val messageKey: String,
     vararg val params: Any?,
 ) : BuildProblem {
-
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId
-        get() = messageKey
 
     override val message: @Nls String
         get() = ProvisioningBundle.message(messageKey, params)

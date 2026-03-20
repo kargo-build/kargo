@@ -18,7 +18,6 @@ import org.jetbrains.amper.frontend.tree.TreeNode
 import org.jetbrains.amper.frontend.tree.TreeRefiner
 import org.jetbrains.amper.frontend.tree.get
 import org.jetbrains.amper.frontend.tree.valueEqualsTo
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
@@ -31,11 +30,6 @@ import org.jetbrains.amper.problems.reporting.ProblemReporter
 class UselessSettingValue(
     private val refiner: TreeRefiner,
 ) : TreeDiagnosticFactory {
-    @Deprecated(
-        message = "Use UselessSettingValue.ID",
-        replaceWith = ReplaceWith("UselessSetting.ID"),
-    )
-    val diagnosticId: BuildProblemId = UselessSetting.ID
 
     override fun analyze(root: TreeNode, minimalModule: MinimalModule, problemReporter: ProblemReporter) {
         // TODO There an optimization can be made.
@@ -69,13 +63,8 @@ class UselessSetting(
     trace: Trace,
     private val precedingTrace: PsiTrace,
 ) : PsiBuildProblem(Level.WeakWarning, BuildProblemType.RedundantDeclaration) {
-    companion object {
-        const val ID = "setting.value.overrides.nothing"
-    }
 
     override val element: PsiElement = trace.extractPsiElement()
-    @Deprecated("Should be replaced with `problemId` property", replaceWith = ReplaceWith("problemId"))
-    override val buildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.UselessSetting
     override val message = SchemaBundle.message(
         messageKey = "setting.value.is.same.as.base",

@@ -11,7 +11,6 @@ import org.jetbrains.amper.frontend.tree.StringNode
 import org.jetbrains.amper.frontend.tree.TreeNode
 import org.jetbrains.amper.frontend.tree.visitMappingNodes
 import org.jetbrains.amper.frontend.types.SchemaType
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 import java.io.StringReader
 import javax.xml.stream.XMLInputFactory

@@ -9,7 +9,6 @@ import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.api.TraceablePath
 import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.messages.extractPsiElement
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
@@ -21,15 +20,10 @@ class UnresolvedTemplate(
     val templatePath: TraceablePath,
     val moduleDirectory: Path,
 ) : PsiBuildProblem(Level.Error, BuildProblemType.UnresolvedReference) {
-    companion object {
-        const val ID = "unresolved.template"
-    }
 
     override val element: PsiElement
         get() = templatePath.extractPsiElement()
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.UnresolvedTemplate
     override val message: @Nls String
         get() {

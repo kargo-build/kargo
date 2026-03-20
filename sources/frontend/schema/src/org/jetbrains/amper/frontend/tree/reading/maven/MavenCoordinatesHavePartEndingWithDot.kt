@@ -21,14 +21,9 @@ class MavenCoordinatesHavePartEndingWithDot(
     override val element: PsiElement,
     override val coordinates: String,
 ) : MavenCoordinatesParsingProblem() {
-    companion object {
-        const val ID = "maven.coordinates.have.part.ending.with.dot"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.MavenCoordinatesHavePartEndingWithDot
-    override val message: @Nls String = SchemaBundle.message(ID)
+    override val message: @Nls String = SchemaBundle.message("maven.coordinates.have.part.ending.with.dot")
 
     val partsEndingWithDot = coordinates.split(':').filter { it.endsWith('.') }
 

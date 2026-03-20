@@ -61,7 +61,6 @@ internal fun tryReadMinimalModule(moduleFilePath: VirtualFile): MinimalModuleHol
                         source = trace.asBuildProblemSource(),
                         diagnosticId = FrontendDiagnosticId.ProductNotDefined,
                         messageKey = "product.not.defined.empty",
-                        buildProblemId = "product.not.defined",
                     )
                     listOf("product", "type") -> collectingReporter.reportBundleError(
                         source = trace.asBuildProblemSource(),

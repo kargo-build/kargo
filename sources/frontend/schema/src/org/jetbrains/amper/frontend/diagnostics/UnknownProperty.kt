@@ -7,7 +7,6 @@ package org.jetbrains.amper.frontend.diagnostics
 import com.intellij.psi.PsiElement
 import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.messages.PsiBuildProblem
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
@@ -21,12 +20,7 @@ class UnknownProperty(
     val possibleIntendedNames: List<String>,
     override val element: PsiElement,
 ) : PsiBuildProblem(Level.Error, BuildProblemType.UnknownSymbol) {
-    companion object {
-        const val ID = "unknown.property"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.UnknownProperty
     override val message: @Nls String
         get() = if (possibleIntendedNames.isEmpty()) {

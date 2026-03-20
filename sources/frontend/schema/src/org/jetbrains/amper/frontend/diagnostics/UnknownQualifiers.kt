@@ -13,12 +13,10 @@ import org.jetbrains.amper.frontend.messages.extractPsiElementOrNull
 import org.jetbrains.amper.frontend.reportBundleError
 import org.jetbrains.amper.frontend.tree.TreeNode
 import org.jetbrains.amper.frontend.tree.visitNodes
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 
 object UnknownQualifiers : TreeDiagnosticFactory {
-    const val diagnosticId: BuildProblemId = "product.unknown.qualifier"
 
     private val knownPlatforms = Platform.values.map { it.schemaValue }
 

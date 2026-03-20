@@ -9,7 +9,6 @@ import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.contexts.Contexts
 import org.jetbrains.amper.problems.reporting.BuildProblem
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemSource
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
@@ -31,8 +30,6 @@ class ConflictingProperties(
     @field:UsedInIdePlugin
     val keyValues: List<KeyValue>,
 ) : BuildProblem {
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId = "conflicting.properties"
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.ConflictingProperties
     override val source: BuildProblemSource = MultipleLocationsBuildProblemSource(
         keyValues.mapNotNull { it.trace.asBuildProblemSource() as? FileBuildProblemSource },

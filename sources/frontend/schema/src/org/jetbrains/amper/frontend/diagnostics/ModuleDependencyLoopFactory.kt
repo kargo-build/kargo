@@ -12,7 +12,6 @@ import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.messages.PsiBuildProblemSource
 import org.jetbrains.amper.frontend.messages.extractPsiElementOrNull
 import org.jetbrains.amper.problems.reporting.BuildProblem
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemSource
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
@@ -25,8 +24,6 @@ import org.jetbrains.annotations.Nls
 class ModuleDependencyLoopProblem(
     val loop: List<Pair<AmperModule, LocalModuleDependency>>,
 ) : BuildProblem {
-    @Deprecated("Should be replaced with `problemId` property", replaceWith = ReplaceWith("problemId"))
-    override val buildProblemId get() = Companion.diagnosticId
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.ModuleDependencyLoopProblem
     override val message: @Nls String = SchemaBundle.message(
         "dependencies.modules.loop", loop.joinToString(
@@ -41,27 +38,17 @@ class ModuleDependencyLoopProblem(
     )
     override val level: Level get() = Level.Error
     override val type: BuildProblemType get() = BuildProblemType.Generic
-
-    companion object {
-        val diagnosticId: BuildProblemId = "module.dependency.loop"
-    }
 }
 
 class ModuleDependencySelfProblem(
     val selfDependent: AmperModule,
     val selfDependency: LocalModuleDependency,
 ) : BuildProblem {
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = Companion.diagnosticId
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.ModuleDependencySelfProblem
     override val source: BuildProblemSource = selfDependency.asBuildProblemSource()
     override val message = SchemaBundle.message("dependencies.modules.self", selfDependent.userReadableName)
     override val level: Level get() = Level.Error
     override val type: BuildProblemType get() = BuildProblemType.Generic
-
-    companion object {
-        val diagnosticId: BuildProblemId = "module.dependency.self"
-    }
 }
 
 object ModuleDependencyLoopFactory : AomModelDiagnosticFactory {

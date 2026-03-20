@@ -6,8 +6,6 @@ package org.jetbrains.amper.problems.reporting
 
 import org.jetbrains.annotations.Nls
 
-typealias BuildProblemId = String
-
 enum class Level {
     /**
      * A level to inform that something might be improved without impacting the build meaningfully.
@@ -76,8 +74,6 @@ enum class BuildProblemType {
 }
 
 interface BuildProblem {
-    @Deprecated("Should be replaced with `diagnosticId` property", ReplaceWith("diagnosticId"))
-    val buildProblemId: BuildProblemId
     val diagnosticId: DiagnosticId
 
     /**
@@ -110,8 +106,6 @@ interface BuildProblem {
  * They can incorporate additional properties for the IDE to simplify quick-fixes implementation.
  */
 data class BuildProblemImpl(
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId,
     override val source: BuildProblemSource,
     override val message: @Nls String,
     override val level: Level,

@@ -14,7 +14,6 @@ import org.jetbrains.amper.frontend.schema.AmperLayout
 import org.jetbrains.amper.frontend.schema.Module
 import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.frontend.tree.TreeNode
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
@@ -22,22 +21,12 @@ import org.jetbrains.amper.problems.reporting.ProblemReporter
 import org.jetbrains.annotations.Nls
 
 class UnsupportedLayoutBuildProblem(override val element: PsiElement): PsiBuildProblem(Level.Error, BuildProblemType.InconsistentConfiguration) {
-    companion object {
-        const val ID = "module.layout.unsupported"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.UnsupportedLayout
     override val message: @Nls String = SchemaBundle.message("module.layout.unsupported")
 }
 
 object UnsupportedLayoutDiagnosticFactory: TreeDiagnosticFactory {
-    @Deprecated(
-        message = "Use UnsupportedLayoutBuildProblem.ID",
-        replaceWith = ReplaceWith("UnsupportedLayoutBuildProblem.ID"),
-    )
-    val diagnosticId: BuildProblemId = UnsupportedLayoutBuildProblem.ID
 
     override fun analyze(
         root: TreeNode,

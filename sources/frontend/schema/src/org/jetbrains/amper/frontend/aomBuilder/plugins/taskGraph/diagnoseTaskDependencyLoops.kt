@@ -30,13 +30,7 @@ class TaskDependencyLoop(
     override val message: @Nls String = "$baseMessage\n$renderedLoop"
     override val level: Level get() = Level.Error
     override val type: BuildProblemType get() = BuildProblemType.Generic
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = PluginDiagnosticId.TaskDependencyLoop
-
-    companion object {
-        const val ID = "plugin.tasks.dependency.loop"
-    }
 }
 
 context(reporter: ProblemReporter)

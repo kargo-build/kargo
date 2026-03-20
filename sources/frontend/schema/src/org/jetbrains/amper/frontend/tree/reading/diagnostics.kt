@@ -22,14 +22,9 @@ class MissingValue(
     val expectedType: SchemaType,
     typeString: String,
 ) : PsiBuildProblem(level = Level.Error, type = BuildProblemType.Generic) {
-    companion object {
-        const val ID = "validation.structure.missing.value"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId get() = TreeDiagnosticId.MissingValue
-    override val message = SchemaBundle.message(ID, typeString)
+    override val message = SchemaBundle.message("validation.structure.missing.value", typeString)
 }
 
 class InvalidTaskActionType(
@@ -40,15 +35,10 @@ class InvalidTaskActionType(
     level = Level.Error,
     type = BuildProblemType.UnknownSymbol,
 ) {
-    companion object {
-        const val ID = "validation.types.tag.task.action.invalid"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.InvalidTaskActionType
     override val message: @Nls String by lazy {
-        SchemaBundle.message(ID, invalidType, formatAvailableTasks(taskActionType))
+        SchemaBundle.message("validation.types.tag.task.action.invalid", invalidType, formatAvailableTasks(taskActionType))
     }
 }
 
@@ -59,16 +49,11 @@ class MissingTaskActionType(
     level = Level.Error,
     type = BuildProblemType.Generic,
 ) {
-    companion object {
-        const val ID = "validation.types.tag.task.action.missing"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.MissingTaskActionType
 
     override val message: @Nls String by lazy {
-        SchemaBundle.message(ID, formatAvailableTasks(taskActionType))
+        SchemaBundle.message("validation.types.tag.task.action.missing", formatAvailableTasks(taskActionType))
     }
 }
 

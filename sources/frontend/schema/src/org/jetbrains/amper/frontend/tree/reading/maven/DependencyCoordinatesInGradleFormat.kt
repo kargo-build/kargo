@@ -19,12 +19,7 @@ class DependencyCoordinatesInGradleFormat(
     @field:UsedInIdePlugin
     val trimmedCoordinates: String,
 ) : MavenCoordinatesParsingProblem() {
-    companion object {
-        const val ID = "dependency.coordinates.in.gradle.format"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.CoordinatesInGradleFormat
-    override val message: @Nls String = SchemaBundle.message(ID, coordinates)
+    override val message: @Nls String = SchemaBundle.message("dependency.coordinates.in.gradle.format", coordinates)
 }

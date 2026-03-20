@@ -24,7 +24,6 @@ import org.jetbrains.amper.frontend.dr.resolver.diagnostics.DrReporterContext
 import org.jetbrains.amper.frontend.dr.resolver.moduleDependenciesResolver
 import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.messages.extractPsiElementOrNull
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
@@ -101,13 +100,11 @@ class ModuleDependencyWithOverriddenVersion(
     val effectiveCoordinates: String
         get() = dependencyNode.key.name
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.DependencyVersionIsOverridden
     override val message: @Nls String
         get() = when {
             dependencyNode.originalVersion != null -> FrontendDrBundle.message(
-                messageKey = ID,
+                messageKey = "dependency.version.is.overridden",
                 dependencyNode.originalVersion, effectiveCoordinates, effectiveVersion
             )
             dependencyNode.versionFromBom != null -> FrontendDrBundle.message(
@@ -118,7 +115,6 @@ class ModuleDependencyWithOverriddenVersion(
         }
 
     companion object {
-        const val ID = "dependency.version.is.overridden"
         const val VERSION_FROM_BOM_IS_OVERRIDDEN_MESSAGE_ID = "dependency.version.from.bom.is.overridden"
     }
 }

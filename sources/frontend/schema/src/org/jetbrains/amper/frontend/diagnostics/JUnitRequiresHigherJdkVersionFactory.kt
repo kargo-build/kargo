@@ -13,7 +13,6 @@ import org.jetbrains.amper.frontend.api.TraceableValue
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.problems.reporting.BuildProblem
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemSource
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
@@ -25,11 +24,6 @@ import org.jetbrains.amper.problems.reporting.ProblemReporter
 private val JUnit6 = ComparableVersion("6.0.0")
 
 object JUnitRequiresHigherJdkVersionFactory : AomSingleModuleDiagnosticFactory {
-    @Deprecated(
-        message = "Use JUnitRequiresHigherJdkVersion.ID",
-        replaceWith = ReplaceWith("JUnitRequiresHigherJdkVersion.ID"),
-    )
-    val diagnosticId: BuildProblemId = JUnitRequiresHigherJdkVersion.ID
 
     override fun analyze(module: AmperModule, problemReporter: ProblemReporter) {
         val reportedPlaces = mutableSetOf<Pair<Trace, Trace>>()
@@ -69,12 +63,7 @@ class JUnitRequiresHigherJdkVersion(
     val actualJdkVersion: TraceableValue<Int>,
     val minJdkVersion: Int,
 ) : BuildProblem {
-    companion object {
-        const val ID = "junit.platform.requires.higher.jdk"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.JUnitRequiresHigherJdkVersion
     override val message = SchemaBundle.message(
         messageKey = "junit.platform.requires.higher.jdk",

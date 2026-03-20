@@ -17,12 +17,7 @@ class MavenCoordinatesHaveTooFewParts(
     @field:UsedInIdePlugin
     val partsSize: Int,
 ) : MavenCoordinatesParsingProblem() {
-    companion object {
-        const val ID = "maven.coordinates.have.too.few.parts"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.MavenCoordinatesHaveTooFewParts
-    override val message: @Nls String = SchemaBundle.message(ID, coordinates, partsSize)
+    override val message: @Nls String = SchemaBundle.message("maven.coordinates.have.too.few.parts", coordinates, partsSize)
 }

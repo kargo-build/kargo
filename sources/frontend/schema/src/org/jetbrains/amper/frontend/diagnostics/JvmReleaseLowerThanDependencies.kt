@@ -15,7 +15,6 @@ import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.messages.extractPsiElementOrNull
 import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.problems.reporting.BuildProblem
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemSource
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
@@ -61,8 +60,6 @@ class JvmReleaseTooLowForDependency(
     val dependency: LocalModuleDependency,
     val dependencyJvmRelease: Int,
 ) : BuildProblem {
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = Companion.diagnosticId
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.JvmReleaseTooLowForDependency
 
     private val jvmReleaseElement = module.jvmReleasePsiElement()
@@ -91,10 +88,6 @@ class JvmReleaseTooLowForDependency(
 
     override val level: Level get() = Level.Warning
     override val type: BuildProblemType get() = BuildProblemType.InconsistentConfiguration
-
-    companion object {
-        val diagnosticId: BuildProblemId = "jvm.release.too.low.for.dependency"
-    }
 }
 
 /**

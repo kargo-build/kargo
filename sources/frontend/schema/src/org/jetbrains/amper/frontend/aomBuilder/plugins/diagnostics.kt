@@ -20,12 +20,6 @@ class PluginYamlMissing(
     level = Level.Warning,
     type = BuildProblemType.Generic,
 ) {
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = PluginDiagnosticId.PluginYamlMissing
     override val message: @Nls String = SchemaBundle.message("plugin.missing.plugin.yaml")
-
-    companion object {
-        const val ID = "plugin.missing.plugin.yaml"
-    }
 }

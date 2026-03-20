@@ -128,8 +128,6 @@ internal suspend fun doPreparePlugins(
 private class SchemaDiagnostic(
     diagnostic: PluginDataResponse.Diagnostic,
 ) : BuildProblem, DiagnosticId {
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId = diagnostic.diagnosticId
     override val diagnosticId: DiagnosticId = this
     override val source = FileWithRangesBuildProblemSource(diagnostic.location.path, diagnostic.location.textRange)
     override val message = diagnostic.message

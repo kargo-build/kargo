@@ -11,14 +11,12 @@ import org.jetbrains.amper.frontend.reportBundleError
 import org.jetbrains.amper.frontend.schema.Module
 import org.jetbrains.amper.frontend.tree.PathNode
 import org.jetbrains.amper.frontend.tree.TreeNode
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 import kotlin.io.path.exists
 import kotlin.io.path.extension
 import kotlin.io.path.pathString
 
 object TemplateNameWithoutPostfix : TreeDiagnosticFactory {
-    const val diagnosticId: BuildProblemId = "template.name.without.postfix"
 
     override fun analyze(root: TreeNode, minimalModule: MinimalModule, problemReporter: ProblemReporter) =
         root.visitListProperties(Module::apply) { _, templatesRaw ->
@@ -30,7 +28,7 @@ object TemplateNameWithoutPostfix : TreeDiagnosticFactory {
                     problemReporter.reportBundleError(
                         source = tValue.trace.asBuildProblemSource(),
                         diagnosticId = FrontendDiagnosticId.TemplateNameWithoutPostfix,
-                        messageKey = diagnosticId,
+                        messageKey = "template.name.without.postfix",
                     )
                 }
             }

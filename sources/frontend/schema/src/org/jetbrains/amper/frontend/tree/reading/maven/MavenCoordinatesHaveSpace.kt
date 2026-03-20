@@ -14,14 +14,9 @@ class MavenCoordinatesHaveSpace(
     override val element: PsiElement,
     override val coordinates: String,
 ) : MavenCoordinatesParsingProblem() {
-    companion object {
-        const val ID = "maven.coordinates.have.space"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.MavenCoordinatesHaveSpace
-    override val message: @Nls String = SchemaBundle.message(ID)
+    override val message: @Nls String = SchemaBundle.message("maven.coordinates.have.space")
 
     val spaceIndices = coordinates.indices.filter { coordinates[it] == ' ' }
 

@@ -29,7 +29,6 @@ import org.jetbrains.amper.frontend.dr.resolver.fragmentDependencies
 import org.jetbrains.amper.frontend.getLineAndColumnRangeInPsiFile
 import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.messages.extractPsiElementOrNull
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemImpl
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
@@ -66,7 +65,6 @@ object BasicDrDiagnosticsReporter : DrDiagnosticsReporter {
         for (message in importantMessages) {
             val msgLevel = message.mapSeverityToLevel()
             val buildProblem = BuildProblemImpl(
-                buildProblemId = "dependency.problem.no.psi",
                 diagnosticId = FrontendDiagnosticId.DependencyResolutionProblem,
                 source = GlobalBuildProblemSource,
                 message = message.detailedMessage,
@@ -167,8 +165,6 @@ class DependencyBuildProblem(
     @field:UsedInIdePlugin
     val versionDefinition: VersionDefinition?,
 ) : PsiBuildProblem(level, BuildProblemType.Generic) {
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.DependencyResolutionProblem
 
     override val message: @Nls String
@@ -206,10 +202,6 @@ class DependencyBuildProblem(
             node.dependency.version,
             "${versionDefinition.relativePath}:${range.start.line}:${range.start.column}",
         )
-    }
-
-    companion object {
-        const val ID = "dependency.problem"
     }
 }
 
