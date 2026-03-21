@@ -1,7 +1,7 @@
 <idea-plugin>
   <id>build.kargo</id>
   <name>Kargo</name>
-  <version>0.1.3</version>
+  <version>0.1.5</version>
   <vendor>Kargo Contributors</vendor>
   <category>Build Tools</category>
   <description><![CDATA[
