@@ -126,38 +126,6 @@ abstract class BaseModuleDrTest {
     protected fun assertEquals(@Language("text") expected: String, root: DependencyNode, forMavenNode: MavenCoordinates? = null) =
         assertEqualsWithDiff(expected.trimEnd().lines(), root.prettyPrint(forMavenNode).trimEnd().lines())
 
-    protected suspend fun downloadAndAssertFiles(
-        testInfo: TestInfo,
-        root: DependencyNodeHolderWithContext,
-        withSources: Boolean = false,
-        checkAutoAddedDocumentation: Boolean = true
-    ) {
-        Resolver().downloadDependencies(root, withSources)
-        assertFiles(
-            testInfo,
-            root,
-            withSources,
-            checkExistence = true,
-            checkAutoAddedDocumentation = checkAutoAddedDocumentation
-        )
-    }
-
-    protected suspend fun downloadAndAssertFiles(
-        files: List<String>,
-        root: DependencyNodeHolderWithContext,
-        withSources: Boolean = false,
-        checkAutoAddedDocumentation: Boolean = true
-    ) {
-        Resolver().downloadDependencies(root, withSources)
-        assertFiles(
-            files,
-            root,
-            withSources,
-            checkExistence = true,
-            checkAutoAddedDocumentation = checkAutoAddedDocumentation
-        )
-    }
-
     protected fun assertFiles(
         testInfo: TestInfo,
         root: DependencyNode,
@@ -216,7 +184,7 @@ abstract class BaseModuleDrTest {
          * Run every test twice if [checkIncrementalCache] is set to true
          * (the first run without cache, the second with cache populated during the first run)
          */
-        internal fun BaseModuleDrTest.runModuleDependenciesTest(
+        internal fun runModuleDependenciesTest(
             checkIncrementalCache: Boolean = true,
             timeout: Duration = 1.minutes,
             testBody: suspend TestScope.() -> Unit
@@ -225,7 +193,7 @@ abstract class BaseModuleDrTest {
                 val incrementalCacheUsageContext =
                     IncrementalCacheUsageContextElement(IncrementalCacheUsage.REFRESH_AND_USE)
                 runTestRespectingDelays(
-                    context = EmptyCoroutineContext + incrementalCacheUsageContext,
+                    context = incrementalCacheUsageContext,
                     timeout = timeout,
                     testBody = {
                         executeWithAndWithoutCache(incrementalCacheUsageContext, testBody)
@@ -242,7 +210,7 @@ abstract class BaseModuleDrTest {
          *
          * test timeout is 5 minutes by default
          */
-        internal fun BaseModuleDrTest.runSlowModuleDependenciesTest(
+        internal fun runSlowModuleDependenciesTest(
             checkIncrementalCache: Boolean = true,
             timeout: Duration = 5.minutes,
             testBody: suspend TestScope.() -> Unit
@@ -330,22 +298,6 @@ abstract class BaseModuleDrTest {
         ): String = replace(Regex("""${Regex.escape(groupPrefix)}[^:]*:${Regex.escape(artifactPrefix)}[^:]*:([\w.\-]+ -> )?${Regex.escape(version)}""")) {
             it.value.replace(version, "#$versionVariableName")
         }
-    }
-
-    internal inline fun <reified MessageT : Message> assertTheOnlyNonInfoMessage(
-        root: DependencyNode,
-        severity: Severity
-    ): MessageT {
-        val messages = root.children.single().messages.defaultFilterMessages()
-        val message = messages.singleOrNull()
-        assertNotNull(message, "A single error message is expected, but found: ${messages.toSet()}")
-        assertIs<MessageT>(message, "Unexpected error message")
-        assertEquals(
-            severity,
-            message.severity,
-            "Unexpected severity of the error message"
-        )
-        return message
     }
 
     internal fun assertTheOnlyNonInfoMessage(

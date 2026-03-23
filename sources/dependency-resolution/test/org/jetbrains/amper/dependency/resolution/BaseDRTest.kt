@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.dependency.resolution
@@ -379,22 +379,20 @@ abstract class BaseDRTest {
         /**
          * Run DR test respecting delays inside DR code.
          */
-        fun BaseDRTest.runDrTest(
+        fun runDrTest(
             context: CoroutineContext = EmptyCoroutineContext,
             timeout: Duration = 1.minutes,
             testBody: suspend TestScope.() -> Unit
-        ) =
-            runTestRespectingDelays(context = context, timeout = timeout, testBody = testBody)
+        ) = runTestRespectingDelays(context = context, timeout = timeout, testBody = testBody)
 
         /**
          * Run DR test respecting delays inside DR code.
          */
-        fun BaseDRTest.runSlowDrTest(
+        fun runSlowDrTest(
             context: CoroutineContext = EmptyCoroutineContext,
             timeout: Duration = 5.minutes,
             testBody: suspend TestScope.() -> Unit
-        ) =
-            runDrTest(context = context, testBody = testBody, timeout = timeout)
+        ) = runDrTest(context = context, testBody = testBody, timeout = timeout)
 
         fun List<Message>.defaultFilterMessages(): List<Message> =
             filter { it.severity > Severity.INFO }
