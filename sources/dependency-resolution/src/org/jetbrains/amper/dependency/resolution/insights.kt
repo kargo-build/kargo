@@ -135,7 +135,9 @@ private fun Set<DependencyNode>.addDecisiveParents(nodesWithDecisiveParents: Mut
             } else {
                 if (effectiveNodes.any { it is MavenDependencyNode }) {
                     // Constraints are redundant
-                    effectiveNodes.filterIsInstance<MavenDependencyNode>().toSet()
+                    (effectiveNodes.filterIsInstance<MavenDependencyNode>()
+                            + if (!resolvedVersionOnly) dependencies.filter { it.group == groupForInsight && it.module == moduleForInsight } else emptySet()
+                    ).toSet()
                 } else {
                     // constraints only => take both dependencies and constraints
                     (dependencies + effectiveNodes).toSet()

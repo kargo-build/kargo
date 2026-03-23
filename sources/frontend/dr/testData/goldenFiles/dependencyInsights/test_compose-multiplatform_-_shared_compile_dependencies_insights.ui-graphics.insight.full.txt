@@ -23,11 +23,23 @@ root
      │              ├─── org.jetbrains.compose.foundation:foundation-layout:#composeDefaultVersion (*)
      │              ├─── org.jetbrains.compose.ui:ui:#composeDefaultVersion (*)
      │              ╰─── org.jetbrains.compose.ui:ui-text:#composeDefaultVersion (*)
+     ├─── shared:iosArm64:org.jetbrains.compose.material3:material3:1.10.0-alpha05
+     │    ╰─── org.jetbrains.compose.material3:material3:1.10.0-alpha05
+     │         ╰─── org.jetbrains.compose.material3:material3-uikitarm64:1.10.0-alpha05
+     │              ╰─── org.jetbrains.compose.ui:ui-graphics:1.9.3 -> #composeDefaultVersion
      ├─── shared:apple:org.jetbrains.compose.foundation:foundation:#composeDefaultVersion
      │    ╰─── org.jetbrains.compose.foundation:foundation:#composeDefaultVersion (*)
+     ├─── shared:apple:org.jetbrains.compose.material3:material3:1.10.0-alpha05
+     │    ╰─── org.jetbrains.compose.material3:material3:1.10.0-alpha05 (*)
      ├─── shared:common:org.jetbrains.compose.foundation:foundation:#composeDefaultVersion
      │    ╰─── org.jetbrains.compose.foundation:foundation:#composeDefaultVersion (*)
+     ├─── shared:common:org.jetbrains.compose.material3:material3:1.10.0-alpha05
+     │    ╰─── org.jetbrains.compose.material3:material3:1.10.0-alpha05 (*)
      ├─── shared:ios:org.jetbrains.compose.foundation:foundation:#composeDefaultVersion
      │    ╰─── org.jetbrains.compose.foundation:foundation:#composeDefaultVersion (*)
-     ╰─── shared:native:org.jetbrains.compose.foundation:foundation:#composeDefaultVersion
-          ╰─── org.jetbrains.compose.foundation:foundation:#composeDefaultVersion (*)
+     ├─── shared:ios:org.jetbrains.compose.material3:material3:1.10.0-alpha05
+     │    ╰─── org.jetbrains.compose.material3:material3:1.10.0-alpha05 (*)
+     ├─── shared:native:org.jetbrains.compose.foundation:foundation:#composeDefaultVersion
+     │    ╰─── org.jetbrains.compose.foundation:foundation:#composeDefaultVersion (*)
+     ╰─── shared:native:org.jetbrains.compose.material3:material3:1.10.0-alpha05
+          ╰─── org.jetbrains.compose.material3:material3:1.10.0-alpha05 (*)

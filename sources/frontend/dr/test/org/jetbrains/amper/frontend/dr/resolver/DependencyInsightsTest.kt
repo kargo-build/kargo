@@ -335,6 +335,28 @@ class DependencyInsightsTest : BaseModuleDrTest() {
         )
     }
 
+    /**
+     * This test checks that in full mode, all pathes to the required dependency are shown.
+     */
+    @Test
+    fun `test jvm-dependency-insights - F`(testInfo: TestInfo) = runModuleDependenciesTest {
+        val aom = getTestProjectModel("jvm-dependency-insights", testDataRoot)
+
+        val eGraph = doTestByFile(
+            testInfo,
+            aom,
+            module = "F",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
+        )
+
+        assertInsightByFile(
+            group = "org.jetbrains.kotlin",
+            module = "kotlin-stdlib",
+            graph = eGraph,
+            testInfo = testInfo,
+        )
+    }
+
     private fun assertInsightByFile(group: String, module: String, graph: DependencyNode, testInfo: TestInfo) {
         val insightFilePrefix = "${testInfo.testMethod.get().name}.$module".replace(" ", "_")
 
