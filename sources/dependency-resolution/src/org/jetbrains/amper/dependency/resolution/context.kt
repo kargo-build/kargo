@@ -38,7 +38,10 @@ import kotlin.io.path.Path
  */
 class Context internal constructor(
     val settings: Settings,
-    val resolutionCache: Cache = Cache(), // todo (AB) : Split to globalResolutionCache and former Context-boiund resolutionCache?
+    /**
+     * Global resolution cache that might be shared across different resolution sessions
+     */
+    val resolutionCache: Cache = Cache(),
     /**
      * Contains a map of all already created [MavenDependencyNode]s by their original maven dependency.
      *

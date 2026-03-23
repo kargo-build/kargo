@@ -9,7 +9,6 @@ import kotlinx.serialization.Transient
 import org.jetbrains.amper.dependency.resolution.CacheEntryKey
 import org.jetbrains.amper.dependency.resolution.Context
 import org.jetbrains.amper.dependency.resolution.DependencyGraphContext
-import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.dependency.resolution.DependencyNodeHolder
 import org.jetbrains.amper.dependency.resolution.DependencyNodeHolderWithContext
 import org.jetbrains.amper.dependency.resolution.DependencyNodeReference
@@ -30,7 +29,6 @@ import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.LocalModuleDependency
 import org.jetbrains.amper.frontend.MavenDependencyBase
-import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.Notation
 import org.jetbrains.amper.frontend.api.BuiltinCatalogTrace
 import org.jetbrains.amper.frontend.api.DefaultTrace
@@ -52,14 +50,12 @@ sealed interface DependenciesFlowType {
         val isTest: Boolean,
         val includeNonExportedNative: Boolean = true,
     ) : DependenciesFlowType
-
-    data class IdeSyncType(val aom: Model) : DependenciesFlowType
 }
 
 /**
  * Filter resolution results.
  * Resolution is executed module wide, aligning versions for all platforms' dependencies and across RUNTIME/COMPILE scopes.
- * main and test resolution are still isolation to avoid tests classpath affecting the main classpath.
+ * To avoid tests classpath affecting the main classpath main and test resolution are still isolated.
  *
  * This filter is intended to be used If the caller needs resolution results for specific platforms/scope only.
  */

@@ -9,6 +9,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import org.jetbrains.amper.core.AmperUserCacheRoot
+import org.jetbrains.amper.core.UsedInIdePlugin
 import org.jetbrains.amper.dependency.resolution.Cache
 import org.jetbrains.amper.dependency.resolution.CacheEntryKey
 import org.jetbrains.amper.dependency.resolution.Context
@@ -44,10 +45,9 @@ import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.RepositoriesModulePart
 import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies.Companion.moduleDependencies
 import org.jetbrains.amper.frontend.dr.resolver.flow.Classpath
-import org.jetbrains.amper.frontend.dr.resolver.flow.defaultRepositories
-import org.jetbrains.amper.frontend.dr.resolver.flow.toRepository
 import org.jetbrains.amper.frontend.dr.resolver.flow.toResolutionPlatform
 import org.jetbrains.amper.frontend.isDescendantOf
+import org.jetbrains.amper.frontend.schema.Repository.Companion.SpecialMavenLocalUrl
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.incrementalcache.ResultWithSerializable
 import org.jetbrains.amper.incrementalcache.execute
@@ -113,15 +113,18 @@ class ModuleDependencies private constructor(
             }
 
     /**
-     * Module dependencies resolution in CLI
-     * should be performed based on the entire list returned by this method at once,
-     * so that versions of module dependencies are aligned across all module fragments.
+     * This method returns an unresolved graph of module dependencies for all leaf platforms.
+     * This exact graph is used as an input for module dependencies resolution
+     * performed by the method [ModuleDependencies.resolveModuleDependencies] with parameter
+     * [leafPlatformsOnly] set to [true].
      *
-     * Note: For CLI, resolution of leaf-platform's dependencies is enough, there is no need to resolve
-     * dependencies of other fragments (multiplatform ones) to align library versions across the module.
+     * This resolution mode (resolving leaf-platform's dependencies) is used in the CLI for now,
+     * since there is no need to resolve dependencies of non-leaf fragments (multiplatform ones).
+     * Dependencies' versions are aligned across all module leaf-fragments of the same type (main/test).
      *
-     * @return the root umbrella node with the list of module nodes (one root module node per platform).
-     * Each node from the list contains unresolved platform-specific dependencies of the module.
+     * @return the root umbrella node with the list of module nodes of type [ModuleDependencyNode] (one module node per platform).
+     * I.e., Each node from the list contains
+     * unresolved platform-specific module dependencies corresponding to one of the module leaf platforms.
      */
     fun allLeafPlatformsGraph(isForTests: Boolean): RootDependencyNodeWithContext {
         // Test dependencies contain dependencies of both test and corresponding main fragments
@@ -150,7 +153,7 @@ class ModuleDependencies private constructor(
     }
 
     /**
-     * @return unresolved compile/runtime module dependencies for the particular platform.
+     * @return unresolved compile/runtime module dependencies for the particular leaf module platform.
      */
     fun forPlatform(platform: Platform, isTest: Boolean): PerFragmentDependencies {
         // Test dependencies contain dependencies of both test and corresponding main fragments
@@ -160,19 +163,20 @@ class ModuleDependencies private constructor(
     }
 
     /**
-     * Module dependencies resolution in IDE
-     * should be performed based on the entire list returned by this method at once,
-     * so that versions of module dependencies are aligned across all module fragments.
+     * This method returns an unresolved dependencies graph for all module fragments
+     * with the unique list of platforms.
+     * This exact graph is used as an input for module dependencies resolution
+     * performed by the method [ModuleDependencies.resolveModuleDependencies] with parameter
+     * [leafPlatformsOnly] set to [false].
      *
-     * IDe converts every fragment into a separate module in the Workspace model.
-     * The same dependency is resolved for each module fragment independently
-     * (since different subsets of dependency source sets are added to the classpath
-     * for different fragments depending on the list of fragment platforms).
-     * This way in IDE resolution of all fragment dependencies should be done (including multiplatform ones)
-     * versions of libraries should be aligned across all module fragments (the same way as it is done for CLI).
+     * This resolution mode (resolving all fragments' dependencies) is used in Idea Plugin for Ide Sync,
+     * aligning library versions across all module fragments of the same type (main/test).
+     * After the resolution is finished, IDe converts every fragment into a separate module in the Workspace model
+     * with the list of resolved fragment dependencies
      *
-     * @return the root umbrella node with the list of module nodes (one root module node per fragment).
-     * Each node from the list contains unresolved platform-specific dependencies of the module fragment.
+     * @return the root umbrella node with the list of module nodes of type [ModuleDependencyNode] (one module node per fragment).
+     * I.e., Each node from the list contains
+     * unresolved module dependencies corresponding to one of the module fragments.
      */
     internal fun allFragmentsGraph(isForTests: Boolean, flattenGraph: Boolean): DependencyNodeHolderWithContext {
         // Test dependencies contain dependencies of both test and corresponding main fragments
@@ -200,27 +204,25 @@ class ModuleDependencies private constructor(
                 templateContext = resolutionSettings.toEmptyContext()
             )
         } else {
-            buildList {
+            val allPlatformsDependencies = buildList {
                 perPlatformsDeps.values.forEach {
                     add(it.compileDeps.toFlatGraph(it.fragment))
                     it.runtimeDeps?.let { runtimeDeps -> add(runtimeDeps.toFlatGraph(it.fragment)) }
                 }
             }
-                .let {
-                    // todo (AB) : It might be useful to decrease the number of changes in logic and make it step-by-step.
-                    //  At first, we could keep returning plain Graph for fragment dependencies as it is done now in IdeSync.
-                    //  This way, it might be simpler to adopt changes on Ide plugin side.
-                    //  As the second step, CLI graph structure might be reused "as is" without flattening.
-                    ModuleDependencyNodeWithModuleAndContext(
-                        // ':full' is here to distinguish from CLI resolution,
-                        // which is leaf-platforms only and should be a separate entry in the cache
-                        isForTests = isForTests,
-                        children = it.flatten(),
-                        module = module,
-                        templateContext = resolutionSettings.toEmptyContext(),
-                        topLevel = true,
-                    )
-                }
+            // todo (AB) : [AMPER-4905] It might be useful to decrease the number of changes in logic and make it step-by-step.
+            //  At first, we could keep returning plain Graph for fragment dependencies as it is done now in IdeSync.
+            //  This way, it might be simpler to adopt changes on Ide plugin side.
+            //  As the second step, CLI graph structure might be reused "as is" without flattening.
+            ModuleDependencyNodeWithModuleAndContext(
+                // ':full' is here to distinguish from CLI resolution,
+                // which is leaf-platforms only and should be a separate entry in the cache
+                isForTests = isForTests,
+                children = allPlatformsDependencies.flatten(),
+                module = module,
+                templateContext = resolutionSettings.toEmptyContext(),
+                topLevel = true,
+            )
         }
     }
 
@@ -257,50 +259,6 @@ class ModuleDependencies private constructor(
             )
         }
 
-    fun AmperModule.getValidRepositories(): List<Repository> {
-        val acceptedRepositories = mutableListOf<Repository>()
-        for (repository in resolvableRepositories()) {
-            if (repository is MavenRepository) {
-                @Suppress("HttpUrlsUsage")
-                if (repository.url.startsWith("http://")) {
-                    // TODO: Special --insecure-http-repositories option or some flag in project.yaml
-                    // to acknowledge http:// usage
-
-                    // report only once per `url`
-                    if (alreadyReportedHttpRepositories.put(repository.url, true) == null) {
-                        logger.warn("http:// repositories are not secure and should not be used: ${repository.url}")
-                    }
-
-                    continue
-                }
-
-                if (!repository.url.startsWith("https://") && repository != MavenLocal) {
-
-                    // report only once per `url`
-                    if (alreadyReportedNonHttpsRepositories.put(repository.url, true) == null) {
-                        logger.warn("Non-https repositories are not supported, skipping url: ${repository.url}")
-                    }
-
-                    continue
-                }
-            }
-
-            acceptedRepositories.add(repository)
-        }
-
-        return acceptedRepositories
-    }
-
-    private fun AmperModule.resolvableRepositories(): List<Repository> =
-        parts
-            .filterIsInstance<RepositoriesModulePart>()
-            .firstOrNull()
-            ?.mavenRepositories
-            ?.filter { it.resolve }
-            ?.map { it.toRepository() }
-            ?: defaultRepositories.map { it.toRepository() }
-
-
     private fun MavenDependencyBase.toFlattenedFragmentDirectDependencyNode(fragment: Fragment, context: Context): DirectFragmentDependencyNodeHolderWithContext {
         val dependencyNode = context.toMavenDependencyNode(toDrMavenCoordinates(), this is BomDependency)
 
@@ -315,6 +273,11 @@ class ModuleDependencies private constructor(
     }
 
     companion object {
+
+        private val defaultRepositories = listOf(
+            "https://repo1.maven.org/maven2",
+            "https://maven.google.com/",
+        )
 
         private val alreadyReportedHttpRepositories = ConcurrentHashMap<String, Boolean>()
         private val alreadyReportedNonHttpsRepositories = ConcurrentHashMap<String, Boolean>()
@@ -339,12 +302,13 @@ class ModuleDependencies private constructor(
             projectRoot = projectRoot.root,
         )
 
-        suspend fun Model.buildProjectDependenciesGraph(
+        @UsedInIdePlugin
+        suspend fun buildProjectDependenciesGraph(
+            model: Model,
             resolutionSettings: AmperResolutionSettings,
             moduleDependenciesList: List<ModuleDependencies>
         ): List<DependencyNodeHolderWithContext> {
-            moduleDependenciesList.checkModules(this@buildProjectDependenciesGraph)
-
+            moduleDependenciesList.checkModules(model)
             return buildProjectDependenciesGraph(resolutionSettings, moduleDependenciesList)
         }
 
@@ -356,7 +320,7 @@ class ModuleDependencies private constructor(
             return openTelemetry.spanBuilder("DR: building project graph").use {
                 buildList {
                     moduleDependenciesList.forEach {
-                        //  1. Tests and main should be resolved separately in IdeSync-mode
+                        // test and main fragments are resolved separately
                         add(it.allFragmentsGraph(isForTests = false, flattenGraph = true))
                         add(it.allFragmentsGraph(isForTests = true, flattenGraph = true))
                     }
@@ -369,7 +333,8 @@ class ModuleDependencies private constructor(
          * It resolves dependencies of all modules independently.
          *
          * Versions of dependency are aligned across all module main fragments and across all module test fragments.
-         * I.e., different main fragments of the module can't have different versions of the same library in their resolved graphs (including transitive)
+         * I.e., different main fragments of the module can't have different versions of the same library
+         * in their resolved graphs (including transitive).
          * And the same is true for test fragments.
          * At the same time, main and test fragments of the module could have different versions of the same library
          * in their resolved graphs.
@@ -426,10 +391,6 @@ class ModuleDependencies private constructor(
                             ) {
                                 openTelemetry.spanBuilder("DR.graph:resolution multi-module")
                                     .use {
-                                        // todo (AB):
-                                        //  2. All resolutions should share MavenDependency cache to avoid multiple parsing of library metadata
-                                        //  key should include scope, platforms and most probably repositories (think about reducing hash/equal execution time for such keys).
-
                                         val compositeGraph = resolveDependenciesBatch(moduleGraphs, filter)
                                         val serializableGraph = compositeGraph.root.toGraph()
 
@@ -460,6 +421,21 @@ class ModuleDependencies private constructor(
             }
         }
 
+        /**
+         * This is an entry point into the module-wide resolution.
+         * It resolves dependencies of given modules independently.
+         *
+         * Versions of dependency are aligned across all module main fragments and across all module test fragments.
+         * I.e., different main fragments of the module can't have different versions of the same library
+         * in their resolved graphs (including transitive).
+         * And the same is true for test fragments.
+         * At the same time, main and test fragments of the module could have different versions of the same library
+         * in their resolved graphs.
+         * Note: The latter is subject to change (ideally, it should be enforced that test fragments have dependencies of the same
+         * versions as main fragments, but could not cause overriding of the versions of main fragments dependencies)
+         *
+         * Two different modules could have different versions of the same library in their resolved graphs (including transitive).
+         */
         suspend fun resolveModuleDependencies(
             modules: List<AmperModule>,
             resolutionSettings: AmperResolutionSettings,
@@ -529,14 +505,14 @@ class ModuleDependencies private constructor(
                     .flatMap { if (it.root is RootDependencyNode) it.root.children else listOf(it.root) }
                     .filter {
                         with(filter) {
-                            // todo (AB) : This filtering works for non-flattened list only.
+                            // todo (AB) : [AMPER-4905] This filtering works for non-flattened list only.
                             it is ModuleDependencyNode
                                     && (platforms == null || platforms == it.resolutionConfig.platforms)
                                     && (scope == null || scope == it.resolutionConfig.scope)
                         }
                     }
 
-            // todo (AB) : Introduce context-unaware ModuleDependencyNode that aggregates context-specific
+            // todo (AB) : [AMPER-4905] Introduce context-unaware ModuleDependencyNode that aggregates context-specific
             //  resolution results. Publicly visible children should be filtered according to given filter,
             //  but all children should be internally available as well for calculating overriddenBy insights.
             val compositeGraph = ResolvedGraph(
@@ -639,8 +615,8 @@ class ModuleDependencies private constructor(
          * This method could be used for caching [ModuleDependencies] per AOM instance to avoid recalculation of
          * direct graph for the same model.
          *
-         * The resulting list could be used as an entry point into module-wide dependency resoluion for the entire project
-         * (represented by the given [Model])
+         * The resulting list could be used as an entry point into module-wide dependency resoluion
+         * for the entire project (represented by the given [Model]) which is performed by [resolveProjectDependencies]
          */
         fun Model.moduleDependencies(resolutionSettings: AmperResolutionSettings): List<ModuleDependencies> {
             val sharedResolutionCache = Cache()
@@ -654,9 +630,9 @@ class ModuleDependencies private constructor(
          *
          * This method could be used for caching [ModuleDependencies] per module instance to avoid recalculation of
          * direct graph for the same module.
-         * Also, it is useful in case a nested cache based on a module dependency graph is built.
-         * Returned [ModuleDependencies] provides inputs that can be used for nested cache without a need to restore the graph itself
-         * (restoring the nested cache entry only).
+         * Also, it is useful in case an upstream cache based on a module dependency graph is built.
+         * Returned [ModuleDependencies] provides inputs that can be used for upstream cache entry without a need to restore the graph itself
+         * (restoring the upstream cache entry only).
          *
          * The resulting list could be used as an entry point into module-wide dependency resolution for the module
          */
@@ -705,6 +681,56 @@ class ModuleDependencies private constructor(
             if (aom.modules.toSet() != this.map { it.module }.toSet())
                 error("Modules from the given list do not match modules from the Project Model")
         }
+
+        internal fun AmperModule.getValidRepositories(): List<Repository> {
+            val acceptedRepositories = mutableListOf<Repository>()
+            for (repository in resolvableRepositories()) {
+                if (repository is MavenRepository) {
+                    @Suppress("HttpUrlsUsage")
+                    if (repository.url.startsWith("http://")) {
+                        // TODO: Special --insecure-http-repositories option or some flag in project.yaml
+                        // to acknowledge http:// usage
+
+                        // report only once per `url`
+                        if (alreadyReportedHttpRepositories.put(repository.url, true) == null) {
+                            logger.warn("http:// repositories are not secure and should not be used: ${repository.url}")
+                        }
+
+                        continue
+                    }
+
+                    if (!repository.url.startsWith("https://") && repository != MavenLocal) {
+
+                        // report only once per `url`
+                        if (alreadyReportedNonHttpsRepositories.put(repository.url, true) == null) {
+                            logger.warn("Non-https repositories are not supported, skipping url: ${repository.url}")
+                        }
+
+                        continue
+                    }
+                }
+
+                acceptedRepositories.add(repository)
+            }
+
+            return acceptedRepositories
+        }
+
+        private fun AmperModule.resolvableRepositories(): List<Repository> =
+            parts
+                .filterIsInstance<RepositoriesModulePart>()
+                .firstOrNull()
+                ?.mavenRepositories
+                ?.filter { it.resolve }
+                ?.map { it.toRepository() }
+                ?: defaultRepositories.map { it.toRepository() }
+
+        fun RepositoriesModulePart.Repository.toRepository() = when {
+            this.url == SpecialMavenLocalUrl -> MavenLocal
+            else -> MavenRepository(url, userName, password)
+        }
+
+        internal fun String.toRepository() = RepositoriesModulePart.Repository(this, this).toRepository()
     }
 }
 
@@ -722,7 +748,9 @@ fun List<ModuleDependencyNode>.fragmentDependencies(module: String, fragment: St
     }
 }
 
-// todo (AB) : Reuse common dependencies for leaf platform in single-platform modules.
+/**
+ * This class provides unresolved fragment RUNTIME and COMPILE dependencies.
+ */
 class PerFragmentDependencies(
     val fragment: Fragment,
     resolutionSettings: AmperResolutionSettings,

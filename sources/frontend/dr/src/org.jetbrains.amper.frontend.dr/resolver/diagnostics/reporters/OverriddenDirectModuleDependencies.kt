@@ -23,7 +23,6 @@ import org.jetbrains.amper.frontend.dr.resolver.FrontendDrBundle
 import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencyNode
 import org.jetbrains.amper.frontend.dr.resolver.diagnostics.DrDiagnosticsReporter
 import org.jetbrains.amper.frontend.dr.resolver.diagnostics.DrReporterContext
-import org.jetbrains.amper.frontend.dr.resolver.flow.IdeSync
 import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.messages.extractPsiElementOrNull
 import org.jetbrains.amper.problems.reporting.BuildProblemType
@@ -33,7 +32,7 @@ import org.jetbrains.amper.problems.reporting.ProblemReporter
 import org.jetbrains.annotations.Nls
 import org.slf4j.LoggerFactory
 
-private val logger = LoggerFactory.getLogger(IdeSync::class.java)
+private val logger = LoggerFactory.getLogger(OverriddenDirectModuleDependencies::class.java)
 
 open class OverriddenDirectModuleDependencies : DrDiagnosticsReporter {
     override val level = Level.Warning
@@ -45,7 +44,7 @@ open class OverriddenDirectModuleDependencies : DrDiagnosticsReporter {
         context: DrReporterContext,
     ) {
         if (node !is DirectFragmentDependencyNode) return
-        val dependencyNode = node.dependencyNode as? MavenDependencyNode ?: return
+        val dependencyNode = node.dependencyNode
 
         val moduleName = node.parents.filterIsInstance<ModuleDependencyNode>().singleOrNull()?.moduleName ?: return
         val isForTestsModule = node.parents.filterIsInstance<ModuleDependencyNode>().singleOrNull()?.isForTests ?: return
@@ -56,28 +55,22 @@ open class OverriddenDirectModuleDependencies : DrDiagnosticsReporter {
         if (originalVersion != dependencyNode.resolvedVersion()) {
             // for every direct module dependency referencing this dependency node
 
-            // We prefer trace of the coordinates to the trace of the notation as it's more specific.
-            // E.g., in case of implicit dependencies it prefers 'version' over 'enabled'.
+            // We prefer the trace of the coordinates to the trace of the notation as it's more specific.
+            // E.g., in the case of implicit dependencies, it prefers 'version' over 'enabled'.
             val psiElement = node.notation.coordinates.extractPsiElementOrNull() ?: node.notation.extractPsiElementOrNull()
             // TODO: This is somewhat bad, because if we messed up with traces, the override goes unnoticed and might leave a user perplexed in the runtime.
             if (psiElement != null) {
                 val insightsCache = context.cache.computeIfAbsent(insightsCacheKey) { mutableMapOf() }
                 val dependencyInsight = insightsCache.computeIfAbsent(
                     DependencyInsightKey(dependencyNode.key, moduleName, isForTestsModule)) {
-                    // todo (AB) : This call assume that conflict resolution is globally applied to the entire graph.
-                    // todo (AB) : If graph contains more than one cluster of nodes resolved with help of different
-                    // todo (AB) : conflict resolvers, the code won't work any longer.
-                    // todo (AB) : Rule of thumb: this method should be called on the complete (!) subgraph that contains
-                    // todo (AB) : all nodes resolved with the same conflict resolver.
-                    timedBlocking(
-                        "insight ($moduleName-${dependencyNode.group}:${dependencyNode.module})"
-                    ) {
-                        context.graphRoot.filterGraph(
-                            dependencyNode.group,
-                            dependencyNode.module,
-                            resolvedVersionOnly = true,
-                        )
-                    }
+                    // This call assumes that conflict resolution is applied module-wide (test/main are resolved separately though).
+                    // Rule of thumb: this method should be called on the complete (!) subgraph that contains
+                    // all nodes resolved with the same conflict resolver.
+                     context.graphRoot.filterGraph(
+                        dependencyNode.group,
+                        dependencyNode.module,
+                        resolvedVersionOnly = true,
+                    )
                 }
                 problemReporter.reportMessage(
                     ModuleDependencyWithOverriddenVersion(
@@ -93,18 +86,6 @@ open class OverriddenDirectModuleDependencies : DrDiagnosticsReporter {
     companion object {
         private val insightsCacheKey =
             Key<MutableMap<DependencyInsightKey, DependencyNode>>("OverriddenDirectModuleDependencies::insightsCache")
-
-        // todo (AB): [AMPER-4905] Remove on final cleanup
-        private fun <T> timedBlocking(text: String, block: () -> T): T {
-            val start = System.currentTimeMillis()
-            return try {
-                block()
-            } finally {
-                val end = System.currentTimeMillis()
-                logger.debug("#######################")
-                logger.debug("Execution time: ${end - start} ms ($text)")
-            }
-        }
     }
 }
 
@@ -123,7 +104,7 @@ class ModuleDependencyWithOverriddenVersion(
     override val element: PsiElement,
 ) : PsiBuildProblem(Level.Warning, BuildProblemType.Generic) {
     val dependencyNode: MavenDependencyNode
-        get() = originalNode.dependencyNode as MavenDependencyNode
+        get() = originalNode.dependencyNode
     val originalVersion: String
         get() = dependencyNode.originalVersion().orUnspecified()
     val effectiveVersion: String

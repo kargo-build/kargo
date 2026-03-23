@@ -131,7 +131,7 @@ internal class ShowDependenciesCommand: AmperModelAwareCommand(name = "dependenc
         val resolutionPlatformSetsToResolveFor = platformSetsToResolveFor.map { it.mapNotNull { it.toResolutionPlatform() }.toSet() }
 
         val resolvedGraph: ResolvedGraph =
-            // todo (AB) : Pass all modules at once (though prettyPrint works for a single resolved graph,
+            // todo (AB) : [AMPER-4905] Pass all modules at once (though prettyPrint works for a single resolved graph,
             //  but not for many combined graphs, see [isConstraintAffectingTheGraph])
             ModuleDependencies
                 .resolveModuleDependencies(
@@ -141,9 +141,13 @@ internal class ShowDependenciesCommand: AmperModelAwareCommand(name = "dependenc
                         incrementalCache = cliContext.incrementalCache,
                         openTelemetry = GlobalOpenTelemetry.get(),
                     ),
-                    filter = ModuleResolutionFilter(resolutionType = if (includeTests) ResolutionType.ALL else ResolutionType.MAIN),
+                    // Filtering by scope and platforms is done later
+                    filter = ModuleResolutionFilter(
+                        resolutionType = if (includeTests) ResolutionType.ALL else ResolutionType.MAIN,
+                        // Filtering by scope and platforms is done later below
+                        scope = null, platforms = null,
+                    )
                 )
-
 
         return resolutionPlatformSetsToResolveFor
             .flatMap { platforms ->

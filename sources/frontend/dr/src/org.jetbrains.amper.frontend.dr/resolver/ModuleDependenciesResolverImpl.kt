@@ -4,7 +4,6 @@
 package org.jetbrains.amper.frontend.dr.resolver
 
 import kotlinx.serialization.modules.SerializersModuleBuilder
-import org.jetbrains.amper.dependency.resolution.Cache
 import org.jetbrains.amper.dependency.resolution.DependencyGraph.Companion.toSerializableReference
 import org.jetbrains.amper.dependency.resolution.DependencyGraphContext
 import org.jetbrains.amper.dependency.resolution.DependencyNode
@@ -16,12 +15,9 @@ import org.jetbrains.amper.dependency.resolution.MavenDependencyUnspecifiedVersi
 import org.jetbrains.amper.dependency.resolution.ResolutionConfigPlain
 import org.jetbrains.amper.dependency.resolution.SerializableDependencyNode
 import org.jetbrains.amper.dependency.resolution.SerializableDependencyNodeConverter
-import org.jetbrains.amper.frontend.AmperModule
-import org.jetbrains.amper.frontend.dr.resolver.flow.Classpath
-import org.slf4j.LoggerFactory
 import kotlin.reflect.KClass
 
-// todo (AB) : Extract to separate serialization-specific file
+// todo (AB) : [AMPER-4905] Extract to separate serialization-specific file
 internal class AmperDrSerializableTypesProvider: GraphSerializableTypesProvider {
     override fun getSerializableConverters() =
         ModuleDependencyNodeWithModuleConverter.converters() +
@@ -44,7 +40,7 @@ internal class AmperDrSerializableTypesProvider: GraphSerializableTypesProvider 
     }
 }
 
-// todo (AB) : Extract to separate serialization-specific file
+// todo (AB) : [AMPER-4905] Extract to separate serialization-specific file
 private sealed class ModuleDependencyNodeWithModuleConverter<T: ModuleDependencyNode>: SerializableDependencyNodeConverter<T, SerializableModuleDependencyNodeWithModule>  {
     object Input: ModuleDependencyNodeWithModuleConverter<ModuleDependencyNodeWithModuleAndContext>() {
         override fun applicableTo() = ModuleDependencyNodeWithModuleAndContext::class
@@ -65,7 +61,7 @@ private sealed class ModuleDependencyNodeWithModuleConverter<T: ModuleDependency
     }
 }
 
-// todo (AB) : Extract to separate serialization-specific file
+// todo (AB) : [AMPER-4905] Extract to separate serialization-specific file
 private sealed class DirectFragmentDependencyNodeConverter<T: DirectFragmentDependencyNode>
     : SerializableDependencyNodeConverter<T, SerializableDirectFragmentDependencyNodeHolder>
 {
@@ -92,7 +88,7 @@ private sealed class DirectFragmentDependencyNodeConverter<T: DirectFragmentDepe
     }
 }
 
-// todo (AB) : Move to ModuleDependencies
+// todo (AB) : [AMPER-4905] Move to ModuleDependencies
 class DirectMavenDependencyUnspecifiedVersionResolver: MavenDependencyUnspecifiedVersionResolverBase() {
 
     override fun getBomNodes(node: MavenDependencyNodeWithContext): List<MavenDependencyNode> {

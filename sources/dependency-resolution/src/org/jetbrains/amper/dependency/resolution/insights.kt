@@ -38,13 +38,12 @@ fun DependencyNode.filterGraph(group: String, module: String, resolvedVersionOnl
 
     val nodes = graph.distinctBfsSequence()
         .filter { it.belongsTo(group, module) }
-        .toSet()
         .let {
             if (resolvedVersionOnly && it.any { it is MavenDependencyNode })
                 // Ignoring redundant constraints
                 it.filterIsInstance<MavenDependencyNode>().toSet()
             else
-                it
+                it.toSet()
         }
 
     if (nodes.isEmpty()) return DependencyNodeWithChildren(graph) // root node without children

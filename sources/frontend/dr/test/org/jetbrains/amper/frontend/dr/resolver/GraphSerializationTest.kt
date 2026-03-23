@@ -8,12 +8,10 @@ import javassist.Modifier
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.DependencyGraph
 import org.jetbrains.amper.dependency.resolution.DependencyGraph.Companion.toGraph
 import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.dependency.resolution.GraphJson
-import org.jetbrains.amper.dependency.resolution.IncrementalCacheUsage
 import org.jetbrains.amper.dependency.resolution.MavenDependencyConstraintNode
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
@@ -21,7 +19,6 @@ import org.jetbrains.amper.dependency.resolution.SerializableDependencyNode
 import org.jetbrains.amper.dependency.resolution.diagnostics.Message
 import org.jetbrains.amper.dependency.resolution.group
 import org.jetbrains.amper.dependency.resolution.isOrphan
-import org.jetbrains.amper.test.Dirs
 import org.jetbrains.amper.test.assertEqualsWithDiff
 import org.jetbrains.amper.test.runTestWithMdc
 import org.junit.jupiter.api.Test
@@ -92,9 +89,8 @@ class GraphSerializationTest: BaseModuleDrTest() {
         fun DependencyNode.getErrorMessagesForChild(group: String): Set<String> =
             distinctBfsSequence()
                 .filterIsInstance<DirectFragmentDependencyNode>()
-                .first { (it.dependencyNode as? MavenDependencyNode)?.group == group }
+                .first { it.dependencyNode.group == group }
                 .dependencyNode
-                .let { it as MavenDependencyNode }
                 .messages.map { it.message }.toSet()
 
         val expectedDiagnostic = "Unable to resolve dependency com.jetbrains.intellij.platform:core:233.13763.1"

@@ -5,7 +5,6 @@
 package org.jetbrains.amper.frontend.dr.resolver.flow
 
 import org.jetbrains.amper.dependency.resolution.Cache
-import org.jetbrains.amper.dependency.resolution.CacheEntryKey
 import org.jetbrains.amper.dependency.resolution.Context
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
@@ -18,11 +17,10 @@ import org.jetbrains.amper.frontend.MavenDependency
 import org.jetbrains.amper.frontend.MavenDependencyBase
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.allFragmentDependencies
+import org.jetbrains.amper.frontend.dr.resolver.AmperResolutionSettings
 import org.jetbrains.amper.frontend.dr.resolver.DependenciesFlowType
 import org.jetbrains.amper.frontend.dr.resolver.DependencyNodeHolderWithNotationAndContext
 import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencyNodeWithModuleAndContext
-import org.jetbrains.amper.frontend.dr.resolver.AmperResolutionSettings
-import org.jetbrains.amper.frontend.dr.resolver.uniqueModuleKey
 import org.jetbrains.amper.frontend.fragmentsTargeting
 
 /**
@@ -64,6 +62,7 @@ import org.jetbrains.amper.frontend.fragmentsTargeting
  *   or unconditionally for native modules (since the native module compilation classpath includes all transitive dependencies)
  *                  and for the runtime resolution scope
  */
+// todo (AB) : [AMPER-4905] Get rid of inheritance and move closer to the ModuleDependencies location.
 internal class Classpath(
     dependenciesFlowType: DependenciesFlowType.ClassPathType
 ): AbstractDependenciesFlow<DependenciesFlowType.ClassPathType>(dependenciesFlowType) {
@@ -74,29 +73,6 @@ internal class Classpath(
         sharedResolutionCache: Cache,
     ): ModuleDependencyNodeWithModuleAndContext {
         return module.fragmentsModuleDependencies(flowType, resolutionSettings = resolutionSettings, sharedResolutionCache = sharedResolutionCache)
-    }
-
-    @Deprecated("To be removed. Used in obsoleteIdeSync only")
-    internal fun directDependenciesGraph(
-        fragment: Fragment,
-        resolutionSettings: AmperResolutionSettings,
-        sharedResolutionCache: Cache
-    ): ModuleDependencyNodeWithModuleAndContext {
-        return fragment.module.fragmentsModuleDependencies(flowType, resolutionSettings = resolutionSettings, sharedResolutionCache = sharedResolutionCache)
-    }
-
-    override fun resolutionCacheEntryKey(modules: List<AmperModule>): CacheEntryKey {
-        return CacheEntryKey.CompositeCacheEntryKey(
-            components = buildList {
-                modules.sortedBy { it.userReadableName }.map { it.userReadableName + it.uniqueModuleKey() }.let {
-                    addAll(it)
-                }
-                add(flowType.platforms)
-                add(flowType.scope)
-                add(flowType.isTest)
-                add(flowType.includeNonExportedNative)
-            }
-        )
     }
 
     private fun AmperModule.fragmentsModuleDependencies(

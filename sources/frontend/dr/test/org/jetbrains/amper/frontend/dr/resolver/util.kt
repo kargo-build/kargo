@@ -5,29 +5,14 @@
 package org.jetbrains.amper.frontend.dr.resolver
 
 import org.jetbrains.amper.core.AmperUserCacheRoot
-import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.aomBuilder.readProjectModel
-import org.jetbrains.amper.frontend.dr.resolver.flow.toResolutionPlatform
 import org.jetbrains.amper.frontend.project.AmperProjectContext
 import org.jetbrains.amper.problems.reporting.NoopProblemReporter
 import org.jetbrains.amper.test.Dirs
 import java.nio.file.Path
 import kotlin.test.assertIs
 import kotlin.test.fail
-
-internal fun DependencyNode.filterByFragment(module: String, fragment: String, aom: Model) : List<ModuleDependencyNode> {
-    val fragment = aom.modules.single { it.userReadableName == module }
-        .fragments.single { it.name == fragment }
-
-    val platforms = fragment.platforms.map { it.toResolutionPlatform()!! }.toSet()
-    val isTest = fragment.isTest
-
-    return children
-        .filterIsInstance<ModuleDependencyNode>()
-        .filter { it.resolutionConfig.platforms == platforms && it.isForTests == isTest }
-        .toList()
-}
 
 internal fun getTestProjectModel(testProjectName: String, testDataRoot: Path): Model {
     val projectPath = testDataRoot.resolve(testProjectName)

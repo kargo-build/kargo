@@ -146,8 +146,8 @@ class DependencyInsightsTest : BaseModuleDrTest() {
     /**
      * This test checks that a large number of overridden dependencies don't
      * cause performance degradation.
-     * // todo (AB) : This test is added temporary and should be removed (it doesn't check anything that other tests checks
-     * // todo (AB) : It is added for debug purposes.
+     * // todo (AB) : [AMPER-4905] This test is added temporary and should be removed (it doesn't check anything that other tests checks
+     * // todo (AB) : [AMPER-4905] It is added for debug purposes.
      */
     @Test
     fun `test large number of overridden dependencies`(testInfo: TestInfo) = runSlowModuleDependenciesTest {
