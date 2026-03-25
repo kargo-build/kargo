@@ -109,9 +109,9 @@ private fun ProjectTreeBuilder.ModuleTreeBuilder.addDependencyInContext(
     }
 
     if (useTestContext) {
-        withTestContext(block)
+        withTestContext(block = block)
     } else {
-        withDefaultContext(block)
+        withDefaultContext(block = block)
     }
 }
 

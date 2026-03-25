@@ -10,6 +10,7 @@ import org.codehaus.plexus.util.xml.Xpp3Dom
 import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.frontend.tree.invoke
 import org.jetbrains.amper.frontend.types.generated.*
+import org.jetbrains.amper.maven.MavenContributorContext
 import org.jetbrains.amper.maven.ProjectTreeBuilder
 
 internal fun ProjectTreeBuilder.contributeSpringBootPlugin(jarProjects: Set<MavenProject>) {
@@ -26,7 +27,7 @@ private fun ProjectTreeBuilder.ModuleTreeBuilder.contributeSpringBootPlugin(
     reactorProject: MavenProject,
     plugin: Plugin,
 ) {
-    withDefaultContext {
+    withDefaultContext(extraContexts = listOf(MavenContributorContext.SpringBoot)) {
         product {
             type(ProductType.JVM_APP)
         }

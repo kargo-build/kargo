@@ -34,7 +34,7 @@ import org.jetbrains.yaml.psi.YAMLPsiElement
 
 val MinimalModule.unwrapAliases get() = aliases?.mapValues { it.value.leaves }.orEmpty()
 
-internal val defaultContextsInheritance by lazy {
+val defaultContextsInheritance by lazy {
     PlatformsInheritance() + MainTestInheritance + DefaultInheritance
 }
 

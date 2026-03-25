@@ -5,6 +5,8 @@
 package org.jetbrains.amper.maven
 
 import org.jetbrains.amper.frontend.contexts.TestCtx
+import org.jetbrains.amper.frontend.contexts.defaultContextsInheritance
+import org.jetbrains.amper.frontend.contexts.plus
 import org.jetbrains.amper.frontend.schema.BomDependency
 import org.jetbrains.amper.frontend.tree.BooleanNode
 import org.jetbrains.amper.frontend.tree.EnumNode
@@ -20,28 +22,36 @@ import org.jetbrains.amper.frontend.tree.copy
 import org.jetbrains.amper.frontend.tree.declaration
 import org.jetbrains.amper.frontend.tree.schemaValue
 import org.jetbrains.amper.frontend.types.SchemaType
-import org.jetbrains.amper.problems.reporting.NoopProblemReporter
+import org.jetbrains.amper.problems.reporting.CollectingProblemReporter
 import kotlin.io.path.invariantSeparatorsPathString
 import kotlin.io.path.pathString
 
 typealias Key = String
 
-val treeRefiner = TreeRefiner()
+val treeRefiner = TreeRefiner(contextComparator = defaultContextsInheritance + MavenContributorContextInheritance)
 
 internal fun MappingNode.serializeToYaml(comments: YamlComments = emptyMap()): String = buildString {
-    val refinedMain = context(NoopProblemReporter) {
+    val problemReporter = CollectingProblemReporter()
+    val refinedMain = context(problemReporter) {
         treeRefiner.refineTree(
             this@serializeToYaml,
-            emptyList(),
+            listOf(MavenContributorContext.WithAllContributors),
             withDefaults = false,
         )
     }
-    val refinedTest = context(NoopProblemReporter) {
+    val refinedTest = context(problemReporter) {
         treeRefiner.refineTree(
             this@serializeToYaml,
-            listOf(TestCtx),
+            listOf(MavenContributorContext.WithAllContributors, TestCtx),
             withDefaults = false,
         )
+    }
+    check(problemReporter.problems.isEmpty()) {
+        // This indicates a problem in the converter code, so it's fine to just fail here
+        buildString {
+            appendLine("Failed to refine converted tree:")
+            problemReporter.problems.forEach { appendLine(" - ${it.message}") }
+        }
     }
     val test = refinedTest.filterByContext(TestCtx, refinedMain)
 
