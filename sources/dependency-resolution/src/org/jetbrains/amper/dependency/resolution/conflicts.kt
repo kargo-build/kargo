@@ -75,7 +75,7 @@ class HighestVersionStrategy : ConflictResolutionStrategy {
                 when(it) {
                     // todo (AB) don't align strictly constraint
                     is MavenDependencyNodeWithContext -> {
-                        it.dependency = it.context.createOrReuseDependency(it.dependency.coordinates.copy(version = resolvedVersion), it.isBom)
+                        it.updateDependency(it.context.createOrReuseDependency(it.dependency.coordinates.copy(version = resolvedVersion), it.isBom))
                         it.overriddenBy = if (it.originalVersion() != resolvedVersion) candidatesWithResolvedVersion else emptySet()
                     }
                     is MavenDependencyConstraintNodeWithContext -> {

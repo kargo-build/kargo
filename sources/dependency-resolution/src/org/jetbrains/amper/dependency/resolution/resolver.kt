@@ -501,23 +501,28 @@ private class ConflictResolver(
      * // todo (AB) : as a part of conflict resolution winning subgraph, but some will be eliminated (not reachable from the root).
      * // todo (AB) : The question is: how to detect such "stale" parents? how to get rid of them on conflict resolution-loosing subgraphs?
      */
-    private suspend fun unregisterOrphanNodes(nodes: Map<DependencyNodeWithContext, List<DependencyNodeWithContext>>) {
-        val nodesToUnregister = nodes.keys +
-                nodes.values.flatMap { oldChildren ->
-                    // old children of the node before the conflict was resolved
-                    oldChildren
-                        .toSet()
-                        .filter { it.isOrphanChildOfConflictingNodes(nodes) }
-                        .flatMap {
-                            it.distinctBfsSequence { child, _ ->
-                                // only a single parent leads to the unregistered top node
-                                // => the node can be unregistered as well with all children
-                                child.isOrphanChildOfConflictingNodes(nodes)
-                                // otherwise, the node is referenced from some resolved non-conflicted node
-                                // => it should be kept with all children (avoid unregistering)
-                            }.filterIsInstance<DependencyNodeWithContext>()
-                        }
-                }
+    private suspend fun unregisterOrphanNodes(conflictedNodesWithOldChildren: Map<DependencyNodeWithContext, List<DependencyNodeWithContext>>) {
+        val conflictedNodesActualChildren = conflictedNodesWithOldChildren.keys.flatMap { it.children }.toSet()
+        val conflictedNodesOldChildren = conflictedNodesWithOldChildren.values.flatten().toSet()
+
+        val conflictedNodesAbandonedChildren = (conflictedNodesOldChildren - conflictedNodesActualChildren)
+
+        val directOrphanChildren = conflictedNodesAbandonedChildren.filter { it.parents.isEmpty() }.toSet()
+        val allOrphanChildren = directOrphanChildren +
+                (conflictedNodesAbandonedChildren - directOrphanChildren)
+                    .filterNot { it.isThereAPathToTopBypassing(directOrphanChildren) }
+
+        val nodesToUnregister =
+            allOrphanChildren.flatMap { orphanChild ->
+                // old children of the node before the conflict was resolved
+                orphanChild.distinctBfsSequence { child, _ ->
+                    // only a single parent leads to the unregistered top node
+                    // => the node can be unregistered as well with all children
+                    child.isOrphanChildOfConflictingNodes(allOrphanChildren)
+                    // otherwise, the node is referenced from some resolved non-conflicted node
+                    // => it should be kept with all children (avoid unregistering)
+                }.filterIsInstance<DependencyNodeWithContext>()
+            }
 
         nodesToUnregister.forEach { node ->
             conflictDetectionMutexByKey.withLock(node.key.hashCode()) {
@@ -529,14 +534,14 @@ private class ConflictResolver(
     }
 
     private fun DependencyNode.isOrphanChildOfConflictingNodes(
-        nodes: Map<DependencyNodeWithContext, List<DependencyNodeWithContext>>,
+        nodes: Set<DependencyNodeWithContext>,
     ): Boolean =
         // there is the single parent that is to be unregistered
         // => the child node can be unregistered as well with all children (except those referenced outside)
         parents.size == 1
                 // all parents lead to one of the unregistered top nodes
                 // => the node could be unregistered as well with all children
-                || !isThereAPathToTopBypassing(nodes.keys)
+                || !isThereAPathToTopBypassing(nodes)
 
     private fun DependencyNode.isThereAPathToTopBypassing(nodes: Set<DependencyNodeWithContext>): Boolean {
         if (parents.isEmpty()) return true // we reach the root
@@ -646,7 +651,7 @@ private class UnspecifiedMavenDependencyVersionHelper(val unspecifiedVersionProv
             val resolvedNodes = unspecifiedVersionProvider.resolveVersions(nodes)
 
             resolvedNodes.forEach { (node, resolvedVersion) ->
-                node.dependency = node.context.createOrReuseDependency(node.dependency.coordinates.copy(version = resolvedVersion))
+                node.updateDependency(node.context.createOrReuseDependency(node.dependency.coordinates.copy(version = resolvedVersion)))
                 node.versionFromBom = resolvedVersion
                 nodes.remove(node)
             }

@@ -12,7 +12,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import org.jetbrains.amper.dependency.resolution.LocalM2RepositoryFinder.findPath
 import org.jetbrains.amper.dependency.resolution.attributes.Attribute
 import org.jetbrains.amper.dependency.resolution.attributes.AttributeValue
 import org.jetbrains.amper.dependency.resolution.attributes.Category
@@ -172,11 +171,22 @@ class MavenDependencyNodeWithContext internal constructor(
 
     @Volatile
     override var dependency: MavenDependencyImpl = dependency
-        set(value) {
+        private set(value) {
             assert(group == value.group) { "Groups don't match. Expected: $group, actual: ${value.group}" }
             assert(module == value.module) { "Modules don't match. Expected: $module, actual: ${value.module}" }
             field = value
         }
+
+    /**
+     * This method is intended to be used when the dependency version is updated
+     * (due to conflict resolution or due to unspecified version substitution).
+     * It updates dependency reference and recalculates children immediately
+     * causes actualizing parents of old children no longer referenced from this node after update.
+     */
+    internal fun updateDependency(dependency: MavenDependencyImpl) {
+        this.dependency = dependency
+        children // causes actualizing parents of old children no longer referenced from this node
+    }
 
     override val originalVersion: String? = dependency.version
 
