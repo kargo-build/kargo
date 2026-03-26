@@ -20,11 +20,11 @@ Module shared
 │              │         │         │              ╰─── org.jetbrains.kotlin:kotlin-stdlib:1.9.24 -> #kotlinVersion
 │              │         │         ├─── org.jetbrains.compose.runtime:runtime:#composeDefaultVersion
 │              │         │         │    ╰─── org.jetbrains.compose.runtime:runtime-uikitarm64:#composeDefaultVersion
-│              │         │         │         ╰─── androidx.compose.runtime:runtime:1.10.2
-│              │         │         │              ╰─── androidx.compose.runtime:runtime-iosarm64:1.10.2
+│              │         │         │         ╰─── androidx.compose.runtime:runtime:1.10.5
+│              │         │         │              ╰─── androidx.compose.runtime:runtime-iosarm64:1.10.5
 │              │         │         │                   ├─── androidx.collection:collection:1.5.0 (*)
-│              │         │         │                   ├─── androidx.compose.runtime:runtime-annotation:1.10.2
-│              │         │         │                   │    ╰─── androidx.compose.runtime:runtime-annotation-iosarm64:1.10.2
+│              │         │         │                   ├─── androidx.compose.runtime:runtime-annotation:1.10.5
+│              │         │         │                   │    ╰─── androidx.compose.runtime:runtime-annotation-iosarm64:1.10.5
 │              │         │         │                   │         ╰─── org.jetbrains.kotlin:kotlin-stdlib:2.0.21 -> #kotlinVersion
 │              │         │         │                   ├─── org.jetbrains.kotlin:kotlin-stdlib:2.0.21 -> #kotlinVersion
 │              │         │         │                   ├─── org.jetbrains.kotlinx:atomicfu:0.27.0
@@ -37,17 +37,17 @@ Module shared
 │              │         │         │                             ╰─── org.jetbrains.kotlin:kotlin-stdlib:2.0.0 -> #kotlinVersion
 │              │         │         ├─── org.jetbrains.compose.ui:ui:#composeDefaultVersion
 │              │         │         │    ╰─── org.jetbrains.compose.ui:ui-uikitarm64:#composeDefaultVersion
-│              │         │         │         ├─── androidx.compose.runtime:runtime-retain:1.10.2
-│              │         │         │         │    ╰─── androidx.compose.runtime:runtime-retain-iosarm64:1.10.2
+│              │         │         │         ├─── androidx.compose.runtime:runtime-retain:1.10.5
+│              │         │         │         │    ╰─── androidx.compose.runtime:runtime-retain-iosarm64:1.10.5
 │              │         │         │         │         ├─── androidx.collection:collection:1.5.0 (*)
-│              │         │         │         │         ├─── androidx.compose.runtime:runtime:1.10.2 (*)
+│              │         │         │         │         ├─── androidx.compose.runtime:runtime:1.10.5 (*)
 │              │         │         │         │         ├─── org.jetbrains.kotlin:kotlin-stdlib:2.0.21 -> #kotlinVersion
 │              │         │         │         │         ├─── org.jetbrains.kotlinx:atomicfu:0.27.0 (*)
 │              │         │         │         │         ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (*)
 │              │         │         │         ├─── androidx.navigationevent:navigationevent:1.0.2
 │              │         │         │         │    ╰─── androidx.navigationevent:navigationevent-iosarm64:1.0.2
 │              │         │         │         │         ├─── androidx.annotation:annotation:1.9.1 (*)
-│              │         │         │         │         ├─── androidx.compose.runtime:runtime-annotation:1.9.0 -> 1.10.2 (*)
+│              │         │         │         │         ├─── androidx.compose.runtime:runtime-annotation:1.9.0 -> 1.10.5 (*)
 │              │         │         │         │         ├─── org.jetbrains.kotlin:kotlin-stdlib:2.0.21 -> #kotlinVersion
 │              │         │         │         │         ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (*)
 │              │         │         │         ├─── org.jetbrains.androidx.lifecycle:lifecycle-common:2.9.6
@@ -69,7 +69,7 @@ Module shared
 │              │         │         │         │         ├─── androidx.lifecycle:lifecycle-runtime-compose:2.9.4
 │              │         │         │         │         │    ╰─── androidx.lifecycle:lifecycle-runtime-compose-iosarm64:2.9.4
 │              │         │         │         │         │         ├─── androidx.annotation:annotation:1.9.1 (*)
-│              │         │         │         │         │         ├─── androidx.compose.runtime:runtime:1.9.0 -> 1.10.2 (*)
+│              │         │         │         │         │         ├─── androidx.compose.runtime:runtime:1.9.0 -> 1.10.5 (*)
 │              │         │         │         │         │         ╰─── androidx.lifecycle:lifecycle-runtime:2.9.4 (*)
 │              │         │         │         │         ├─── org.jetbrains.androidx.lifecycle:lifecycle-common:2.9.6 (*)
 │              │         │         │         │         ├─── org.jetbrains.androidx.lifecycle:lifecycle-runtime:2.9.6 (*)
@@ -106,14 +106,14 @@ Module shared
 │              │         │         │         ├─── org.jetbrains.compose.runtime:runtime:#composeDefaultVersion (*)
 │              │         │         │         ├─── org.jetbrains.compose.runtime:runtime-saveable:#composeDefaultVersion
 │              │         │         │         │    ╰─── org.jetbrains.compose.runtime:runtime-saveable-uikitarm64:#composeDefaultVersion
-│              │         │         │         │         ├─── androidx.compose.runtime:runtime-saveable:1.10.2
-│              │         │         │         │         │    ╰─── androidx.compose.runtime:runtime-saveable-iosarm64:1.10.2
+│              │         │         │         │         ├─── androidx.compose.runtime:runtime-saveable:1.10.5
+│              │         │         │         │         │    ╰─── androidx.compose.runtime:runtime-saveable-iosarm64:1.10.5
 │              │         │         │         │         │         ├─── androidx.collection:collection:1.5.0 (*)
-│              │         │         │         │         │         ├─── androidx.compose.runtime:runtime:1.10.2 (*)
+│              │         │         │         │         │         ├─── androidx.compose.runtime:runtime:1.10.5 (*)
 │              │         │         │         │         │         ├─── androidx.lifecycle:lifecycle-runtime-compose:2.9.4 (*)
 │              │         │         │         │         │         ├─── androidx.savedstate:savedstate-compose:1.3.2 -> 1.3.3
 │              │         │         │         │         │         │    ╰─── androidx.savedstate:savedstate-compose-iosarm64:1.3.3
-│              │         │         │         │         │         │         ├─── androidx.compose.runtime:runtime:1.9.0 -> 1.10.2 (*)
+│              │         │         │         │         │         │         ├─── androidx.compose.runtime:runtime:1.9.0 -> 1.10.5 (*)
 │              │         │         │         │         │         │         ╰─── androidx.savedstate:savedstate:1.3.3 (*)
 │              │         │         │         │         │         ╰─── org.jetbrains.kotlin:kotlin-stdlib:2.0.21 -> #kotlinVersion
 │              │         │         │         │         ├─── org.jetbrains.androidx.lifecycle:lifecycle-runtime-compose:2.9.6 (*)

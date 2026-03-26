@@ -27,7 +27,7 @@ settings@android:
       enabled: false  # default
       exposedAccessors: false  # default
       packageName:   # default
-    version: 1.10.1  # default
+    version: 1.10.3  # default
   java:
     annotationProcessing:
       processorOptions: {}  # default
@@ -113,7 +113,7 @@ settings@jvm:
       enabled: false  # default
       exposedAccessors: false  # default
       packageName:   # default
-    version: 1.10.1  # default
+    version: 1.10.3  # default
   java:
     annotationProcessing:
       processorOptions: {}  # default
@@ -213,7 +213,7 @@ settings@jvm+android:
       enabled: false  # default
       exposedAccessors: false  # default
       packageName:   # default
-    version: 1.10.1  # default
+    version: 1.10.3  # default
   java:
     annotationProcessing:
       processorOptions: {}  # default
@@ -302,7 +302,7 @@ settings@jvm:
       enabled: false  # default
       exposedAccessors: false  # default
       packageName:   # default
-    version: 1.10.1  # default
+    version: 1.10.3  # default
   java:
     annotationProcessing:
       processorOptions: {}  # default
@@ -399,7 +399,7 @@ settings@android:
       enabled: false  # default
       exposedAccessors: false  # default
       packageName:   # default
-    version: 1.10.1  # default
+    version: 1.10.3  # default
   java:
     annotationProcessing:
       processorOptions: {}  # default

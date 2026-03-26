@@ -34,7 +34,7 @@ val amperJreZuluVersion = "25.32.21"
 val amperJreJavaVersion = "25.0.2"
 
 val composeHotReloadVersion = "1.0.0"
-val composeVersion = "1.10.1"
+val composeVersion = "1.10.3"
 val jdkVersion = "21" // TODO bump to 25 when Kotlin supports it
 val junitPlatformVersion = "6.0.1"
 val kotlinVersion = "2.3.20" // /!\ Remember to update the KotlinVersion enum with outdated/experimental versions

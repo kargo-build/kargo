@@ -45,7 +45,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.10.1
+        version: <default> 1.10.3
       }
       ios: <default> {
         framework: <default> {
@@ -216,7 +216,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.10.1
+        version: <default> 1.10.3
       }
       ios: <default> {
         framework: <default> {
@@ -385,7 +385,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.10.1
+        version: <default> 1.10.3
       }
       ios: <default> {
         framework: <default> {
@@ -557,7 +557,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.10.1
+        version: <default> 1.10.3
       }
       ios: <default> {
         framework: <default> {
@@ -726,7 +726,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.10.1
+        version: <default> 1.10.3
       }
       ios: <default> {
         framework: <default> {
@@ -898,7 +898,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.10.1
+        version: <default> 1.10.3
       }
       ios: <default> {
         framework: <default> {

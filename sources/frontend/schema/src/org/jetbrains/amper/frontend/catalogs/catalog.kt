@@ -371,7 +371,7 @@ private fun library(groupAndModule: String, version: TraceableVersion): Traceabl
  * This is defined the same way the Compose Gradle plugin defines the `compose.material3` alias.
  */
 private fun composeMaterial3VersionForCMPVersion(composeVersion: TraceableVersion): TraceableVersion {
-    // Before Compose Multiplatform 1.9.0, the material3 version was aligned with the Compose version
+    // Before Compose Multiplatform 1.9.0, the material3 version was aligned with the Compose version.
     // Starting from 1.9.0, the material3 version was decoupled, and only stable versions (at the time of
     // publication) were used.
     // See https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.9.0
@@ -393,6 +393,8 @@ private fun composeMaterial3VersionForCMPVersion(composeVersion: TraceableVersio
         "1.10.0-rc02" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.0-rc02
         "1.10.0" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.0
         "1.10.1" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.1
+        "1.10.2" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.2
+        "1.10.3" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.3
         else -> null // not known yet, or regular alphas/betas/rcs
     }
     if (material3Version != null) {

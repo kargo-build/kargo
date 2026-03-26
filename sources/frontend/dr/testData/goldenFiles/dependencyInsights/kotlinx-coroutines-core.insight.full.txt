@@ -11,14 +11,14 @@ Module shared
 │              │         │    ╰─── org.jetbrains.compose.animation:animation-core-uikitarm64:#composeDefaultVersion
 │              │         │         ├─── org.jetbrains.compose.runtime:runtime:#composeDefaultVersion
 │              │         │         │    ╰─── org.jetbrains.compose.runtime:runtime-uikitarm64:#composeDefaultVersion
-│              │         │         │         ╰─── androidx.compose.runtime:runtime:1.10.2
-│              │         │         │              ╰─── androidx.compose.runtime:runtime-iosarm64:1.10.2
+│              │         │         │         ╰─── androidx.compose.runtime:runtime:1.10.5
+│              │         │         │              ╰─── androidx.compose.runtime:runtime-iosarm64:1.10.5
 │              │         │         │                   ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0
 │              │         │         ├─── org.jetbrains.compose.ui:ui:#composeDefaultVersion
 │              │         │         │    ╰─── org.jetbrains.compose.ui:ui-uikitarm64:#composeDefaultVersion
-│              │         │         │         ├─── androidx.compose.runtime:runtime-retain:1.10.2
-│              │         │         │         │    ╰─── androidx.compose.runtime:runtime-retain-iosarm64:1.10.2
-│              │         │         │         │         ├─── androidx.compose.runtime:runtime:1.10.2 (*)
+│              │         │         │         ├─── androidx.compose.runtime:runtime-retain:1.10.5
+│              │         │         │         │    ╰─── androidx.compose.runtime:runtime-retain-iosarm64:1.10.5
+│              │         │         │         │         ├─── androidx.compose.runtime:runtime:1.10.5 (*)
 │              │         │         │         │         ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0
 │              │         │         │         ├─── androidx.navigationevent:navigationevent:1.0.2
 │              │         │         │         │    ╰─── androidx.navigationevent:navigationevent-iosarm64:1.0.2
@@ -26,9 +26,9 @@ Module shared
 │              │         │         │         ├─── org.jetbrains.compose.runtime:runtime:#composeDefaultVersion (*)
 │              │         │         │         ├─── org.jetbrains.compose.runtime:runtime-saveable:#composeDefaultVersion
 │              │         │         │         │    ╰─── org.jetbrains.compose.runtime:runtime-saveable-uikitarm64:#composeDefaultVersion
-│              │         │         │         │         ├─── androidx.compose.runtime:runtime-saveable:1.10.2
-│              │         │         │         │         │    ╰─── androidx.compose.runtime:runtime-saveable-iosarm64:1.10.2
-│              │         │         │         │         │         ╰─── androidx.compose.runtime:runtime:1.10.2 (*)
+│              │         │         │         │         ├─── androidx.compose.runtime:runtime-saveable:1.10.5
+│              │         │         │         │         │    ╰─── androidx.compose.runtime:runtime-saveable-iosarm64:1.10.5
+│              │         │         │         │         │         ╰─── androidx.compose.runtime:runtime:1.10.5 (*)
 │              │         │         │         │         ╰─── org.jetbrains.compose.runtime:runtime:#composeDefaultVersion (*)
 │              │         │         │         ├─── org.jetbrains.compose.ui:ui-backhandler:#composeDefaultVersion
 │              │         │         │         │    ╰─── org.jetbrains.compose.ui:ui-backhandler-uikitarm64:#composeDefaultVersion
