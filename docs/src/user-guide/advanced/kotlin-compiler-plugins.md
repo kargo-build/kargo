@@ -55,6 +55,25 @@ settings:
 The Compose compiler plugin is covered in the mode general
 [Compose Multiplatform](../builtin-tech/compose-multiplatform.md) section.
 
+### JS Plain Objects
+
+The [JS plain objects](https://kotlinlang.org/docs/js-plain-objects.html) lets you create and copy plain JS objects in 
+a type-safe way.
+
+To enable this plugin, add the following configuration to your module file:
+
+```yaml
+settings:
+  kotlin:
+    jsPlainObjects: enabled
+```
+
+Then, simply annotate your `external interface` with `@JsPlainObject`, and you'll be able to use the generated
+factory function and copy function.
+
+Read more in the [JS Plain Objects](https://kotlinlang.org/docs/js-plain-objects.html) documentation on the Kotlinlang 
+website.
+
 ### Kotlinx Serialization
 
 The Kotlinx Serialization compiler plugin is covered in the more general

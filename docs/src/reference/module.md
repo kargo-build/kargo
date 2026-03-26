@@ -614,6 +614,18 @@ compilation.
 Check the [third-party compiler plugins](../user-guide/advanced/kotlin-compiler-plugins.md#third-party-compiler-plugins)
 section for more information and examples.
 
+#### `settings.kotlin.jsPlainObjects`
+
+`settings.kotlin.jsPlainObjects` configures the [JS plain objects compiler plugin](https://kotlinlang.org/docs/js-plain-objects.html),
+which lets you create and copy plain JS objects in a type-safe way.
+
+| Attribute                     | Default | Description                                        |
+|-------------------------------|---------|----------------------------------------------------|
+| `enabled: boolean`            | `false` | Enable the Kotlin JS plain objects compiler plugin |  
+
+Check the dedicated [JS plain objects](../user-guide/advanced/kotlin-compiler-plugins.md#js-plain-objects) section for 
+more information.
+
 #### `settings.kotlin.noArg`
 
 `settings.kotlin.noArg` configures the [Kotlin no-arg compiler plugin](https://kotlinlang.org/docs/no-arg-plugin.html),
