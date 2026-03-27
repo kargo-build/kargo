@@ -94,8 +94,6 @@ class KotlinNativeCompiler(
                             "-XX:TieredStopAtLevel=1",
                             "-Dfile.encoding=UTF-8",
                             "-Dkonan.home=$kotlinNativeHome",
-                            "--enable-native-access=ALL-UNNAMED",
-                            "--sun-misc-unsafe-memory-access=allow",
                         ),
                         outputListener = LoggingProcessOutputListener(logger),
                     )
