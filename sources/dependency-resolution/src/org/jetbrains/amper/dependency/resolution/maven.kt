@@ -118,15 +118,15 @@ val MavenDependencyNode.module
 @Serializable
 internal class SerializableMavenDependencyNode internal constructor(
     override val originalVersion: String?,
-    override val versionFromBom: String?,
-    override val isBom: Boolean,
-    override val messages: List<Message>,
+    override val versionFromBom: String? = null,
+    override val isBom: Boolean = false,
+    override val messages: List<Message> = emptyList(),
     private val dependencyRef: MavenDependencyReference,
     override val parentsRefs: MutableSet<DependencyNodeReference> = mutableSetOf(),
     override val childrenRefs: MutableList<DependencyNodeReference> = mutableListOf(),
     internal val overriddenByRefs: MutableSet<DependencyNodeReference> = mutableSetOf(),
     private val coordinatesForPublishing: MavenCoordinates,
-    private val parentKmpLibraryCoordinates: MavenCoordinates?,
+    private val parentKmpLibraryCoordinates: MavenCoordinates? = null,
     @Transient
     private val graphContext: DependencyGraphContext = currentGraphContext()
 ) : MavenDependencyNode, SerializableDependencyNodeBase(graphContext) {
@@ -394,7 +394,7 @@ internal class SerializableMavenDependencyConstraintNode internal constructor(
     override val parentsRefs: MutableSet<DependencyNodeReference> = mutableSetOf(),
     override val childrenRefs: List<DependencyNodeReference> = mutableListOf(),
     internal val overriddenByRefs: MutableSet<DependencyNodeReference> = mutableSetOf(),
-    override val messages: List<Message>,
+    override val messages: List<Message> = emptyList(),
     @Transient
     private val graphContext: DependencyGraphContext = currentGraphContext()
 ) : MavenDependencyConstraintNode, SerializableDependencyNodeBase(graphContext) {
@@ -595,8 +595,8 @@ val MavenDependency.version
 @Serializable
 class MavenDependencyPlain internal constructor (
     override val coordinates: MavenCoordinates,
-    override val packaging: String?,
-    override val messages: List<Message>,
+    override val packaging: String? = null,
+    override val messages: List<Message> = emptyList(),
     val files: List<DependencyFilePlain>,
     private val pomPathAsString: String? = null,
     private val resolutionConfigReference: ResolutionConfigReference,

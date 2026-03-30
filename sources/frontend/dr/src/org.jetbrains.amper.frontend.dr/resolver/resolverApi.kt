@@ -207,7 +207,7 @@ private fun traceInfo(notation: Notation): String {
 internal class SerializableDirectFragmentDependencyNodeHolder internal constructor(
     override val fragmentName: String,
     override val graphEntryName: String,
-    override val messages: List<Message>,
+    override val messages: List<Message> = emptyList(),
     override val parentsRefs: MutableSet<DependencyNodeReference> = mutableSetOf(),
     override val childrenRefs: List<DependencyNodeReference> = mutableListOf(),
     @Transient
