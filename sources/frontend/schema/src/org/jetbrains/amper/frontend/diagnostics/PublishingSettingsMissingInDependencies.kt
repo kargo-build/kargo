@@ -4,14 +4,20 @@
 
 package org.jetbrains.amper.frontend.diagnostics
 
+import com.intellij.psi.PsiElement
+import org.jetbrains.amper.core.UsedInIdePlugin
+import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.LocalModuleDependency
 import org.jetbrains.amper.frontend.Model
-import org.jetbrains.amper.frontend.asBuildProblemSource
+import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.hasPublishingConfigured
-import org.jetbrains.amper.frontend.reportBundleError
+import org.jetbrains.amper.frontend.messages.PsiBuildProblem
+import org.jetbrains.amper.frontend.messages.extractPsiElement
 import org.jetbrains.amper.problems.reporting.BuildProblemType
+import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
 import org.jetbrains.amper.problems.reporting.ProblemReporter
+import org.jetbrains.annotations.Nls
 
 object PublishingSettingsMissingInDependencies : AomModelDiagnosticFactory {
 
@@ -24,17 +30,26 @@ object PublishingSettingsMissingInDependencies : AomModelDiagnosticFactory {
                     .filterIsInstance<LocalModuleDependency>()
                     .filterNot { it.module.hasPublishingConfigured() }
                     .forEach { dep ->
-                        problemReporter.reportBundleError(
-                            source = dep.asBuildProblemSource(),
-                            diagnosticId = FrontendDiagnosticId.PublishingSettingsMissingInDependencies,
-                            messageKey = "published.module.0.depends.on.non.published.module.1",
-                            module.userReadableName,
-                            dep.module.userReadableName,
-                            level = Level.Error,
-                            problemType = BuildProblemType.InconsistentConfiguration,
-                        )
+                        problemReporter.reportMessage(PublishingSettingsMissingInDependency(module, dep))
                     }
             }
         }
     }
+}
+
+class PublishingSettingsMissingInDependency(
+    val module: AmperModule,
+    @field:UsedInIdePlugin
+    val dependency: LocalModuleDependency,
+) : PsiBuildProblem(
+    Level.Error, BuildProblemType.InconsistentConfiguration,
+) {
+    override val element: PsiElement get() = dependency.extractPsiElement()
+    override val diagnosticId: DiagnosticId = FrontendDiagnosticId.PublishingSettingsMissingInDependencies
+    override val message: @Nls String
+        get() = SchemaBundle.message(
+            "published.module.0.depends.on.non.published.module.1",
+            module.userReadableName,
+            dependency.module.userReadableName,
+        )
 }
