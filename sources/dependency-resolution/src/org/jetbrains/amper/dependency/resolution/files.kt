@@ -262,7 +262,7 @@ fun getDependencyFile(
 data class DependencyFilePlain private constructor(
     override val isAutoAddedDocumentation: Boolean = false,
     override val isDocumentation: Boolean = false,
-    override val extension: String = ".jar",
+    override val extension: String = "jar",
     private val pathAsString: String? = null,
     override val kmpSourceSet: String? = null,
     override val kmpPlatforms: Set<ResolutionPlatform>? = null
