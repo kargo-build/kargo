@@ -6,6 +6,7 @@ package org.jetbrains.amper.tasks.custom
 
 import com.intellij.openapi.vfs.VirtualFile
 import io.opentelemetry.api.GlobalOpenTelemetry
+import org.jetbrains.amper.CliReportingMavenResolver
 import org.jetbrains.amper.cli.telemetry.setAmperModule
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
@@ -29,13 +30,11 @@ import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.VersionCatalog
 import org.jetbrains.amper.frontend.aomBuilder.DefaultLocalModuleDependency
 import org.jetbrains.amper.frontend.api.DefaultTrace
-import org.jetbrains.amper.CliReportingMavenResolver
-import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies
-import org.jetbrains.amper.frontend.dr.resolver.ModuleResolutionFilter
 import org.jetbrains.amper.frontend.dr.resolver.AmperResolutionSettings
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies
 import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies.Companion.toRepository
+import org.jetbrains.amper.frontend.dr.resolver.ModuleResolutionFilter
 import org.jetbrains.amper.frontend.dr.resolver.ResolutionType
-import org.jetbrains.amper.frontend.dr.resolver.flow.toPlatform
 import org.jetbrains.amper.frontend.dr.resolver.getExternalDependencies
 import org.jetbrains.amper.frontend.dr.resolver.toDrMavenCoordinates
 import org.jetbrains.amper.frontend.mavenRepositories
@@ -45,7 +44,6 @@ import org.jetbrains.amper.frontend.schema.PluginSettings
 import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.frontend.schema.Settings
 import org.jetbrains.amper.incrementalcache.IncrementalCache
-import org.jetbrains.amper.tasks.CommonTaskType
 import org.jetbrains.amper.tasks.ResolveExternalDependenciesTask
 import org.jetbrains.amper.tasks.TaskResult
 import org.jetbrains.amper.tasks.toIncrementalCacheResult
@@ -93,7 +91,7 @@ internal class ResolveCustomExternalDependenciesTask(
                 //  See https://youtrack.jetbrains.com/issue/AMPER-5243 for details
                 externalDependencies.isEmpty() && localDependencies.size == 1 -> {
                     // Resolve local module dependencies
-                    localDependencies.single().resolveModuleDependencies(executionContext)
+                    localDependencies.single().resolveModuleDependencies()
                 }
                 localDependencies.isEmpty() -> {
                     // Resolve module-agnostic list of Maven dependencies
@@ -115,26 +113,20 @@ internal class ResolveCustomExternalDependenciesTask(
         )
     }
 
-    private suspend fun AmperModule.resolveModuleDependencies(executionContext: TaskGraphExecutionContext): List<Path> {
-        val module = this
-
+    private suspend fun AmperModule.resolveModuleDependencies(): List<Path> {
         val moduleDependencies = with(ModuleDependencies) {
             val resolutionSettings = AmperResolutionSettings(userCacheRoot, incrementalCache, GlobalOpenTelemetry.get())
             moduleDependencies(resolutionSettings)
         }
 
-        val result = ResolveExternalDependenciesTask(
-            module = module,
+        val result = ResolveExternalDependenciesTask.resolveModuleDependencies(
+            resolutionPlatform = platform,
             userCacheRoot = userCacheRoot,
             incrementalCache = incrementalCache,
-            platform = platform.toPlatform(),
             isTest = isTest,
             moduleDependencies = moduleDependencies,
-            taskName = CommonTaskType.Dependencies.getTaskName(module, platform.toPlatform(), isTest),
-        ).run(
-            dependenciesResult = emptyList(),
-            executionContext = executionContext,
-        ) as ResolveExternalDependenciesTask.Result
+            mavenResolver = mavenResolver,
+        )
 
         return when (resolutionScope) {
             ResolutionScope.COMPILE -> result.compileClasspath
@@ -178,9 +170,9 @@ internal class ResolveCustomExternalDependenciesTask(
      * Semantically, it is equivalent to declaring a module with given mixed dependencies and then resolving
      * dependencies of that module according to Amper module resolution rules.
      * Note:
-     * - non-exported compile dependencies of given local modules are not included in the resolution result for COMPILE
+     * - Non-exported compile dependencies of given local modules are not included in the resolution result for COMPILE
      *   resolution scope.
-     * - still versions of libraries from COMPILE and RUNTIME classpath of given mixed dependencies are aligned.
+     * - Still, versions of libraries from COMPILE and RUNTIME classpath of given mixed dependencies are aligned.
      */
     private suspend fun resolveMixedExternalAndModuleDependencies(): List<Path> {
         val module = getModuleForMixedDeps()

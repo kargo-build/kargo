@@ -7,12 +7,12 @@
 package org.jetbrains.amper.tasks
 
 import kotlinx.serialization.Serializable
+import org.jetbrains.amper.CliReportingMavenResolver
 import org.jetbrains.amper.cli.logging.withoutConsoleLogging
 import org.jetbrains.amper.cli.telemetry.setAmperModule
 import org.jetbrains.amper.cli.telemetry.setFragments
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.DependencyNode
-import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.engine.Task
@@ -21,9 +21,9 @@ import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.DefaultScopedNotation
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.TaskName
-import org.jetbrains.amper.CliReportingMavenResolver
 import org.jetbrains.amper.frontend.dr.resolver.DirectFragmentDependencyNode
 import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies
+import org.jetbrains.amper.frontend.dr.resolver.flow.toPlatform
 import org.jetbrains.amper.frontend.dr.resolver.flow.toResolutionPlatform
 import org.jetbrains.amper.frontend.dr.resolver.getExternalDependencies
 import org.jetbrains.amper.frontend.fragmentsTargeting
@@ -96,9 +96,6 @@ class ResolveExternalDependenciesTask(
     override val taskName: TaskName,
 ) : Task {
 
-    // for test code, we resolve dependencies on union of test and prod dependencies
-    private val fragments = module.fragmentsTargeting(platform, includeTestFragments = isTest)
-
     private val mavenResolver by lazy {
         CliReportingMavenResolver(userCacheRoot, incrementalCache)
     }
@@ -117,175 +114,32 @@ class ResolveExternalDependenciesTask(
         dependenciesResult: List<TaskResult>,
         executionContext: TaskGraphExecutionContext,
     ): TaskResult {
-        val repositories = module.mavenRepositories
-            .filter { it.resolve }
-            .map { it.url }
-            .distinct()
-
         // order in compileDependencies is important (classpath is generally (and unfortunately!) order-dependent),
         // but the current implementation requires a full review of it
 
-        val resolvedPlatform = platform.toResolutionPlatform()
-        if (resolvedPlatform == null) {
+        val resolutionPlatform = platform.toResolutionPlatform()
+        if (resolutionPlatform == null) {
             logger.error("${module.userReadableName}: Non-leaf platform $platform is not supported for resolving external dependencies")
             return onParametersErrorResult
-        } else if (resolvedPlatform != ResolutionPlatform.JVM
-            && resolvedPlatform != ResolutionPlatform.ANDROID
-            && resolvedPlatform.nativeTarget == null
-            && resolvedPlatform != ResolutionPlatform.JS
-            && resolvedPlatform.wasmTarget == null
+        } else if (resolutionPlatform != ResolutionPlatform.JVM
+            && resolutionPlatform != ResolutionPlatform.ANDROID
+            && resolutionPlatform.nativeTarget == null
+            && resolutionPlatform != ResolutionPlatform.JS
+            && resolutionPlatform.wasmTarget == null
         ) {
             logger.error("${module.userReadableName}: $platform is not yet supported for resolving external dependencies")
             return onParametersErrorResult
         }
 
-        val platformOnlyDependencies = moduleDependencies.forPlatform(platform, isTest)
-        return spanBuilder("resolve-dependencies")
-            .setAmperModule(module)
-            .setFragments(fragments)
-            .setListAttribute("dependencies", platformOnlyDependencies.compileDepsCoordinates.map { it.toString() })
-            .setListAttribute("runtimeDependencies", platformOnlyDependencies.runtimeDepsCoordinates.map { it.toString() })
-            .setAttribute("isTest", isTest)
-            .setAttribute("platform", resolvedPlatform.type.value)
-            .also {
-                resolvedPlatform.nativeTarget?.let { target ->
-                    it.setAttribute("native-target", target)
-                }
-                resolvedPlatform.wasmTarget?.let { target ->
-                    it.setAttribute("wasm-target", target)
-                }
-            }
-            .use {
-                logger.debug(
-                    "resolve dependencies ${module.userReadableName} -- " +
-                            "${fragments.userReadableList()} -- " +
-                            "${platformOnlyDependencies.compileDepsCoordinates.joinToString(" ")} -- " +
-                            "resolvePlatform=${resolvedPlatform.type.value} " +
-                            "nativeTarget=${resolvedPlatform.nativeTarget} " +
-                            "wasmTarget=${resolvedPlatform.wasmTarget}"
-                )
-
-                val result = try {
-                    val moduleDependenciesRoot = moduleDependencies.allLeafPlatformsGraph(isTest)
-                    incrementalCache.execute(
-                        key = taskName.name,
-                        inputValues = mapOf(
-                            "userCacheRoot" to userCacheRoot.path.pathString,
-                            "dependencies" to moduleDependenciesRoot.children.flatMap{ it.getExternalDependencies() }.joinToString("|"),
-                            "repositories" to repositories.joinToString("|"),
-                            "resolvePlatform" to resolvedPlatform.type.value,
-                            "resolveNativeTarget" to (resolvedPlatform.nativeTarget ?: ""),
-                            "resolveWasmTarget" to (resolvedPlatform.wasmTarget ?: ""),
-                        ),
-                        inputFiles = emptyList(),
-                        serializer = Result.serializer(),
-                    ) {
-                        val (compileDependenciesRootNode, runtimeDependenciesRootNode, expirationTime) =
-                            mavenResolver.doResolveExternalDependencies(
-                                platform = platform,
-                                isTest = isTest,
-                                moduleDependencies = moduleDependencies,
-                            )
-
-                        val compileClasspath = compileDependenciesRootNode.dependencyPaths()
-                        val runtimeClasspath = runtimeDependenciesRootNode?.dependencyPaths() ?: emptyList()
-
-                        val publicationCoordsOverrides = getPublicationCoordinatesOverrides(
-                            compileDependenciesRootNode = compileDependenciesRootNode,
-                            runtimeDependenciesRootNode = runtimeDependenciesRootNode,
-                        )
-
-                        ResultWithSerializable(
-                            outputFiles = (compileClasspath + runtimeClasspath).toSet().sorted(),
-                            // We reuse the task Result class here because it has exactly the fields we need.
-                            // If types must diverge, we can always introduce a new Result class for this.
-                            outputValue = Result(
-                                compileClasspath = compileClasspath,
-                                runtimeClasspath = runtimeClasspath,
-                                coordinateOverridesForPublishing = publicationCoordsOverrides,
-                            ),
-                            expirationTime = expirationTime,
-                        )
-                    }
-                } catch (t: CancellationException) {
-                    throw t
-                } catch (t: Throwable) {
-                    withoutConsoleLogging {
-                        logger.error(
-                            "resolve dependencies of module '${module.userReadableName}' failed\n" +
-                                    "fragments: ${fragments.userReadableList()}\n" +
-                                    "repositories:\n${repositories.joinToString("\n").prependIndent("  ")}\n" +
-                                    "direct dependencies:\n${
-                                        platformOnlyDependencies.compileDirectDepsCoordinates
-                                            .joinToString("\n")
-                                            .prependIndent("  ")
-                                    }\n" +
-                                    "all dependencies:\n${
-                                        platformOnlyDependencies.compileDepsCoordinates
-                                            .joinToString("\n")
-                                            .prependIndent("  ")
-                                    }\n" +
-                                    "platform: $resolvedPlatform" +
-                                    (resolvedPlatform.nativeTarget?.let { "\nnativeTarget: $it" } ?: "") +
-                                    (resolvedPlatform.wasmTarget?.let { "\nwasmTarget: $it" } ?: ""), t)
-                    }
-
-                    throw t
-                }
-
-                logger.debug(
-                    "resolve dependencies ${module.userReadableName} -- " +
-                            "${fragments.userReadableList()} -- " +
-                            "${platformOnlyDependencies.compileDepsCoordinates.joinToString(" ")} -- " +
-                            "resolvePlatform=$resolvedPlatform " +
-                            "nativeTarget=${resolvedPlatform.nativeTarget}\n" +
-                            "wasmTarget=${resolvedPlatform.wasmTarget}\n" +
-                            "${repositories.joinToString(" ")} resolved to:\n${
-                                result.outputValue.compileClasspath.joinToString("\n") {
-                                    "  " + it.relativeToOrSelf(
-                                        userCacheRoot.path
-                                    ).pathString
-                                }
-                            }"
-                )
-
-                // todo (AB) : output should contain placeholder for every module (in a correct place in the list!!!
-                // todo (AB) : It might be replaced with the path to compiled module later in order to form complete correctly ordered classpath)
-                result.outputValue
-            }
+        return resolveModuleDependencies(
+            resolutionPlatform,
+            userCacheRoot,
+            incrementalCache,
+            isTest,
+            moduleDependencies,
+            mavenResolver
+        )
     }
-
-    private fun getPublicationCoordinatesOverrides(
-        compileDependenciesRootNode: DependencyNode,
-        runtimeDependenciesRootNode: DependencyNode?,
-    ): PublicationCoordinatesOverrides {
-        val compileOverrides = compileDependenciesRootNode.children.getOverridesForDirectDeps()
-        val runtimeOverrides = runtimeDependenciesRootNode
-            ?.children
-            ?.getOverridesForDirectDeps(directDependencyCondition = { (notation as? DefaultScopedNotation)?.compile == false })
-            ?: emptyList()
-        return PublicationCoordinatesOverrides(compileOverrides + runtimeOverrides)
-    }
-
-    private fun List<DependencyNode>.getOverridesForDirectDeps(
-        directDependencyCondition: DirectFragmentDependencyNode.() -> Boolean = { true },
-    ): List<PublicationCoordinatesOverride> = this
-        .filterIsInstance<DirectFragmentDependencyNode>()
-        .filter { it.dependencyNode is MavenDependencyNode }
-        .filter { it.directDependencyCondition() }
-        .mapNotNull { directMavenDependency ->
-            val node = directMavenDependency.dependencyNode as MavenDependencyNode
-            val coordinatesOriginal = node.getOriginalMavenCoordinates()
-            val coordinatesForPublishing = node.getMavenCoordinatesForPublishing()
-            if (coordinatesOriginal != coordinatesForPublishing) {
-                PublicationCoordinatesOverride(
-                    originalCoordinates = coordinatesOriginal,
-                    variantCoordinates = coordinatesForPublishing,
-                )
-            } else {
-                null
-            }
-        }
 
     @Serializable
     class Result(
@@ -294,5 +148,177 @@ class ResolveExternalDependenciesTask(
         val coordinateOverridesForPublishing: PublicationCoordinatesOverrides,
     ) : TaskResult
 
-    private val logger = LoggerFactory.getLogger(javaClass)
+    companion object {
+        private val logger = LoggerFactory.getLogger(javaClass)
+
+        internal suspend fun resolveModuleDependencies(
+            resolutionPlatform: ResolutionPlatform,
+            userCacheRoot: AmperUserCacheRoot,
+            incrementalCache: IncrementalCache,
+            isTest: Boolean,
+            moduleDependencies: ModuleDependencies,
+            mavenResolver: CliReportingMavenResolver
+        ): Result {
+            val module = moduleDependencies.module
+            val repositories = module.mavenRepositories
+                .filter { it.resolve }
+                .map { it.url }
+                .distinct()
+
+            // for test code, we resolve dependencies on union of test and prod dependencies
+            val fragments = module.fragmentsTargeting(resolutionPlatform.toPlatform(), includeTestFragments = isTest)
+
+            val platformOnlyDependencies = moduleDependencies.forPlatform(resolutionPlatform.toPlatform(), isTest)
+
+            return spanBuilder("resolve-dependencies")
+                .setAmperModule(moduleDependencies.module)
+                .setFragments(fragments)
+                .setListAttribute("dependencies", platformOnlyDependencies.compileDepsCoordinates.map { it.toString() })
+                .setListAttribute(
+                    "runtimeDependencies",
+                    platformOnlyDependencies.runtimeDepsCoordinates.map { it.toString() })
+                .setAttribute("isTest", isTest)
+                .setAttribute("platform", resolutionPlatform.type.value)
+                .also {
+                    resolutionPlatform.nativeTarget?.let { target ->
+                        it.setAttribute("native-target", target)
+                    }
+                    resolutionPlatform.wasmTarget?.let { target ->
+                        it.setAttribute("wasm-target", target)
+                    }
+                }
+                .use {
+                    logger.debug(
+                        "resolve dependencies ${module.userReadableName} -- " +
+                                "${fragments.userReadableList()} -- " +
+                                "${platformOnlyDependencies.compileDepsCoordinates.joinToString(" ")} -- " +
+                                "resolvePlatform=${resolutionPlatform.type.value} " +
+                                "nativeTarget=${resolutionPlatform.nativeTarget} " +
+                                "wasmTarget=${resolutionPlatform.wasmTarget}"
+                    )
+
+                    val cacheEntryKey = "${module.userReadableName}:${resolutionPlatform.pretty}:${if (isTest) "test" else "main"}"
+
+                    val result = try {
+                        val moduleDependenciesRoot = moduleDependencies.allLeafPlatformsGraph(isTest)
+                        incrementalCache.execute(
+                            key = cacheEntryKey,
+                            inputValues = mapOf(
+                                "userCacheRoot" to userCacheRoot.path.pathString,
+                                "dependencies" to moduleDependenciesRoot.children.flatMap { it.getExternalDependencies() }
+                                    .joinToString("|"),
+                                "repositories" to repositories.joinToString("|"),
+                                "resolvePlatform" to resolutionPlatform.type.value,
+                                "resolveNativeTarget" to (resolutionPlatform.nativeTarget ?: ""),
+                                "resolveWasmTarget" to (resolutionPlatform.wasmTarget ?: ""),
+                            ),
+                            inputFiles = emptyList(),
+                            serializer = Result.serializer(),
+                        ) {
+                            val (compileDependenciesRootNode, runtimeDependenciesRootNode, expirationTime) =
+                                mavenResolver.doResolveExternalDependencies(
+                                    platform = resolutionPlatform.toPlatform(),
+                                    isTest = isTest,
+                                    moduleDependencies = moduleDependencies,
+                                )
+
+                            val compileClasspath = compileDependenciesRootNode.dependencyPaths()
+                            val runtimeClasspath = runtimeDependenciesRootNode?.dependencyPaths() ?: emptyList()
+
+                            val publicationCoordsOverrides = getPublicationCoordinatesOverrides(
+                                compileDependenciesRootNode = compileDependenciesRootNode,
+                                runtimeDependenciesRootNode = runtimeDependenciesRootNode,
+                            )
+
+                            ResultWithSerializable(
+                                outputFiles = (compileClasspath + runtimeClasspath).toSet().sorted(),
+                                // We reuse the task Result class here because it has exactly the fields we need.
+                                // If types must diverge, we can always introduce a new Result class for this.
+                                outputValue = Result(
+                                    compileClasspath = compileClasspath,
+                                    runtimeClasspath = runtimeClasspath,
+                                    coordinateOverridesForPublishing = publicationCoordsOverrides,
+                                ),
+                                expirationTime = expirationTime,
+                            )
+                        }
+                    } catch (t: CancellationException) {
+                        throw t
+                    } catch (t: Throwable) {
+                        withoutConsoleLogging {
+                            logger.error(
+                                "resolve dependencies of module '${module.userReadableName}' failed\n" +
+                                        "fragments: ${fragments.userReadableList()}\n" +
+                                        "repositories:\n${repositories.joinToString("\n").prependIndent("  ")}\n" +
+                                        "direct dependencies:\n${
+                                            platformOnlyDependencies.compileDirectDepsCoordinates
+                                                .joinToString("\n")
+                                                .prependIndent("  ")
+                                        }\n" +
+                                        "all dependencies:\n${
+                                            platformOnlyDependencies.compileDepsCoordinates
+                                                .joinToString("\n")
+                                                .prependIndent("  ")
+                                        }\n" +
+                                        "platform: $resolutionPlatform" +
+                                        (resolutionPlatform.nativeTarget?.let { "\nnativeTarget: $it" } ?: "") +
+                                        (resolutionPlatform.wasmTarget?.let { "\nwasmTarget: $it" } ?: ""), t)
+                        }
+
+                        throw t
+                    }
+
+                    logger.debug(
+                        "resolve dependencies ${module.userReadableName} -- " +
+                                "${fragments.userReadableList()} -- " +
+                                "${platformOnlyDependencies.compileDepsCoordinates.joinToString(" ")} -- " +
+                                "resolvePlatform=$resolutionPlatform " +
+                                "nativeTarget=${resolutionPlatform.nativeTarget}\n" +
+                                "wasmTarget=${resolutionPlatform.wasmTarget}\n" +
+                                "${repositories.joinToString(" ")} resolved to:\n${
+                                    result.outputValue.compileClasspath.joinToString("\n") {
+                                        "  " + it.relativeToOrSelf(
+                                            userCacheRoot.path
+                                        ).pathString
+                                    }
+                                }"
+                    )
+
+                    // todo (AB) : output should contain placeholder for every module (in a correct place in the list!!!
+                    // todo (AB) : It might be replaced with the path to compiled module later in order to form complete correctly ordered classpath)
+                    result.outputValue
+                }
+        }
+
+        private fun getPublicationCoordinatesOverrides(
+            compileDependenciesRootNode: DependencyNode,
+            runtimeDependenciesRootNode: DependencyNode?,
+        ): PublicationCoordinatesOverrides {
+            val compileOverrides = compileDependenciesRootNode.children.getOverridesForDirectDeps()
+            val runtimeOverrides = runtimeDependenciesRootNode
+                ?.children
+                ?.getOverridesForDirectDeps(directDependencyCondition = { (notation as? DefaultScopedNotation)?.compile == false })
+                ?: emptyList()
+            return PublicationCoordinatesOverrides(compileOverrides + runtimeOverrides)
+        }
+
+        private fun List<DependencyNode>.getOverridesForDirectDeps(
+            directDependencyCondition: DirectFragmentDependencyNode.() -> Boolean = { true },
+        ): List<PublicationCoordinatesOverride> = this
+            .filterIsInstance<DirectFragmentDependencyNode>()
+            .filter { it.directDependencyCondition() }
+            .mapNotNull { directMavenDependency ->
+                val node = directMavenDependency.dependencyNode
+                val coordinatesOriginal = node.getOriginalMavenCoordinates()
+                val coordinatesForPublishing = node.getMavenCoordinatesForPublishing()
+                if (coordinatesOriginal != coordinatesForPublishing) {
+                    PublicationCoordinatesOverride(
+                        originalCoordinates = coordinatesOriginal,
+                        variantCoordinates = coordinatesForPublishing,
+                    )
+                } else {
+                    null
+                }
+            }
+    }
 }
