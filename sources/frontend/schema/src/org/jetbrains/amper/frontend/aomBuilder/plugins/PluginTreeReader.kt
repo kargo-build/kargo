@@ -184,6 +184,9 @@ internal class PluginTreeReader(
                 settings(module.moduleCtxModule.settings.backingTree)
                 // TODO: Maybe at include test-settings here also?
             }
+            project {
+                rootDir(projectContext.projectRootDir.toNioPath())
+            }
             tasks {
                 for ((taskName, taskBuildRoot) in taskDirs) {
                     put[taskName] {

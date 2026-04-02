@@ -69,6 +69,7 @@ class PluginsTest : AmperCliTestBase() {
             taskName = taskName,
             output = """
             Hello from distribution
+            local.properties: $projectDir/local.properties
             classpath base.dependencies = [{modulePath: $projectDir/app}]
             classpath base.dependencies[0] = {modulePath: $projectDir/app}
             classpath base.dependencies[0].modulePath = $projectDir/app

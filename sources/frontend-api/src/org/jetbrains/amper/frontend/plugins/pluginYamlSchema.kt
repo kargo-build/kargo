@@ -37,6 +37,10 @@ class PluginYamlRoot : SchemaNode() {
     val module by value<ModuleDataForPlugin>()
 
     @ReadOnly
+    @SchemaDoc("Data from the project within which the plugin is applied")
+    val project by value<ProjectDataForPlugin>()
+
+    @ReadOnly
     @CanBeReferenced
     val pluginSettings: PluginSettingsPlaceholder by value()
 }
@@ -83,6 +87,12 @@ class ModuleDataForPlugin : SchemaNode() {
 
     @SchemaDoc("Module's `settings` configuration")
     val settings by value<Settings>()
+}
+
+class ProjectDataForPlugin : SchemaNode() {
+    @CanBeReferenced
+    @SchemaDoc("Project's root directory (where `project.yaml` resides if present)")
+    val rootDir by value<Path>()
 }
 
 @CustomSchemaDeclaration

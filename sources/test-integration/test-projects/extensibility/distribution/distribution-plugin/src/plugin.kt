@@ -18,9 +18,11 @@ fun buildDistribution(
     @Input baseJar: CompilationArtifact,
     @Input baseClasspath: Classpath,
     @Input settings: DistributionSettings,
+    @Input localProperties: Path,
 ) {
     distributionDir.createDirectories()
     println("Hello from distribution")
+    println("local.properties: ${localProperties}")
     printClasspathInfo("base", baseClasspath)
     settings.extraNamedClasspaths.forEach { (name, classpath) ->
         printClasspathInfo(name, classpath)

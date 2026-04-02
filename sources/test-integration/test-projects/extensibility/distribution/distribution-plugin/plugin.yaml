@@ -7,3 +7,4 @@ tasks:
       distributionDir: ${taskOutputDir}
       baseJar:
         from: ${module.self}
+      localProperties: ${project.rootDir}/local.properties
