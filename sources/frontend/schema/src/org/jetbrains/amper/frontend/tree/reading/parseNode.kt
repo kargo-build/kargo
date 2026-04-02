@@ -7,6 +7,7 @@ package org.jetbrains.amper.frontend.tree.reading
 import com.intellij.psi.util.childrenOfType
 import org.jetbrains.amper.frontend.contexts.Contexts
 import org.jetbrains.amper.frontend.contexts.EmptyContexts
+import org.jetbrains.amper.frontend.tree.ErrorNode
 import org.jetbrains.amper.frontend.tree.NullLiteralNode
 import org.jetbrains.amper.frontend.tree.TreeDiagnosticId
 import org.jetbrains.amper.frontend.tree.TreeNode
@@ -30,7 +31,7 @@ internal fun parseNode(
     value: YamlValue,
     type: SchemaType,
     explicitContexts: Contexts = EmptyContexts,
-): TreeNode? {
+): TreeNode {
     // Unquoted `null` string is treated as the `null` keyword, not a string
     if (value is YamlValue.Scalar && value.isLiteral && value.textValue == "null") {
         if (!type.isMarkedNullable) {
@@ -39,7 +40,7 @@ internal fun parseNode(
                     -> reportParsing(value, TreeDiagnosticId.UnexpectedNull, "validation.types.unexpected.null.stringlike", type = BuildProblemType.TypeMismatch)
                 else -> reportParsing(value, TreeDiagnosticId.UnexpectedNull, "validation.types.unexpected.null", type = BuildProblemType.TypeMismatch)
             }
-            return null // null means invalid in this function, not the null value
+            return ErrorNode(type, value.asTrace())
         }
         return NullLiteralNode(value.asTrace(), explicitContexts)
     }
@@ -66,7 +67,7 @@ internal fun parseNode(
             //  Then we can't really parse it here, so we need this rather on `parseScalar` level.
             if (containsReferenceSyntax(value)) {
                 if (config.parseReferences) {
-                    return parseReferenceOrInterpolation(value, type)
+                    return parseReferenceOrInterpolation(value, type) ?: ErrorNode(type, value.asTrace())
                 } else {
                     reportParsing(value, TreeDiagnosticId.ReferencesAreNotSupported, "validation.types.unsupported.reference", level = Level.Warning)
                 }
@@ -84,6 +85,6 @@ internal fun parseNode(
                 reportUnexpectedValue(value, type)
                 null
             }
-        }
+        } ?: ErrorNode(type, value.asTrace())
     }
 }

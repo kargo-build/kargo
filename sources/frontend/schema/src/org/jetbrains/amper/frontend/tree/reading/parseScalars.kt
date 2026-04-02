@@ -47,12 +47,12 @@ internal fun parseScalar(scalar: YamlValue.Scalar, type: SchemaType.ScalarType):
         }
     }
     is SchemaType.EnumType -> parseEnum(scalar, type)
-    is SchemaType.PathType -> parsePath(scalar, type)
+    is SchemaType.PathType -> parsePath(scalar)
 }
 
 
 context(_: Contexts, config: ParsingConfig, _: ProblemReporter)
-private fun parsePath(scalar: YamlValue.Scalar, type: SchemaType.PathType): ScalarNode? {
+private fun parsePath(scalar: YamlValue.Scalar): ScalarNode? {
     var path = try {
         Path(scalar.textValue)
     } catch (e: InvalidPathException) {

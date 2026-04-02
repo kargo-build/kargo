@@ -49,9 +49,10 @@ private fun parseObjectWithFromKeyProperty(
     value: YamlValue,
     type: SchemaType.ObjectType,
 ): MappingNode? {
+    val otherProperties = type.declaration.properties.filterNot { it.isFromKeyAndTheRestNested }
     val argumentType = valueAsKeyProperty.type as SchemaType.ScalarType // should be scalar by design
     return when (value) {
-        is YamlValue.Mapping -> {
+        is YamlValue.Mapping if otherProperties.isNotEmpty() -> {
             val argKeyValue = value.keyValues.singleOrNull() ?: run {
                 reportParsing(value, TreeDiagnosticId.MappingShouldHaveSingleKeyValue, "validation.types.invalid.ctor.arg.key", type.render())
                 return null
@@ -80,7 +81,7 @@ private fun parseObjectWithFromKeyProperty(
                     KeyValue(
                         keyTrace = value.asTrace(),
                         trace = trace,
-                        value = parseNode(value, argumentType) ?: return null,
+                        value = parseNode(value, argumentType),
                         propertyDeclaration = valueAsKeyProperty,
                     )
                 ),
@@ -234,8 +235,8 @@ private fun parsePropertyKeyContexts(
         parseScalarKey(key, SchemaType.StringType) as StringNode? ?: return null
     }.value
     if (config.supportContexts) {
-        val keyWithoutContext = keyText.substringBefore('@')
-        val context = if (keyWithoutContext === keyText) null else keyText.substringAfter('@')
+        val context = keyText.indexOf('@').takeUnless { it == -1 }?.let { keyText.substring(it + 1) }
+        val keyWithoutContext = if (context != null) keyText.substringBefore('@') else keyText
         if (context != null && '+' in context) {
             reportParsing(key, TreeDiagnosticId.MultipleQualifiersAreNotSupported, "multiple.qualifiers.are.unsupported")
             return null

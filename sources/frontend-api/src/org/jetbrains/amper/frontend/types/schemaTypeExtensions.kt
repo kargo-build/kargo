@@ -102,8 +102,12 @@ fun SchemaType.render(
                 if (fromKeyProperty != null && !onlyNested) {
                     append("( ")
                     val fromKeyPropertyType = fromKeyProperty.type.render(false)
-                    append(fromKeyPropertyType).append(" | ").append(fromKeyPropertyType).append(": ")
-                    appendPossibleSyntax()
+                    append(fromKeyPropertyType)
+                    val otherProperties = declaration.properties.filterNot { it.isFromKeyAndTheRestNested }
+                    if (otherProperties.isNotEmpty()) {
+                        append(" | ").append(fromKeyPropertyType).append(": ")
+                        appendPossibleSyntax()
+                    }
                     append(" )")
                 } else {
                     appendPossibleSyntax()

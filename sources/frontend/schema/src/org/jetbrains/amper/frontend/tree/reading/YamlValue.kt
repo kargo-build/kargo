@@ -59,8 +59,7 @@ interface YamlKeyValue {
 private class MissingImpl(
     override val psi: PsiElement,
     override val tag: PsiElement?,
-) : YamlValue.Missing {
-}
+) : YamlValue.Missing
 
 fun YamlValue(value: YAMLValue, tag: PsiElement? = value.tag) : YamlValue {
     @Suppress("unused") // mixin override for YamlValue

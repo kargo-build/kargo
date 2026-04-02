@@ -43,10 +43,7 @@ internal fun parseVariant(
         val singleKeyValue = (value as? YamlValue.Mapping)?.keyValues?.singleOrNull()
         if (singleKeyValue != null && singleKeyValue.key.psi.text == "bom") {
             parseNode(singleKeyValue.value, type.subVariantType(BomDependency::class))
-                ?.copyWithTrace(trace = singleKeyValue.asTrace()) ?: run {
-                reportParsing(singleKeyValue.value, TreeDiagnosticId.IncorrectBomDependencyStructure, "unexpected.bom.dependency.structure")
-                null
-            }
+                .copyWithTrace(trace = singleKeyValue.asTrace())
         } else {
             parseVariant(value, type.subVariantType(ScopedDependency::class))
         }
@@ -70,9 +67,6 @@ internal fun parseVariant(
             singleKeyValue.value.let { bomDependency ->
                 parseVariant(bomDependency, type.subVariantType(UnscopedBomDependency::class))
                     ?.copyWithTrace(trace = singleKeyValue.asTrace())
-            } ?: run {
-                reportParsing(singleKeyValue.value, TreeDiagnosticId.IncorrectBomDependencyStructure, "unexpected.bom.dependency.structure")
-                null
             }
         } else {
             when (peekValueAsKey(value)?.firstOrNull()) {

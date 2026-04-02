@@ -21,7 +21,7 @@ import org.jetbrains.amper.problems.reporting.ProblemReporter
 context(contexts: Contexts, _: ParsingConfig, _: ProblemReporter)
 internal fun parseList(value: YamlValue.Sequence, type: SchemaType.ListType): ListNode {
     return ListNode(
-        children = value.items.mapNotNull { value ->
+        children = value.items.map { value ->
             parseNode(value, type.elementType)
         },
         trace = value.asTrace(),
@@ -123,7 +123,4 @@ internal fun parseNodeFromKeyValue(
     keyValue: YamlKeyValue,
     type: SchemaType,
     explicitContexts: Contexts,
-): TreeNode {
-    return parseNode(keyValue.value, type, explicitContexts)
-        ?: ErrorNode(type, keyValue.asTrace())
-}
+): TreeNode = parseNode(keyValue.value, type, explicitContexts)
