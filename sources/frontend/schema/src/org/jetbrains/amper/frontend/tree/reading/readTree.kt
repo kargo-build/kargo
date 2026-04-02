@@ -33,7 +33,7 @@ import kotlin.io.path.absolute
  *
  * @param reportUnknowns whether to report unknown properties inside object mappings.
  *  If `false`, such properties are silently ignored.
- * @param referenceParsingMode how to treat Amper references (`${...}) syntax in the file. See [ReferencesParsingMode].
+ * @param referenceParsingMode how to treat Amper references (`${...}`) syntax in the file. See [ReferencesParsingMode].
  * @param parseContexts whether to treat `@<id>` at the end of the object keys as contexts.
  * @param contexts the contexts of the whole file, e.g., a template context.
  */
