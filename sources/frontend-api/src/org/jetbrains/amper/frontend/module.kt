@@ -4,6 +4,7 @@
 
 package org.jetbrains.amper.frontend
 
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.amper.core.UsedInIdePlugin
 import org.jetbrains.amper.frontend.plugins.AmperMavenPluginDescription
@@ -83,12 +84,12 @@ interface AmperModule {
     /**
      * To reference module somehow in output.
      */
-    val userReadableName: String
+    val userReadableName: @NlsSafe String
 
     /**
      * An optional description for this module.
      */
-    val description: String?
+    val description: @NlsSafe String?
 
     val type: ProductType
 
@@ -97,7 +98,7 @@ interface AmperModule {
     /**
      * The platform aliases defined in this module.
      */
-    val aliases: Map<String, Set<Platform>>
+    val aliases: Map<@NlsSafe String, Set<Platform>>
 
     /**
      * List of all the fragments in the module. Can be empty if no platforms were specified.

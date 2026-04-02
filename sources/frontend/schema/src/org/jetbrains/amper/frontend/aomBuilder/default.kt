@@ -4,6 +4,7 @@
 
 package org.jetbrains.amper.frontend.aomBuilder
 
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.AmperModuleFileSource
@@ -36,11 +37,11 @@ data class DefaultModel(
 ) : Model
 
 internal open class DefaultModule(
-    override val userReadableName: String,
-    override val description: String?,
+    override val userReadableName: @NlsSafe String,
+    override val description: @NlsSafe String?,
     override val type: ProductType,
     override val source: AmperModuleFileSource,
-    override val aliases: Map<String, Set<Platform>>,
+    override val aliases: Map<@NlsSafe String, Set<Platform>>,
     override val usedCatalog: VersionCatalog,
     override val usedTemplates: List<VirtualFile>,
     override var parts: ClassBasedSet<ModulePart<*>> = classBasedSet(),
