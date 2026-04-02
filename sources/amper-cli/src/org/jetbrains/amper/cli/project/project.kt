@@ -15,7 +15,6 @@ import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.aomBuilder.readProjectModel
 import org.jetbrains.amper.frontend.project.AmperProjectContext
-import org.jetbrains.amper.frontend.project.StandaloneAmperProjectContext
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.plugins.prepareMavenPlugins
 import org.jetbrains.amper.plugins.preparePlugins

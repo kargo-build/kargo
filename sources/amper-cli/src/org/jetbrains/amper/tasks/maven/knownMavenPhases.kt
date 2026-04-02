@@ -9,7 +9,6 @@ import org.jetbrains.amper.frontend.EnumMap
 import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.tasks.ModuleSequenceCtx
 import org.jetbrains.amper.tasks.ProjectTasksBuilder
-import org.jetbrains.amper.tasks.ProjectTasksBuilder.Companion.getTaskOutputPath
 import org.jetbrains.amper.tasks.artifacts.ArtifactTaskBase
 
 /**
