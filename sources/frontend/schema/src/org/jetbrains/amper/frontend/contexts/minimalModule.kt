@@ -103,8 +103,6 @@ internal fun tryReadMinimalModule(moduleFilePath: VirtualFile): MinimalModuleHol
     }
 
     return MinimalModuleHolder(
-        moduleFilePath = moduleFilePath,
-        pathResolver = pathResolver,
         // We can cast here because we know that minimal module
         // properties should be used outside any context.
         module = minimalModule,
@@ -143,26 +141,9 @@ private fun ProblemReporter.reportMissingExplicitPlatforms(product: ModuleProduc
     )
 }
 
-internal class MinimalModuleHolder(
-    val moduleFilePath: VirtualFile,
-    val module: MinimalModule,
-    pathResolver: FrontendPathResolver,
-) {
-    val appliedTemplates by lazy {
-        module.apply?.map { it.value }.orEmpty()
-    }
-
+internal class MinimalModuleHolder(val module: MinimalModule) {
     val platformsInheritance by lazy {
         val aliases = module.aliases.orEmpty().mapValues { it.value.leaves }
         PlatformsInheritance(aliases)
-    }
-
-    val pathInheritance by lazy {
-        val appliedTemplates = module.apply?.map { it.value }.orEmpty().toSet()
-        PathInheritance(templatePaths = appliedTemplates, modulePath = moduleFilePath)
-    }
-
-    val combinedInheritance by lazy {
-        platformsInheritance + pathInheritance + MainTestInheritance + DefaultInheritance
     }
 }

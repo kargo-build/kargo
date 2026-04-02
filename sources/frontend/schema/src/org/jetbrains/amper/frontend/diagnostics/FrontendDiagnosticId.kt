@@ -46,6 +46,7 @@ enum class FrontendDiagnosticId : DiagnosticId {
     PublishingSettingsMissingInDependencies,
     SerializationVersionWithoutSerialization,
     SigningEnabledWithoutPropertiesFile,
+    TemplateApplicationLoop,
     TemplateNameWithoutPostfix,
     UnknownProperty,
     UnknownQualifiers,

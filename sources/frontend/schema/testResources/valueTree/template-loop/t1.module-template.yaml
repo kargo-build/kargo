@@ -1,0 +1,2 @@
+apply:
+  - ./t2.module-template.yaml

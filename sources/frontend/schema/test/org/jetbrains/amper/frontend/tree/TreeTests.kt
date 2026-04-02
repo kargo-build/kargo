@@ -7,6 +7,7 @@ package org.jetbrains.amper.frontend.tree
 import org.jetbrains.amper.frontend.api.SchemaNode
 import org.jetbrains.amper.frontend.contexts.PathCtx
 import org.jetbrains.amper.frontend.contexts.PlatformCtx
+import org.jetbrains.amper.frontend.diagnostics.TemplateApplicationLoop
 import org.jetbrains.amper.frontend.helpers.DiagnosticsTreeTestRun
 import org.jetbrains.amper.frontend.helpers.FrontendTestCaseBase
 import org.jetbrains.amper.frontend.helpers.diagnoseModuleRead
@@ -54,6 +55,47 @@ class TreeTests : FrontendTestCaseBase(Path(".") / "testResources" / "valueTree"
         "with-templates",
         selectedContexts = { platformCtxs("jvm") + PathCtx(it, null) },
     )
+
+    @Test
+    fun `merge with nested templates`() = testRefineModuleWithTemplates(
+        "with-nested-templates",
+        selectedContexts = { platformCtxs("jvm") + PathCtx(it, null) },
+    )
+
+    @Test
+    fun `template loop`() {
+        // TODO: We do not report template issues in the module that applies them so we have to manually check
+        //  problems here.
+        val problems = readModuleWithTemplatesAndGetProblems(
+            caseName = "template-loop",
+            selectedContexts = { listOf(PathCtx(it, null)) },
+        )
+        val conflicts = problems.filterIsInstance<TemplateApplicationLoop>()
+        assertEquals(1, conflicts.size, "Expected exactly one conflict, got: $problems")
+        val conflict = conflicts.single()
+        assertEquals("Template application loop detected: t1 -> t2 -> t3 -> t1", conflict.message)
+    }
+
+    @Test
+    fun `template diamond with resolved conflict`() = testRefineModuleWithTemplates(
+        "template-diamond",
+        selectedContexts = { listOf(PathCtx(it, null)) }
+    )
+
+    @Test
+    fun `template diamond with unresolved conflict`() {
+        // TODO: We do not report template issues in the module that applies them so we have to manually check
+        //  problems here.
+        val problems = readModuleWithTemplatesAndGetProblems(
+            caseName = "template-diamond-with-conflict",
+            selectedContexts = { listOf(PathCtx(it, null)) },
+        )
+        val conflicts = problems.filterIsInstance<ConflictingProperties>()
+        assertEquals(1, conflicts.size, "Expected exactly one conflict, got: $problems")
+        val conflict = conflicts.single()
+        assertEquals(2, conflict.keyValues.size, "Expected exactly two conflicting properties, got: $conflict")
+        assertTrue(conflict.keyValues.all { it.key == "release" })
+    }
 
     @Suppress("unused")
     class CustomPluginSchema : SchemaNode() {

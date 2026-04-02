@@ -6,11 +6,13 @@ package org.jetbrains.amper.frontend.helpers
 
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.amper.frontend.FrontendPathResolver
-import org.jetbrains.amper.frontend.aomBuilder.asPsi
 import org.jetbrains.amper.frontend.aomBuilder.readWithTemplates
-import org.jetbrains.amper.frontend.api.asTrace
 import org.jetbrains.amper.frontend.contexts.Contexts
+import org.jetbrains.amper.frontend.contexts.DefaultInheritance
+import org.jetbrains.amper.frontend.contexts.MainTestInheritance
 import org.jetbrains.amper.frontend.contexts.PathCtx
+import org.jetbrains.amper.frontend.contexts.PathInheritance
+import org.jetbrains.amper.frontend.contexts.plus
 import org.jetbrains.amper.frontend.contexts.tryReadMinimalModule
 import org.jetbrains.amper.frontend.tree.TreeNode
 import org.jetbrains.amper.frontend.tree.jsonDump
@@ -101,11 +103,12 @@ fun FrontendTestCaseBase.readModuleWithTemplatesAndGetProblems(
 fun FrontendTestCaseBase.diagnoseModuleRead(
     caseName: String,
     types: SchemaTypingContext = SchemaTypingContext(),
+    treeBuilder: TreeBuilderFunction = readModule,
 ) = DiagnosticsTreeTestRun(
     caseName = caseName,
     testCase = this,
     types = types,
-    treeBuilder = readModule,
+    treeBuilder = treeBuilder,
 ).doTest()
 
 /**
@@ -182,16 +185,24 @@ internal fun readAndRefineModule(
     contexts: Contexts,
     withDefaults: Boolean = false,
 ): TreeBuilderFunction = {
-    val minimalModule = tryReadMinimalModule(it)!!
+    val minimalModule = checkNotNull(tryReadMinimalModule(it)) { "Failed to read minimal module for $it" }
     val tree = readTree(it, ModuleDeclaration)
-    tree.refineTree(contexts, minimalModule.combinedInheritance, withDefaults = withDefaults)
+    tree.refineTree(contexts, minimalModule.platformsInheritance + MainTestInheritance + DefaultInheritance, withDefaults = withDefaults)
 }
 
 // Helper function read the module with templates and refine it with selected contexts.
-internal fun readAndRefineModuleWithTemplates(contexts: (VirtualFile) -> Contexts): TreeBuilderFunction =
-    {
-        val minimalModule = tryReadMinimalModule(it)!!
-        val ownedTrees = readWithTemplates(minimalModule, it, PathCtx(it, it.asPsi().asTrace()))
-        val resultTree = mergeTrees(ownedTrees)
-        resultTree.refineTree(contexts(it), minimalModule.combinedInheritance, withDefaults = false)
-    }
+internal fun readAndRefineModuleWithTemplates(contexts: (VirtualFile) -> Contexts): TreeBuilderFunction = { file ->
+    val minimalModule = checkNotNull(tryReadMinimalModule(file)) { "Failed to read minimal module for $file" }
+    val templateResult = readWithTemplates(
+        file = file,
+        fileDeclaration = contextOf<SchemaTypingContext>().moduleDeclaration,
+    )
+    val resultTree = mergeTrees(templateResult.trees)
+    val pathInheritance = PathInheritance(
+        templateGraph = templateResult.templateGraph,
+        rootFile = file,
+    )
+    val combinedInheritance =
+        minimalModule.platformsInheritance + pathInheritance + MainTestInheritance + DefaultInheritance
+    resultTree.refineTree(contexts(file), combinedInheritance, withDefaults = false)
+}

@@ -1,0 +1,2 @@
+apply:
+  - ./t3.module-template.yaml

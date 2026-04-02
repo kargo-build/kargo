@@ -1,0 +1,4 @@
+product: jvm/app
+
+apply:
+  - ./template-diamond/all-spring.module-template.yaml

@@ -20,8 +20,11 @@ import org.jetbrains.amper.frontend.api.asTrace
 import org.jetbrains.amper.frontend.api.asTraceableValue
 import org.jetbrains.amper.frontend.catalogs.builtInCatalog
 import org.jetbrains.amper.frontend.catalogs.substituteCatalogDependencies
-import org.jetbrains.amper.frontend.contexts.MinimalModuleHolder
+import org.jetbrains.amper.frontend.contexts.DefaultInheritance
+import org.jetbrains.amper.frontend.contexts.MainTestInheritance
 import org.jetbrains.amper.frontend.contexts.PathCtx
+import org.jetbrains.amper.frontend.contexts.PathInheritance
+import org.jetbrains.amper.frontend.contexts.plus
 import org.jetbrains.amper.frontend.contexts.tryReadMinimalModule
 import org.jetbrains.amper.frontend.diagnostics.AomModelDiagnosticFactories
 import org.jetbrains.amper.frontend.diagnostics.AomSingleModuleDiagnosticFactories
@@ -41,7 +44,6 @@ import org.jetbrains.amper.frontend.schema.Dependency
 import org.jetbrains.amper.frontend.schema.ExternalMavenBomDependency
 import org.jetbrains.amper.frontend.schema.ExternalMavenDependency
 import org.jetbrains.amper.frontend.schema.InternalDependency
-import org.jetbrains.amper.frontend.schema.MavenPlugin
 import org.jetbrains.amper.frontend.schema.Module
 import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.frontend.schema.Settings
@@ -53,7 +55,6 @@ import org.jetbrains.amper.frontend.tree.completeTree
 import org.jetbrains.amper.frontend.tree.get
 import org.jetbrains.amper.frontend.tree.instance
 import org.jetbrains.amper.frontend.tree.mergeTrees
-import org.jetbrains.amper.frontend.tree.reading.readTree
 import org.jetbrains.amper.frontend.types.SchemaTypingContext
 import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.frontend.types.maven.MavenPluginDescriptionAdapter
@@ -136,7 +137,7 @@ internal fun AmperProjectContext.doReadProjectModel(
     return model
 }
 
-context(problemReporter: ProblemReporter, _: SchemaTypingContext, pathResolver: FrontendPathResolver, _: SystemInfo)
+context(problemReporter: ProblemReporter, types: SchemaTypingContext, pathResolver: FrontendPathResolver, _: SystemInfo)
 internal fun readModuleMergedTree(
     moduleFile: VirtualFile,
     projectVersionsCatalog: VersionCatalog?,
@@ -145,21 +146,28 @@ internal fun readModuleMergedTree(
     val moduleCtx = PathCtx(moduleFile, moduleFile.asPsi().asTrace())
 
     // Read the initial module file.
+    // FIXME Reuse single read tree both for module building and minimal module building
     val minimalModule = tryReadMinimalModule(moduleFile) ?: return null
 
-    // Read the whole module and used templates.
-    // FIXME Read templates by raw access API and then just reuse single read tree both
-    //       for module building and minimal module building.
-    val ownedTrees = readWithTemplates(minimalModule, moduleFile, moduleCtx, templatesCache)
+    // Read the whole module and used templates (including nested ones).
+    val treesReadResult = readWithTemplates(moduleFile, types.moduleDeclaration, templatesCache)
 
     val modulePsiDir = pathResolver.toPsiDirectory(moduleFile.parent) ?: error("A module file necessarily has a parent")
 
-    val preProcessedTree = mergeTrees(ownedTrees)
+    val preProcessedTree = mergeTrees(treesReadResult.trees)
         .configurePluginDefaults(moduleDir = modulePsiDir, product = minimalModule.module.product)
 
-    // TODO This should be done without refining somehow?
-    val refiner = TreeRefiner(minimalModule.combinedInheritance)
+    val pathInheritance = PathInheritance(
+        templateGraph = treesReadResult.templateGraph,
+        rootFile = moduleFile,
+    )
+    val combinedInheritance = minimalModule.platformsInheritance +
+            pathInheritance +
+            MainTestInheritance +
+            DefaultInheritance
+    val refiner = TreeRefiner(combinedInheritance)
 
+    // TODO This should be done without refining somehow?
     // Create a common "preview" of module settings to finish dependent/reactive configuration.
     val preProcessedCommonSettings: Settings = run {
         val preProcessedCommonTree = refiner.refineTree(preProcessedTree, setOf(moduleCtx))[Module::settings]
@@ -197,23 +205,6 @@ internal fun readModuleMergedTree(
         pathResolver = pathResolver,
         problemReporter = problemReporter,
     )
-}
-
-context(_: ProblemReporter, types: SchemaTypingContext, pathResolver: FrontendPathResolver)
-internal fun readWithTemplates(
-    minimalModule: MinimalModuleHolder,
-    mPath: VirtualFile,
-    moduleCtx: PathCtx,
-    templatesCache: MutableMap<Path, MappingNode> = hashMapOf(),
-): List<MappingNode> {
-    val moduleTree = readTree(mPath, types.moduleDeclaration, moduleCtx)
-    return listOf(moduleTree) + minimalModule.appliedTemplates.mapNotNull {
-        templatesCache.getOrPut(it) {
-            val templateVirtual = it.asVirtualOrNull() ?: return@mapNotNull null
-            val psiFile = pathResolver.toPsiFile(templateVirtual) ?: return@mapNotNull null
-            readTree(templateVirtual, types.templateDeclaration, PathCtx(templateVirtual, psiFile.asTrace()))
-        }
-    }
 }
 
 /**
