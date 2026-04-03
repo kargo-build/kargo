@@ -75,7 +75,35 @@ class ResolveFromMavenLocalTest : BaseDRTest() {
             // Checksums are ignored when an artifact is resolved from mavenLocal
             filesThatMustBeDownloaded = emptyList(),
             repositories = listOf(MAVEN_LOCAL),
-            initMavenLocalRepository = { initEtalonMavenLocalStorage(testCacheRoot) }
+            initMavenLocalRepository = {
+                initEtalonMavenLocalStorage(testCacheRoot) { context -> downloadAtomicFu(context) }
+            }
+        )
+    }
+
+    @Test
+    fun `release artifacts with classifier are resolved from mavenLocal`(testInfo: TestInfo) = runDrTest {
+        val testCacheRoot = uniqueCacheRoot()
+
+        checkLocalRepositoryUsage(
+            testInfo,
+            "org.bytedeco:opencv:4.5.5-1.5.7:windows-x86_64".toMavenCoordinates(),
+            testCacheRoot,
+            // All of those artifacts are taken from maven local storage
+            filesThatShouldNotBeDownloaded = listOf(
+                "opencv-4.5.5-1.5.7.pom",
+                "opencv-4.5.5-1.5.7.pom.sha1",
+                "opencv-4.5.5-1.5.7.module",
+                "opencv-4.5.5-1.5.7.module.sha1",
+                "opencv-4.5.5-1.5.7-windows-x86_64.jar",
+                "opencv-4.5.5-1.5.7-windows-x86_64.jar.sha1",
+            ),
+            // Checksums are ignored when an artifact is resolved from mavenLocal
+            filesThatMustBeDownloaded = emptyList(),
+            repositories = listOf(MAVEN_LOCAL),
+            initMavenLocalRepository = {
+                initEtalonMavenLocalStorage(testCacheRoot) { context -> downloadBytedecoOpencv(context) }
+            }
         )
     }
 
@@ -239,29 +267,33 @@ class ResolveFromMavenLocalTest : BaseDRTest() {
         }
     }
 
-    private suspend fun initEtalonMavenLocalStorage(cacheRoot: Path): MavenLocalRepository {
+    private suspend fun initEtalonMavenLocalStorage(
+        cacheRoot: Path,
+        downloadDependencyBlock: suspend (Context) -> Unit
+    ): MavenLocalRepository {
         // Installing maven local repository at the custom location
         cacheRoot.createDirectories()
 
         val mavenLocal = MavenLocalRepository(cacheRoot)
 
-        initEtalonLocalStorage(cacheRoot, mavenLocal)
-        return mavenLocal
-    }
-
-    private suspend fun initEtalonLocalStorage(cacheRoot: Path, localStorage: LocalRepository) {
-        val atomicfuCoordinates = "org.jetbrains.kotlinx:atomicfu-jvm:0.23.2"
-
         // Initialize resolution context
         val context = context(ResolutionScope.COMPILE, cacheBuilder = {
             amperCache = cacheRoot.resolve(".amper")
-            localRepository = localStorage
+            localRepository = mavenLocal
             readOnlyExternalRepositories = emptyList()
         })
 
+        downloadDependencyBlock(context)
+
+        return mavenLocal
+    }
+
+    private suspend fun downloadAtomicFu(context: Context) {
+        val coordinates = "org.jetbrains.kotlinx:atomicfu-jvm:0.23.2"
+
         val root = RootDependencyNodeWithContext(
-            children = listOf(atomicfuCoordinates.toMavenNode(context)),
-            templateContext = context()
+            children = listOf(coordinates.toMavenNode(context)),
+            templateContext = context
         )
 
         doTest(
@@ -275,6 +307,26 @@ class ResolveFromMavenLocalTest : BaseDRTest() {
         downloadAndAssertFiles(listOf("atomicfu-jvm-0.23.2.jar"), root)
     }
 
+    private suspend fun downloadBytedecoOpencv(context: Context) {
+        val coordinates = "org.bytedeco:opencv:4.5.5-1.5.7:windows-x86_64"
+
+        val root = RootDependencyNodeWithContext(
+            children = listOf(coordinates.toMavenNode(context)),
+            templateContext = context()
+        )
+
+        doTest(root)
+
+        downloadAndAssertFiles(
+            listOf(
+                "javacpp-1.5.7.jar",
+                "openblas-0.3.19-1.5.7.jar",
+                "opencv-4.5.5-1.5.7-windows-x86_64.jar"
+            ),
+            root
+        )
+    }
+
     private suspend fun checkLocalRepositoryUsage(
         testInfo: TestInfo,
         mavenCoordinates: MavenCoordinates,
@@ -284,7 +336,7 @@ class ResolveFromMavenLocalTest : BaseDRTest() {
         filesThatMustBeDownloaded: List<String> = emptyList(),
         repositories: List<Repository> = listOf(REDIRECTOR_MAVEN_CENTRAL),
         updateLocalRepository: (LocalRepository) -> Unit = {},
-        initMavenLocalRepository: suspend (Path) -> MavenLocalRepository = { cacheRoot -> initEtalonMavenLocalStorage(cacheRoot) }
+        initMavenLocalRepository: suspend (Path) -> MavenLocalRepository,
     ): DependencyNode {
         val urlPrefix =
             "https://cache-redirector.jetbrains.com/repo1.maven.org/maven2/${mavenCoordinates.urlFolderPath}"
@@ -364,7 +416,7 @@ class ResolveFromMavenLocalTest : BaseDRTest() {
         get() = "$urlFolderPath/$fileName"
 
     private val MavenCoordinates.fileName
-        get() = "$artifactId-$version.jar"
+        get() = "$artifactId-$version${classifier?.let { "-$it" }?:""}.jar"
 
     /**
      * Create Amper like configuration of repositories.

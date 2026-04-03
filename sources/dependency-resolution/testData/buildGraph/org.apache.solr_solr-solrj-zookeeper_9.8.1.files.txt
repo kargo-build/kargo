@@ -66,8 +66,8 @@ netty-transport-4.1.105.Final-sources.jar
 netty-transport-4.1.105.Final.jar
 netty-transport-classes-epoll-4.1.105.Final-sources.jar
 netty-transport-classes-epoll-4.1.105.Final.jar
+netty-transport-native-epoll-4.1.105.Final-linux-x86_64.jar
 netty-transport-native-epoll-4.1.105.Final-sources.jar
-netty-transport-native-epoll-4.1.105.Final.jar
 netty-transport-native-unix-common-4.1.105.Final-sources.jar
 netty-transport-native-unix-common-4.1.105.Final.jar
 semver4j-5.3.0-sources.jar

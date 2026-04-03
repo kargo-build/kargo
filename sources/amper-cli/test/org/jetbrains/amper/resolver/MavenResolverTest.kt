@@ -9,12 +9,12 @@ import org.jetbrains.amper.cli.AmperBuildOutputRoot
 import org.jetbrains.amper.cli.AmperVersion
 import org.jetbrains.amper.cli.UserReadableError
 import org.jetbrains.amper.core.AmperUserCacheRoot
-import org.jetbrains.amper.dependency.resolution.MavenCoordinates
 import org.jetbrains.amper.dependency.resolution.MavenRepository
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.frontend.dr.resolver.CliReportingMavenResolver
 import org.jetbrains.amper.incrementalcache.IncrementalCache
+import org.jetbrains.amper.test.dr.toMavenCoordinates
 import org.jetbrains.amper.test.runTestWithMdc
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
@@ -277,7 +277,4 @@ class MavenResolverTest {
     }
 
     private fun List<String>.toMavenCoordinates() = map { it.toMavenCoordinates() }
-
-    private fun String.toMavenCoordinates() =
-        split(":").let { MavenCoordinates(it[0], it[1], it[2]) }
 }

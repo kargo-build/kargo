@@ -19,7 +19,8 @@ fun String.toMavenCoordinates(): MavenCoordinates {
     val group = parts[0]
     val module = parts[1]
     val version = if (parts.size > 2) parts[2] else null
-    return MavenCoordinates(group, module, version)
+    val classifier = if (parts.size > 3) parts[3] else null
+    return MavenCoordinates(group, module, version, classifier = classifier)
 }
 
 fun MavenCoordinates.toMavenNode(context: Context, isBom: Boolean = false): MavenDependencyNodeWithContext {

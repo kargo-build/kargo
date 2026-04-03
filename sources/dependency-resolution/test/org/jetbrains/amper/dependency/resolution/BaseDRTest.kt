@@ -255,7 +255,6 @@ abstract class BaseDRTest {
         root.distinctBfsSequence()
             .filterIsInstance<MavenDependencyNode>()
             .flatMap { it.dependency.files(withSources) }
-            .filterNot { !checkAutoAddedDocumentation && it.isAutoAddedDocumentation }
             .mapNotNull { file -> file.path?.let { file to it } }
             .sortedBy { it.second.name }
             .distinctBy { it.second }
@@ -266,7 +265,8 @@ abstract class BaseDRTest {
                     it.forEach {
                         val file = it.first
                         val filePath = it.second
-                        check(filePath.exists()) {
+                        check(filePath.exists()
+                                || !checkAutoAddedDocumentation && file.isAutoAddedDocumentation) {
                             SimpleMessage(
                                 text = "File '$filePath' was returned from dependency resolution, but is missing on disk",
                                 id = "File is missing on disk",

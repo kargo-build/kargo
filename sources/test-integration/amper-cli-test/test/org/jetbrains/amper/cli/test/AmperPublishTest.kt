@@ -116,6 +116,13 @@ class AmperPublishTest : AmperCliTestBase() {
                   <scope>compile</scope>
                 </dependency>
                 <dependency>
+                  <groupId>org.bytedeco</groupId>
+                  <artifactId>opencv</artifactId>
+                  <version>4.5.5-1.5.7</version>
+                  <classifier>windows-x86_64</classifier>
+                  <scope>runtime</scope>
+                </dependency>
+                <dependency>
                   <groupId>org.jetbrains.kotlin</groupId>
                   <artifactId>kotlin-stdlib</artifactId>
                   <version>${DefaultVersions.kotlin}</version>

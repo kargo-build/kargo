@@ -101,7 +101,7 @@ interface MavenDependencyNode : DependencyNode {
         get() = if (dependency.version == originalVersion) {
             dependency.toString()
         } else {
-            "$group:$module:${originalVersion.orUnspecified()} -> ${dependency.version}"
+            getOriginalMavenCoordinates().toPrettyString(overridingVersion = dependency.version)
         }
 
     fun getOriginalMavenCoordinates(): MavenCoordinates = dependency.coordinates.copy(version = originalVersion)
@@ -115,6 +115,8 @@ val MavenDependencyNode.group
     get() = dependency.group
 val MavenDependencyNode.module
     get() = dependency.module
+val MavenDependencyNode.classifier
+    get() = dependency.classifier
 
 @Serializable
 @SerialName("MDN")
@@ -251,7 +253,7 @@ class MavenDependencyNodeWithContext internal constructor(
     override fun toString(): String = if (dependency.version == originalVersion) {
         dependency.toString()
     } else {
-        "$group:$module:${originalVersion.orUnspecified()} -> ${dependency.version}"
+        getOriginalMavenCoordinates().toPrettyString(overridingVersion = dependency.version)
     }
 
     override val cacheEntryKey: CacheEntryKey
@@ -490,7 +492,8 @@ fun Context.createOrReuseDependency(
     isBom: Boolean = false
 ): MavenDependencyImpl =
     this.resolutionCache.computeIfAbsent(Key<MavenDependencyImpl>(
-        "${coordinates.groupId}:${coordinates.artifactId}:${coordinates.version.orUnspecified()}:$isBom"
+        "${coordinates.groupId}:${coordinates.artifactId}:${coordinates.version.orUnspecified()}" +
+                "${coordinates.classifier?.let{":$it"} ?: ""}:$isBom"
     )) {
         MavenDependencyImpl(this.settings, coordinates, isBom)
     }
@@ -593,6 +596,8 @@ val MavenDependency.module
     get() = coordinates.artifactId
 val MavenDependency.version
     get() = coordinates.version
+val MavenDependency.classifier
+    get() = coordinates.classifier
 
 @Serializable
 @SerialName("MD")
@@ -617,7 +622,7 @@ class MavenDependencyPlain internal constructor (
         return if (withSources) files else files.filterNot { it.isDocumentation }
     }
 
-    override fun toString() = "$group:$module:${version.orUnspecified()}"
+    override fun toString() = coordinates.toPrettyString()
 }
 
 @Serializable(with = MavenDependencyReference.Serializer::class)
@@ -697,9 +702,16 @@ class MavenDependencyImpl internal constructor(
 
     private val mutex = Mutex()
 
-    internal val moduleFile = getDependencyFile(this, getNameWithoutExtension(this), "module")
+    internal val moduleFile = getDependencyFile(
+        dependency = this,
+        nameWithoutExtension = getNameWithoutExtension(this, withClassifier = false),
+        extension = "module"
+    )
     private var moduleMetadata: Module? = null
-    val pom = getDependencyFile(this, getNameWithoutExtension(this), "pom")
+    val pom = getDependencyFile(dependency = this,
+        nameWithoutExtension = getNameWithoutExtension(this, withClassifier = false),
+        extension = "pom"
+    )
     private var pomText: String? = null
     override val pomPath: Path?
         get() = pom.path
@@ -773,7 +785,7 @@ class MavenDependencyImpl internal constructor(
             }
         }
 
-    override fun toString(): String = "$group:$module:${version.orUnspecified()}"
+    override fun toString(): String = coordinates.toPrettyString()
 
     suspend fun resolveChildren(
         context: Context,
@@ -1175,6 +1187,7 @@ class MavenDependencyImpl internal constructor(
     fun getAutoAddedSourcesDependencyFile() =
         getDependencyFile(
             this,
+            // Sources are published once for all classifiers, this is why 'moduleFile'.'nameWithoutExtension' is taken
             "${this.moduleFile.nameWithoutExtension}-sources",
             "jar",
             isDocumentation = true,
@@ -1242,6 +1255,8 @@ class MavenDependencyImpl internal constructor(
         reportError: (reason: String) -> Unit = {},
     ): MavenCoordinates {
         val resolvedVersion = resolveVersion(reportError)
+        // todo (AB): [AMPER-774] How to get classifier from Gradle metadata type 'Dependency
+        //  (see 'thirdPartyCompatibility')
         return mavenCoordinatesTrimmed(groupId = group, artifactId = module, version = resolvedVersion)
     }
 
@@ -1927,7 +1942,7 @@ class MavenDependencyImpl internal constructor(
         if (packaging == "jar" && !isSpecialKmpLibrary()) {
             val nonJvmPlatforms =
                 context.settings.platforms.filter { it != ResolutionPlatform.JVM && it != ResolutionPlatform.ANDROID }
-            // JAR packed dependencies without metadata shouldn't be used for non-JVM platforms
+            // JAR-packed dependencies without metadata shouldn't be used for non-JVM platforms
             if (nonJvmPlatforms.isNotEmpty()) {
                 diagnosticsReporter.addMessage(
                     PlatformsAreNotSupported(
@@ -2110,13 +2125,22 @@ data class MavenCoordinates(
     val packagingType: String? = null,
     val classifier: String? = null,
 ) {
-    override fun toString(): String {
-        return "$groupId:$artifactId:${version.orUnspecified()}" +
+    override fun toString(): String = toPrettyString(withPackagingType = true)
+
+    fun toPrettyString(withPackagingType: Boolean = false, overridingVersion:String? = null): String {
+        return "$groupId:$artifactId" +
+                ":${version.orUnspecified()}" +
+                (overridingVersion?.let { " -> $it" } ?: "") +
                 (if (classifier != null) ":$classifier" else "") +
-                (if (packagingType != null) "@$packagingType" else "")
+                (if (withPackagingType && packagingType != null) "@$packagingType" else "")
     }
 }
 
+/**
+ * The format of the 'available-at' element is described by the following link
+ * https://github.com/gradle/gradle/blob/master/platforms/documentation/docs/src/docs/design/gradle-module-metadata-latest-specification.md#available-at-value
+ * It doesn't have a built-in notion of classifier.
+ */
 internal fun AvailableAt.toCoordinates() =
     mavenCoordinatesTrimmed(group, module, version)
 

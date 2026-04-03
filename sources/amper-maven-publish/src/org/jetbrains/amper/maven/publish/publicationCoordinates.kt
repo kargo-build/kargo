@@ -36,6 +36,7 @@ private fun AmperModule.kmpLeafPlatformPublicationCoordinates(platform: Platform
     return fragment.mavenCoordinates(artifactIdSuffix = "-${platform.schemaValue.lowercase()}")
 }
 
+// todo (AB): [AMPER-5245] Support publishing with classifier.
 private fun Fragment.mavenCoordinates(artifactIdSuffix: String): MavenCoordinates = mavenCoordinatesTrimmed(
     groupId = settings.publishing.group
         ?: error("Missing 'group' in publishing settings of fragment '${name}' of module '${module.userReadableName}'"),

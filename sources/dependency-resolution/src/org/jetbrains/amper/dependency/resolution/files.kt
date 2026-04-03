@@ -1481,7 +1481,12 @@ class SnapshotDependencyFileImpl(
     }
 }
 
-internal fun getNameWithoutExtension(node: MavenDependency): String = "${node.module}-${node.version.orUnspecified()}"
+internal fun getNameWithoutExtension(node: MavenDependency, withClassifier: Boolean = true): String {
+    val moduleName = node.module
+    val versionSuffix = "-${node.version.orUnspecified()}"
+    val classifierSuffix = node.classifier?.takeIf { withClassifier }?.let { "-$it" } ?: ""
+    return "$moduleName$versionSuffix$classifierSuffix"
+}
 
 private fun fileFromVariant(dependency: MavenDependencyImpl, name: String) =
     dependency.variants.flatMap { it.files }.singleOrNull { it.name == name }

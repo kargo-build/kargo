@@ -528,7 +528,21 @@ class BuildGraphTest : BaseDRTest() {
             scope = ResolutionScope.RUNTIME,
             verifyMessages = true
         )
-        assertFiles(testInfo, root, true)
+        downloadAndAssertFiles(testInfo, root, withSources = true, checkAutoAddedDocumentation = false)
+    }
+
+    /**
+     * This test checks that a classifier is taken into account and the appropriate artifact is resolved
+     */
+    @Test
+    fun `org_bytedeco opencv 4_5_5-1_5_7 windows-x86_64`(testInfo: TestInfo) = runDrTest {
+        val root = doTestByFile(
+            testInfo = testInfo,
+            dependency = listOf("org.bytedeco:opencv:4.5.5-1.5.7:windows-x86_64"),
+            scope = ResolutionScope.RUNTIME,
+            verifyMessages = true
+        )
+        downloadAndAssertFiles(testInfo, root)
     }
 
     /**
@@ -806,7 +820,10 @@ class BuildGraphTest : BaseDRTest() {
             """.trimIndent()
         )
         downloadAndAssertFiles(
-            listOf("listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar"),
+            listOf(
+                "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava-sources.jar",
+                "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+            ),
             root,
             withSources = true,
             checkAutoAddedDocumentation = false
@@ -2345,7 +2362,8 @@ class BuildGraphTest : BaseDRTest() {
                         org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.1
                         org.jetbrains:annotations:13.0
                     """.trimIndent(),
-                    it.joinToString("\n")
+                    it.joinToString("\n"),
+                    "Unexpected list of MavenDependencyNodes"
                 )
             }
     }
