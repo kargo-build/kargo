@@ -4,6 +4,8 @@ settings:
   springBoot: enabled
   jvm:
     mainClass: org.springframework.samples.petclinic.PetClinicApplicationKt
+  kotlin:
+    freeCompilerArgs: [ -Xannotation-default-target=param-property ]
 
 dependencies:
   - $spring.boot.starter.actuator
@@ -32,6 +34,3 @@ test-dependencies:
   - $spring.boot.starter.test.webmvc
   - $spring.boot.starter.test.data.jpa
 
-test-settings:
-  kotlin:
-    freeCompilerArgs: [ -Xannotation-default-target=param-property ]
