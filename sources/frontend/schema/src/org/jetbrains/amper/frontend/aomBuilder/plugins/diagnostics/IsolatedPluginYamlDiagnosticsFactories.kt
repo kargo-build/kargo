@@ -12,4 +12,6 @@ internal val IsolatedPluginYamlDiagnosticsFactories = listOf(
     NoTasksDiagnosticFactory,
     InvalidTaskNameReferencesDiagnosticFactory,
     ConstInitDiagnosticFactory,
+    ConflictingCheckNamesDiagnosticFactory,
+    ConflictingCommandNamesDiagnosticFactory,
 )

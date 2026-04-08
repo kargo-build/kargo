@@ -161,6 +161,12 @@ class CustomChecksTest : AmperCliTestBase() {
             "${pluginYaml}:10:5: Property `name` can't have its value referencing external parameters.",
             "${pluginYaml}:13:5: Property `name` can't have its value referencing external parameters.",
             "${pluginYaml}:6:18: Expected a task name, got `nonExistentTask` instead. Registered task names are `runCheckA`.",
+            """
+               Multiple checks have the same name `badCheck`
+               ╰─ Conflicting check names defined at:
+                  ├─ ${pluginYaml}:7:11
+                  ╰─ ${pluginYaml}:16:11
+            """.trimIndent(),
         )
     }
 

@@ -11,3 +11,6 @@ checks:
 
   - performedBy: runCheckA
     name: ${project.rootDir}
+
+  - performedBy: runCheckA
+    name: badCheck

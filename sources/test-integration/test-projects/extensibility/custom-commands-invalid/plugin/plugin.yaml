@@ -1,0 +1,8 @@
+tasks:
+  dummy: { action: !dummy {} }
+  dummy1: { action: !dummy {} }
+
+commands:
+  - performedBy: dummy1
+    name: dummy
+  - dummy

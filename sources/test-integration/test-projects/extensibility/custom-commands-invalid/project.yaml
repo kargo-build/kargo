@@ -1,0 +1,4 @@
+modules:
+  - plugin
+plugins:
+  - ./plugin

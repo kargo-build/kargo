@@ -4,10 +4,12 @@
 
 package org.jetbrains.amper.cli.test
 
+import org.jetbrains.amper.cli.test.utils.assertErrors
 import org.jetbrains.amper.cli.test.utils.assertStderrContains
 import org.jetbrains.amper.cli.test.utils.assertStdoutContains
 import org.jetbrains.amper.cli.test.utils.runSlowTest
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class DoCommandTest : AmperCliTestBase() {
     @Test
@@ -58,7 +60,7 @@ class DoCommandTest : AmperCliTestBase() {
         result.assertStdoutContains("Uploading pictures...")
         // Count occurrences of "Uploading pictures..."
         val occurrences = result.stdout.split("Uploading pictures...").size - 1
-        kotlin.test.assertEquals(2, occurrences, "Should run for both app and app2")
+        assertEquals(2, occurrences, "Should run for both app and app2")
     }
 
     @Test
@@ -71,7 +73,7 @@ class DoCommandTest : AmperCliTestBase() {
         )
         result.assertStdoutContains("Uploading pictures...")
         val occurrences = result.stdout.split("Uploading pictures...").size - 1
-        kotlin.test.assertEquals(1, occurrences, "Should only run for app")
+        assertEquals(1, occurrences, "Should only run for app")
     }
     @Test
     fun `do command - missing command`() = runSlowTest {
@@ -84,5 +86,25 @@ class DoCommandTest : AmperCliTestBase() {
             assertEmptyStdErr = false,
         )
         result.assertStderrContains("Unknown command 'nonExistent'")
+    }
+
+    @Test
+    fun `do command - conflicting command names`() = runSlowTest {
+        val projectDir = testProject("extensibility/custom-commands-invalid")
+        val pluginYaml = projectDir.resolve("plugin/plugin.yaml")
+        val result = runCli(
+            projectDir = projectDir,
+            "do", "dummy",
+            expectedExitCode = 1,
+            assertEmptyStdErr = false,
+        )
+        result.assertErrors(
+            """
+                Multiple commands have the same name `dummy`
+                ╰─ Conflicting command names:
+                   ├─ ${pluginYaml}:7:11
+                   ╰─ ${pluginYaml}:8:5
+            """.trimIndent()
+        )
     }
 }
