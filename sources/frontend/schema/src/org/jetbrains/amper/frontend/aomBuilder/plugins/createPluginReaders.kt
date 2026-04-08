@@ -7,6 +7,7 @@ package org.jetbrains.amper.frontend.aomBuilder.plugins
 import org.jetbrains.amper.frontend.FrontendPathResolver
 import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.aomBuilder.ModuleBuildCtx
+import org.jetbrains.amper.frontend.aomBuilder.plugins.diagnostics.PluginYamlMissing
 import org.jetbrains.amper.frontend.api.TraceableString
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.messages.extractKeyValuePsiElement

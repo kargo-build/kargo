@@ -4,24 +4,14 @@
 
 package org.jetbrains.amper.frontend.aomBuilder.plugins
 
-import com.intellij.psi.PsiElement
 import org.jetbrains.amper.core.UsedInIdePlugin
-import org.jetbrains.amper.frontend.SchemaBundle
-import org.jetbrains.amper.frontend.messages.PsiBuildProblem
-import org.jetbrains.amper.problems.reporting.BuildProblemType
-import org.jetbrains.amper.problems.reporting.DiagnosticId
-import org.jetbrains.amper.problems.reporting.Level
-import org.jetbrains.annotations.Nls
-import java.nio.file.Path
 
-class PluginYamlMissing(
-    override val element: PsiElement,
-    @field:UsedInIdePlugin
-    val expectedPluginYamlPath: Path,
-) : PsiBuildProblem(
-    level = Level.Warning,
-    type = BuildProblemType.Generic,
-) {
-    override val diagnosticId: DiagnosticId = PluginDiagnosticId.PluginYamlMissing
-    override val message: @Nls String = SchemaBundle.message("plugin.missing.plugin.yaml")
-}
+@Deprecated(
+    message = "Was relocated into the .diagnostics package",
+    replaceWith = ReplaceWith(
+        expression = "org.jetbrains.amper.frontend.aomBuilder.plugins.diagnostics.PluginYamlMissing",
+        imports = ["org.jetbrains.amper.frontend.aomBuilder.plugins.diagnostics.PluginYamlMissing"],
+    )
+)
+@UsedInIdePlugin
+typealias PluginYamlMissing = org.jetbrains.amper.frontend.aomBuilder.plugins.diagnostics.PluginYamlMissing

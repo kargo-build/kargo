@@ -10,7 +10,7 @@ import org.jetbrains.amper.frontend.FrontendPathResolver
 import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.aomBuilder.ModuleBuildCtx
-import org.jetbrains.amper.frontend.api.Trace
+import org.jetbrains.amper.frontend.aomBuilder.plugins.diagnostics.IsolatedPluginYamlDiagnosticsFactories
 import org.jetbrains.amper.frontend.api.isDefault
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.catalogs.substituteCatalogDependencies
@@ -83,73 +83,13 @@ internal class PluginTreeReader(
         context(proxyReporter) {
             val refinedTree = treeRefiner.refineTree(tree, EmptyContexts)
 
-            // Purely for reporting missing properties
-            // TODO: Maybe extract just properties reporting routine so we don't so unnecessary transform?
-            refinedTree.completeTree(TaskParameterAwareMissingPropertiesHandler(problemReporter))
-            // We don't need to save the result
-
-            diagnoseConstInit(refinedTree)
-            diagnoseNoTasks(refinedTree)
+            for (diagnosticsFactory in IsolatedPluginYamlDiagnosticsFactories) {
+                diagnosticsFactory.analyze(refinedTree)
+            }
 
             proxyReporter.replayProblemsTo(problemReporter)
-
             // If errors are detected, don't save the tree. No point in applying the plugin with errors.
             refinedTree.takeUnless { proxyReporter.problems.any { it.level == Level.Error } }
-        }
-    }
-
-    context(reporter: ProblemReporter)
-    private fun diagnoseConstInit(tree: RefinedMappingNode) {
-        object : RecurringRefinedTreeVisitorUnit() {
-            override fun visitMap(node: RefinedMappingNode) {
-                node.refinedChildren.values.forEach { keyValue ->
-                    val isConstInit = keyValue.propertyDeclaration?.isConstInit == true
-                    if (isConstInit && keyValue.value.subtreeContainsResolvableNodes()) {
-                        reporter.reportBundleError(
-                            source = keyValue.asBuildProblemSource(),
-                            diagnosticId = PluginDiagnosticId.ConstInitPropertyIsNotFullyResolved,
-                            messageKey = "plugin.constinit.property.contains.holes",
-                            keyValue.key,
-                        )
-                    }
-                }
-                super.visitMap(node)
-            }
-        }.visit(tree)
-    }
-
-    context(reporter: ProblemReporter)
-    private fun diagnoseNoTasks(tree: RefinedMappingNode) {
-        val tasks = tree[PluginYamlRoot::tasks] as? MappingNode
-        if (tasks == null || tasks.children.isEmpty()) {
-            reporter.reportBundleError(
-                source = tasks?.asBuildProblemSource() as? PsiBuildProblemSource
-                    // If tasks are `{}` by *default*, then we need to use the whole tree trace.
-                    ?: tree.asBuildProblemSource(),
-                diagnosticId = PluginDiagnosticId.PluginDoesntRegisterAnyTasks,
-                messageKey = "plugin.missing.tasks",
-                level = Level.Warning,
-            )
-        } else {
-            val taskNames = tasks.children.map { it.key }
-            val allTaskNameReferences = buildSet {
-                tree.visitNodes { node ->
-                    if (node is StringNode && node.semantics == SchemaType.StringType.Semantics.TaskName) {
-                        add(node)
-                    }
-                }
-            }
-            allTaskNameReferences.forEach { taskNameReference ->
-                if (taskNameReference.value !in taskNames) {
-                    reporter.reportBundleError(
-                        source = taskNameReference.asBuildProblemSource(),
-                        diagnosticId = PluginDiagnosticId.InvalidCheckerTaskName,
-                        messageKey = "plugin.invalid.task.name.reference",
-                        taskNameReference.value,
-                        taskNames.joinToString { "`$it`" },
-                    )
-                }
-            }
         }
     }
 
@@ -239,31 +179,6 @@ internal class PluginTreeReader(
                 messageKey = "plugin.unexpected.configuration.when.disabled", pluginData.id.value,
                 level = Level.Warning,
             )
-        }
-    }
-}
-
-private class TaskParameterAwareMissingPropertiesHandler(
-    problemReporter: ProblemReporter,
-) : MissingPropertiesHandler.Default(problemReporter) {
-    override fun onMissingRequiredPropertyValue(
-        trace: Trace,
-        valuePath: List<String>,
-        relativeValuePath: List<String>,
-    ) {
-        if (valuePath.size == 4) {
-            // ["tasks", *, "action", *]
-            val (maybeTasks, _, maybeAction, maybeParameterName) = valuePath
-            if (maybeTasks == "tasks" && maybeAction == "action") {
-                problemReporter.reportBundleError(
-                    source = trace.asBuildProblemSource(),
-                    diagnosticId = TreeDiagnosticId.NoValueForRequiredProperty,
-                    messageKey = "validation.missing.task.parameter.value",
-                    maybeParameterName,
-                )
-            }
-        } else {
-            super.onMissingRequiredPropertyValue(trace, valuePath, relativeValuePath)
         }
     }
 }
