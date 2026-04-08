@@ -6,8 +6,8 @@ package org.jetbrains.amper.frontend.plugins
 
 import org.jetbrains.amper.frontend.SchemaEnum
 import org.jetbrains.amper.frontend.api.CanBeReferenced
+import org.jetbrains.amper.frontend.api.ConstInit
 import org.jetbrains.amper.frontend.api.CustomSchemaDeclaration
-import org.jetbrains.amper.frontend.api.IgnoreForSchema
 import org.jetbrains.amper.frontend.api.ReadOnly
 import org.jetbrains.amper.frontend.api.SchemaDoc
 import org.jetbrains.amper.frontend.api.SchemaNode
@@ -154,21 +154,25 @@ class FragmentDescriptor : SchemaNode() {
 }
 
 class CustomCheck : SchemaNode() {
+    @ConstInit
     @Shorthand
     @SchemaDoc("The name of the task that performs this check.")
     @StringSemantics(SchemaType.StringType.Semantics.TaskName)
     val performedBy by value<String>()
 
+    @ConstInit
     @SchemaDoc("The name of this check. Defaults to the task name specified in 'performedBy'.")
     val name: String by referenceValue(::performedBy)
 }
 
 class CustomCommand : SchemaNode() {
+    @ConstInit
     @Shorthand
     @SchemaDoc("The name of the task that performs this command.")
     @StringSemantics(SchemaType.StringType.Semantics.TaskName)
     val performedBy by value<String>()
 
+    @ConstInit
     @SchemaDoc("The name of this command. Defaults to the task name specified in 'performedBy'.")
     val name: String by referenceValue(::performedBy)
 }

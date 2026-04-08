@@ -20,6 +20,7 @@ import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.withIndent
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.api.CanBeReferenced
+import org.jetbrains.amper.frontend.api.ConstInit
 import org.jetbrains.amper.frontend.api.Default
 import org.jetbrains.amper.frontend.api.FromKeyAndTheRestIsNested
 import org.jetbrains.amper.frontend.api.GradleSpecific
@@ -122,6 +123,7 @@ internal fun <T : SchemaNode> parseAndGenerateSchemaNode(clazz: KClass<T>): Pars
                     add("canBeReferenced = true,\n")
                 }
                 if (prop.hasAnnotation<ReadOnly>()) add("isUserSettable = false,\n")
+                if (prop.hasAnnotation<ConstInit>()) add("isConstInit = true,\n")
                 prop.findAnnotation<PlatformSpecific>()?.let {
                     val list = CodeBlock.builder().apply {
                         it.platforms.forEach { platform -> add("%T.%N, ", Platform::class, platform.name) }

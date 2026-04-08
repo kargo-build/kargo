@@ -26,6 +26,7 @@ import org.jetbrains.amper.frontend.tree.BooleanNode
 import org.jetbrains.amper.frontend.tree.ErrorNode
 import org.jetbrains.amper.frontend.tree.MappingNode
 import org.jetbrains.amper.frontend.tree.MissingPropertiesHandler
+import org.jetbrains.amper.frontend.tree.RecurringRefinedTreeVisitorUnit
 import org.jetbrains.amper.frontend.tree.RefinedMappingNode
 import org.jetbrains.amper.frontend.tree.StringNode
 import org.jetbrains.amper.frontend.tree.TreeDiagnosticId
@@ -40,6 +41,7 @@ import org.jetbrains.amper.frontend.tree.mergeTrees
 import org.jetbrains.amper.frontend.tree.put
 import org.jetbrains.amper.frontend.tree.reading.ReferencesParsingMode
 import org.jetbrains.amper.frontend.tree.reading.readTree
+import org.jetbrains.amper.frontend.tree.resolution.subtreeContainsResolvableNodes
 import org.jetbrains.amper.frontend.tree.visitNodes
 import org.jetbrains.amper.frontend.types.SchemaType
 import org.jetbrains.amper.frontend.types.SchemaTypingContext
@@ -86,6 +88,9 @@ internal class PluginTreeReader(
             refinedTree.completeTree(TaskParameterAwareMissingPropertiesHandler(problemReporter))
             // We don't need to save the result
 
+            diagnoseConstInit(refinedTree)
+            diagnoseNoTasks(refinedTree)
+
             proxyReporter.replayProblemsTo(problemReporter)
 
             // If errors are detected, don't save the tree. No point in applying the plugin with errors.
@@ -93,18 +98,34 @@ internal class PluginTreeReader(
         }
     }
 
-    init {
-        diagnoseNoTasks(problemReporter)
+    context(reporter: ProblemReporter)
+    private fun diagnoseConstInit(tree: RefinedMappingNode) {
+        object : RecurringRefinedTreeVisitorUnit() {
+            override fun visitMap(node: RefinedMappingNode) {
+                node.refinedChildren.values.forEach { keyValue ->
+                    val isConstInit = keyValue.propertyDeclaration?.isConstInit == true
+                    if (isConstInit && keyValue.value.subtreeContainsResolvableNodes()) {
+                        reporter.reportBundleError(
+                            source = keyValue.asBuildProblemSource(),
+                            diagnosticId = PluginDiagnosticId.ConstInitPropertyIsNotFullyResolved,
+                            messageKey = "plugin.constinit.property.contains.holes",
+                            keyValue.key,
+                        )
+                    }
+                }
+                super.visitMap(node)
+            }
+        }.visit(tree)
     }
 
-    private fun diagnoseNoTasks(problemReporter: ProblemReporter) {
-        if (pluginTree == null) return
-        val tasks = pluginTree[PluginYamlRoot::tasks] as? MappingNode
+    context(reporter: ProblemReporter)
+    private fun diagnoseNoTasks(tree: RefinedMappingNode) {
+        val tasks = tree[PluginYamlRoot::tasks] as? MappingNode
         if (tasks == null || tasks.children.isEmpty()) {
-            problemReporter.reportBundleError(
+            reporter.reportBundleError(
                 source = tasks?.asBuildProblemSource() as? PsiBuildProblemSource
                     // If tasks are `{}` by *default*, then we need to use the whole tree trace.
-                    ?: pluginTree.asBuildProblemSource(),
+                    ?: tree.asBuildProblemSource(),
                 diagnosticId = PluginDiagnosticId.PluginDoesntRegisterAnyTasks,
                 messageKey = "plugin.missing.tasks",
                 level = Level.Warning,
@@ -112,7 +133,7 @@ internal class PluginTreeReader(
         } else {
             val taskNames = tasks.children.map { it.key }
             val allTaskNameReferences = buildSet {
-                pluginTree.visitNodes { node ->
+                tree.visitNodes { node ->
                     if (node is StringNode && node.semantics == SchemaType.StringType.Semantics.TaskName) {
                         add(node)
                     }
@@ -120,7 +141,7 @@ internal class PluginTreeReader(
             }
             allTaskNameReferences.forEach { taskNameReference ->
                 if (taskNameReference.value !in taskNames) {
-                    problemReporter.reportBundleError(
+                    reporter.reportBundleError(
                         source = taskNameReference.asBuildProblemSource(),
                         diagnosticId = PluginDiagnosticId.InvalidCheckerTaskName,
                         messageKey = "plugin.invalid.task.name.reference",
@@ -130,8 +151,6 @@ internal class PluginTreeReader(
                 }
             }
         }
-
-        // TODO: Diagnose duplicate checkers (forbid external unresolved references to the checker name)
     }
 
     context(problemReporter: ProblemReporter)

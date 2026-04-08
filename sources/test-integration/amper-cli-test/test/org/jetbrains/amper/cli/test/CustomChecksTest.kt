@@ -158,6 +158,8 @@ class CustomChecksTest : AmperCliTestBase() {
             assertEmptyStdErr = false,
             expectedExitCode = 1,
         ).assertErrors(
+            "${pluginYaml}:10:5: Property `name` can't have its value referencing external parameters.",
+            "${pluginYaml}:13:5: Property `name` can't have its value referencing external parameters.",
             "${pluginYaml}:6:18: Expected a task name, got `nonExistentTask` instead. Registered task names are `runCheckA`.",
         )
     }
