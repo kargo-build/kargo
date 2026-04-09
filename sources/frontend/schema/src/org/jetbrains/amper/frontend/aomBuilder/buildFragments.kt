@@ -216,7 +216,7 @@ internal fun createFragments(
         val testCtx = if (isTest) setOf(TestCtx) else EmptyContexts
         val selectedContexts = testCtx +
                 platforms.map { PlatformCtx(it.pretty) } +
-                PathCtx(ctx.moduleFile)
+                PathCtx(ctx.moduleFile.toNioPath())
         val refinedTree = ctx.refiner.refineTree(ctx.mergedTree, selectedContexts)
         val handler = object : MissingPropertiesHandler.Default(problemReporter) {
             override fun onMissingRequiredPropertyValue(

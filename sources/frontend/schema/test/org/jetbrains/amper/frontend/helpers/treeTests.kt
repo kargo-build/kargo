@@ -200,7 +200,7 @@ internal fun readAndRefineModuleWithTemplates(contexts: (VirtualFile) -> Context
     val resultTree = mergeTrees(templateResult.trees)
     val pathInheritance = PathInheritance(
         templateGraph = templateResult.templateGraph,
-        rootFile = file,
+        rootPath = file.toNioPath(),
     )
     val combinedInheritance =
         minimalModule.platformsInheritance + pathInheritance + MainTestInheritance + DefaultInheritance

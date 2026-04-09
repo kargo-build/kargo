@@ -53,13 +53,13 @@ class TreeTests : FrontendTestCaseBase(Path(".") / "testResources" / "valueTree"
     @Test
     fun `merge with templates`() = testRefineModuleWithTemplates(
         "with-templates",
-        selectedContexts = { platformCtxs("jvm") + PathCtx(it, null) },
+        selectedContexts = { platformCtxs("jvm") + PathCtx(it.toNioPath(), null) },
     )
 
     @Test
     fun `merge with nested templates`() = testRefineModuleWithTemplates(
         "with-nested-templates",
-        selectedContexts = { platformCtxs("jvm") + PathCtx(it, null) },
+        selectedContexts = { platformCtxs("jvm") + PathCtx(it.toNioPath(), null) },
     )
 
     @Test
@@ -68,7 +68,7 @@ class TreeTests : FrontendTestCaseBase(Path(".") / "testResources" / "valueTree"
         //  problems here.
         val problems = readModuleWithTemplatesAndGetProblems(
             caseName = "template-loop",
-            selectedContexts = { listOf(PathCtx(it, null)) },
+            selectedContexts = { listOf(PathCtx(it.toNioPath(), null)) },
         )
         val conflicts = problems.filterIsInstance<TemplateApplicationLoop>()
         assertEquals(1, conflicts.size, "Expected exactly one conflict, got: $problems")
@@ -79,7 +79,7 @@ class TreeTests : FrontendTestCaseBase(Path(".") / "testResources" / "valueTree"
     @Test
     fun `template diamond with resolved conflict`() = testRefineModuleWithTemplates(
         "template-diamond",
-        selectedContexts = { listOf(PathCtx(it, null)) }
+        selectedContexts = { listOf(PathCtx(it.toNioPath(), null)) }
     )
 
     @Test
@@ -88,7 +88,7 @@ class TreeTests : FrontendTestCaseBase(Path(".") / "testResources" / "valueTree"
         //  problems here.
         val problems = readModuleWithTemplatesAndGetProblems(
             caseName = "template-diamond-with-conflict",
-            selectedContexts = { listOf(PathCtx(it, null)) },
+            selectedContexts = { listOf(PathCtx(it.toNioPath(), null)) },
         )
         val conflicts = problems.filterIsInstance<ConflictingProperties>()
         assertEquals(1, conflicts.size, "Expected exactly one conflict, got: $problems")
@@ -141,7 +141,7 @@ class TreeTests : FrontendTestCaseBase(Path(".") / "testResources" / "valueTree"
         //  problems here.
         val problems = readModuleWithTemplatesAndGetProblems(
             caseName = "template-conflicts",
-            selectedContexts = { platformCtxs("jvm") + PathCtx(it, null) },
+            selectedContexts = { platformCtxs("jvm") + PathCtx(it.toNioPath(), null) },
         )
         val conflicts = problems.filterIsInstance<ConflictingProperties>()
         assertEquals(1, conflicts.size, "Expected exactly one conflict, got: $problems")

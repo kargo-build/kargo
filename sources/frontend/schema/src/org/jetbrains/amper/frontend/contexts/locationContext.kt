@@ -4,8 +4,6 @@
 
 package org.jetbrains.amper.frontend.contexts
 
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.openapi.vfs.toNioPathOrNull
 import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.api.TraceablePath
 import org.jetbrains.amper.frontend.contexts.ContextsInheritance.Result.INDETERMINATE
@@ -14,10 +12,11 @@ import org.jetbrains.amper.frontend.contexts.ContextsInheritance.Result.IS_MORE_
 import org.jetbrains.amper.frontend.contexts.ContextsInheritance.Result.SAME
 import java.nio.file.Path
 import java.util.*
+import kotlin.io.path.pathString
 
-class PathCtx(val path: VirtualFile, override val trace: Trace? = null) : Context {
+class PathCtx(val path: Path, override val trace: Trace? = null) : Context {
     override fun withoutTrace() = PathCtx(path)
-    override fun toString() = path.path
+    override fun toString() = path.pathString
 }
 
 /**
@@ -32,11 +31,10 @@ class PathCtx(val path: VirtualFile, override val trace: Trace? = null) : Contex
  */
 class PathInheritance(
     templateGraph: Map<Path, Set<TraceablePath>>,
-    rootFile: VirtualFile,
+    private val rootPath: Path,
 ) : ContextsInheritance<PathCtx> {
     private val templateReachabilityGraph: Map<Path, Set<Path>>
     private val templatePaths = templateGraph.keys + templateGraph.values.flatten().map(TraceablePath::value).toSet()
-    private val rootPath = rootFile.toNioPath()
 
     init {
         val reachabilityMap = mutableMapOf<Path, Set<Path>>()
@@ -62,8 +60,8 @@ class PathInheritance(
 
     override fun Collection<PathCtx>.compareContexts(other: Collection<PathCtx>): ContextsInheritance.Result {
         // Values in trees shouldn't have more than a single path context.
-        val thisPath = singleOrNull()?.path?.toNioPathOrNull()
-        val otherPath = other.singleOrNull()?.path?.toNioPathOrNull()
+        val thisPath = singleOrNull()?.path
+        val otherPath = other.singleOrNull()?.path
 
         return when {
             thisPath == otherPath -> SAME

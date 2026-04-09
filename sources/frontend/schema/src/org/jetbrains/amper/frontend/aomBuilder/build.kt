@@ -143,7 +143,7 @@ internal fun readModuleMergedTree(
     projectVersionsCatalog: VersionCatalog?,
     templatesCache: MutableMap<Path, MappingNode> = hashMapOf(),
 ): ModuleBuildCtx? {
-    val moduleCtx = PathCtx(moduleFile, moduleFile.asPsi().asTrace())
+    val moduleCtx = PathCtx(moduleFile.toNioPath(), moduleFile.asPsi().asTrace())
 
     // Read the initial module file.
     // FIXME Reuse single read tree both for module building and minimal module building
@@ -159,7 +159,7 @@ internal fun readModuleMergedTree(
 
     val pathInheritance = PathInheritance(
         templateGraph = treesReadResult.templateGraph,
-        rootFile = moduleFile,
+        rootPath = moduleFile.toNioPath(),
     )
     val combinedInheritance = minimalModule.platformsInheritance +
             pathInheritance +

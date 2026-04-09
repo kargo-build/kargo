@@ -57,13 +57,13 @@ fun AmperProjectContext.readEffectiveCatalogForTemplate(templateFile: VirtualFil
         )
         val mergedTrees = mergeTrees(trees)
         val refiner = TreeRefiner(
-            PathInheritance(templateGraph = templateGraph, rootFile = templateFile) +
+            PathInheritance(templateGraph = templateGraph, rootPath = templateFile.toNioPath()) +
                     MainTestInheritance +
                     DefaultInheritance
         )
         val completeTemplate = refiner.refineTree(
             mergedTrees,
-            listOf(PathCtx(templateFile, templateFile.asPsi().asTrace()))
+            listOf(PathCtx(templateFile.toNioPath(), templateFile.asPsi().asTrace()))
         ).completeTree()?.instance<Template>()
         val builtinCatalog = completeTemplate?.settings?.builtInCatalog() ?: EmptyVersionCatalog
         builtinCatalog + projectVersionsCatalog
@@ -95,14 +95,14 @@ internal fun readWithTemplates(
     fileDeclaration: SchemaObjectDeclaration,
     templatesCache: MutableMap<Path, MappingNode> = hashMapOf(),
 ): ModuleTreesReadResult {
-    val pathContext = PathCtx(file, file.asPsi().asTrace())
+    val filePath = file.toNioPath()
+    val pathContext = PathCtx(filePath, file.asPsi().asTrace())
     val rootTree = readTree(file, fileDeclaration, pathContext)
 
     val templateEdges = mutableMapOf<Path, Set<TraceablePath>>()
     val allTemplateTrees = mutableListOf<MappingNode>()
 
     val queue = ArrayDeque<Path>()
-    val filePath = file.toNioPath()
     val startTemplates = rootTree.extractApplyPaths()
     templateEdges[filePath] = startTemplates.toSet()
     queue.addAll(startTemplates.map { it.value })
@@ -116,7 +116,7 @@ internal fun readWithTemplates(
         val templateTree = templatesCache.getOrPut(templatePath) {
             val templateVirtual = templatePath.asVirtualOrNull() ?: continue@loop
             val psiFile = pathResolver.toPsiFile(templateVirtual) ?: continue@loop
-            readTree(templateVirtual, types.templateDeclaration, PathCtx(templateVirtual, psiFile.asTrace()))
+            readTree(templateVirtual, types.templateDeclaration, PathCtx(templatePath, psiFile.asTrace()))
         }
         allTemplateTrees.add(templateTree)
 

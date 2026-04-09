@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.tree
@@ -22,7 +22,7 @@ fun TreeNode.jsonDump(
     val normalizedRoot = root.absolute().normalize()
     fun Path.normalizedPath(): String = absolute().relativeTo(normalizedRoot).toString().replace('\\', '/')
 
-    fun Context.pathCtxString() = if (this is PathCtx) path.toNioPath().normalizedPath() else null
+    fun Context.pathCtxString() = if (this is PathCtx) path.normalizedPath() else null
     fun TreeNode.contextStr() = contexts
         .filter(contextsFilter).ifEmpty { null }
         ?.joinToString(separator = ",", prefix = "(", postfix = ")") { it.pathCtxString() ?: it.toString() }
