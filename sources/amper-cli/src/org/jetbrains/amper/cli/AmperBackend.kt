@@ -22,7 +22,6 @@ import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.isDescendantOf
 import org.jetbrains.amper.frontend.mavenRepositories
-import org.jetbrains.amper.frontend.plugins.CheckFromPlugin
 import org.jetbrains.amper.frontend.plugins.CustomCommandFromPlugin
 import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.system.info.OsFamily
@@ -375,8 +374,7 @@ class AmperBackend(
         data class CustomCommandEntry(
             val custom: CustomCommandFromPlugin,
         ) : QualifiedEntity {
-            override val name get() = custom.name
-            override val pluginId get() = custom.pluginId.value
+            override val name = QualifiedName(custom.name, custom.pluginId.value)
         }
 
         val selectedModules = modules?.map { resolveModule(it) }?.toSet() ?: model.modules.toSet()
@@ -553,20 +551,6 @@ class AmperBackend(
             matchingTasks
         } else {
             filter { it.buildType == null || it.buildType == default }
-        }
-    }
-
-    private sealed interface CheckEntry : QualifiedEntity {
-        /** Builtin 'tests' check */
-        data object Tests : CheckEntry {
-            override val name get() = "tests"
-            override val pluginId get() = null
-        }
-
-        /** Custom check from a plugin */
-        data class Custom(val custom: CheckFromPlugin) : CheckEntry {
-            override val name get() = custom.name
-            override val pluginId get() = custom.pluginId.value
         }
     }
 

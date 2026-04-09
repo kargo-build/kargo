@@ -29,7 +29,8 @@ internal class CheckCommand : AmperModelAwareCommand(name = "check") {
 
     private val checkNames by argument(
         name = "checks",
-        help = "The names of the checks to run. If not specified, all checks are run."
+        help = "The names of the checks to run. Run the `show checks` command to get all the available checks. " +
+                "If not specified, all checks are run."
     ).multiple()
 
     // TODO: arguments for tests, like buildType, filter, etc.

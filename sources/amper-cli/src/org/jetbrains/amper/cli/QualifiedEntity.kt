@@ -4,13 +4,46 @@
 
 package org.jetbrains.amper.cli
 
+import org.jetbrains.amper.frontend.Model
+
 /**
  * Simple trait for entities that potentially come from plugins
  * and need to be identified by their qualified/simple names
+ *
+ * @see QualifiedName
  */
 interface QualifiedEntity {
-    val name: String
+    val name: QualifiedName
+}
+
+/**
+ * Potentially qualified name of an entity.
+ *
+ * @see QualifiedEntity
+ */
+data class QualifiedName(
+    val simpleName: String,
+    /**
+     * Plugin id if entity comes from a plugin, `null` if builtin.
+     */
     val pluginId: String?
+) : Comparable<QualifiedName> {
+    val qualifiedName = pluginId?.let { "$it:$simpleName" } ?: simpleName
+    override fun toString() = qualifiedName
+
+    override fun compareTo(other: QualifiedName) = Comparator.compare(this, other)
+
+    private companion object {
+        val Comparator = compareBy(QualifiedName::pluginId, QualifiedName::simpleName)
+    }
+}
+
+fun List<QualifiedName>.filterByPluginId(model: Model, pluginId: String): List<QualifiedName> {
+    val allPluginIdsInProject = model.amperPlugins.mapTo(mutableSetOf()) { it.id.value }
+    if (pluginId !in allPluginIdsInProject) {
+        userReadableError("Plugin with the id '$pluginId' is not registered in the project.")
+    }
+    return filter { it.pluginId == pluginId }
 }
 
 fun <T : QualifiedEntity> resolveMatchingEntities(
@@ -19,12 +52,12 @@ fun <T : QualifiedEntity> resolveMatchingEntities(
     entityDisplayName: String,
     context: String = "",
 ): List<T> {
-    val allNames = entities.map(QualifiedEntity::qualifiedName)
+    val allNames = entities.map(QualifiedEntity::name).distinct()
 
     fun formatAllAvailable() = buildList {
         allNames.groupBy(
-            keySelector = QualifiedName::name,
-            valueTransform = QualifiedName::toString,
+            keySelector = QualifiedName::simpleName,
+            valueTransform = QualifiedName::qualifiedName,
         ).forEach { (name, qualifiedNames) ->
             val singleQualifiedName = qualifiedNames.singleOrNull()
             if (singleQualifiedName != null) {
@@ -44,7 +77,7 @@ fun <T : QualifiedEntity> resolveMatchingEntities(
     val resolvedNames = if (':' in userProvidedName) {
         allNames.filter { it.qualifiedName == userProvidedName }
     } else {
-        allNames.filter { it.name == userProvidedName }
+        allNames.filter { it.simpleName == userProvidedName }
     }.toSet()
 
     if (resolvedNames.isEmpty()) {
@@ -57,16 +90,5 @@ fun <T : QualifiedEntity> resolveMatchingEntities(
                     "Please use a qualified name: ${resolvedNames.joinToString()}"
         )
     }
-    return entities.filter { it.qualifiedName in resolvedNames }
+    return entities.filter { it.name in resolvedNames }
 }
-
-private data class QualifiedName(
-    val name: String,
-    val qualifier: String?
-) {
-    val qualifiedName = qualifier?.let { "$it:$name" } ?: name
-    override fun toString() = qualifiedName
-}
-
-private val QualifiedEntity.qualifiedName
-    get() = QualifiedName(name, pluginId)
