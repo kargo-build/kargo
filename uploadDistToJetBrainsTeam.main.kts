@@ -15,7 +15,7 @@ fun runAmperCli(vararg args: String): Int {
     return ProcessBuilder(amperScript.pathString, *args).inheritIO().start().waitFor()
 }
 
-val result = runAmperCli("task", ":amper-cli:upload@amper-distribution")
+val result = runAmperCli("do", "uploadAmperDistribution")
 
 check(result == 0) {
     "Uploading task failed: $result. Check the output above"

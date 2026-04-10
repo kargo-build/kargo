@@ -19,4 +19,8 @@ tasks:
 
 checks:
   - performedBy: apiCheck
-    name: binary-compatibility
+    name: binaryCompatibility
+
+commands:
+  - name: updateBinaryCompatibilityBaseline
+    performedBy: apiDump

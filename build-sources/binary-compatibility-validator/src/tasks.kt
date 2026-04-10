@@ -45,7 +45,7 @@ fun kotlinApiCompareTask(
     if (!projectApiFile.exists()) {
         error(
             "Expected file with API declarations '${projectApiFile}' does not exist.\n" +
-                    "Please ensure that ':apiDump' was executed in order to get " +
+                    "Please ensure that ${dumpCommandSuggestion(moduleName)} was executed in order to get " +
                     "an API dump to compare the build against"
         )
     }
@@ -60,8 +60,8 @@ fun kotlinApiCompareTask(
         val diffText = diffSet.joinToString("\n\n")
         error(
             "API check failed for module $moduleName.\n$diffText\n\n" +
-                    "You can run :$moduleName:apiBuild@binary-compatibility-validator " +
-                    "task to overwrite API declarations"
+                    "You can run ${dumpCommandSuggestion(moduleName)} " +
+                    "command to overwrite API declarations"
         )
     }
 }
@@ -108,3 +108,6 @@ fun kotlinApiBuildTask(
         filteredSignatures.dump(writer)
     }
 }
+
+private fun dumpCommandSuggestion(moduleName: String) =
+    "`amper do -m '$moduleName' updateBinaryCompatibilityBaseline`"
