@@ -187,13 +187,14 @@ class CustomCommand : SchemaNode() {
 }
 
 class Generated : SchemaNode() {
-    @SchemaDoc("Specifies generated source files to be compiled together with the module. " +
-            "The directory must be an `@Output` of a task declared in this plugin.")
+    @SchemaDoc("Specifies generated source files to be compiled together with the module.")
     val sources: List<GeneratedSources> by value(default = emptyList())
 
-    @SchemaDoc("Specifies generated resource files to be bundled together with the module. " +
-            "The directory must be an `@Output` of a task declared in this plugin.")
+    @SchemaDoc("Specifies generated resource files to be bundled together with the module.")
     val resources: List<GeneratedResources> by value(default = emptyList())
+
+    @SchemaDoc("Specifies generated cinterop definition files to be processed and included in the build.")
+    val cinteropDefinitions: List<GeneratedCInteropDefinition> by value(default = emptyList())
 }
 
 class GeneratedSources : FragmentScopedOutput() {
@@ -209,6 +210,15 @@ class GeneratedResources : FragmentScopedOutput() {
     @SchemaDoc("The directory containing the generated resource files. " +
             "Must be an `@Output` of a task declared in this plugin.")
     val directory by value<Path>()
+}
+
+class GeneratedCInteropDefinition : FragmentScopedOutput() {
+    @SchemaDoc(
+        "The `.def` file for the cinterop tool to process and include in the build. " +
+                "Must be an `@Output` of a task declared in this plugin. " +
+                "See [definition file format](https://kotlinlang.org/docs/native-definition-file.html) for reference."
+    )
+    val defFile by value<Path>()
 }
 
 enum class GeneratedSourcesLanguage(
@@ -232,6 +242,9 @@ enum class GeneratedPathKind(
 
     @SchemaDoc("Resources to be bundled together with the module")
     JvmResources("jvm-resources"),
+
+    @SchemaDoc("Cinterop definition files to be picked up by the build")
+    CinteropDefFile("cinterop-def-file"),
     ;
 
     override val outdated: Boolean

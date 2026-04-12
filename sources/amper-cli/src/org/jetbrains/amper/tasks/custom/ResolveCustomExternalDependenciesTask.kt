@@ -265,6 +265,7 @@ internal class ResolveCustomExternalDependenciesTask(
             override val resourcesPath: Path = Path(".")
             override val composeResourcesPath: Path = Path(".")
             override val hasAnyComposeResources: Boolean = false
+            override val cinteropPath: Path? get() = null
 
             override val settings: Settings =
                 hostModule.fragments.firstOrNull { it.platforms.singleOrNull() == Platform.JVM }?.settings ?: Settings()

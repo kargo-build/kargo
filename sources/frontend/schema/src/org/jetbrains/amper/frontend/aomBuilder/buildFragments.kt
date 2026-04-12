@@ -12,10 +12,12 @@ import org.jetbrains.amper.frontend.FragmentLink
 import org.jetbrains.amper.frontend.Layout
 import org.jetbrains.amper.frontend.LeafFragment
 import org.jetbrains.amper.frontend.Notation
+import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.contexts.EmptyContexts
 import org.jetbrains.amper.frontend.contexts.PathCtx
 import org.jetbrains.amper.frontend.contexts.PlatformCtx
 import org.jetbrains.amper.frontend.contexts.TestCtx
+import org.jetbrains.amper.frontend.isDescendantOf
 import org.jetbrains.amper.frontend.schema.Dependency
 import org.jetbrains.amper.frontend.schema.FragmentBase
 import org.jetbrains.amper.frontend.schema.Settings
@@ -95,6 +97,14 @@ open class DefaultFragment(
                 moduleFile.parent.toNioPath() / "src" / (if (isTest) "test" else "main") / "resources"
             }
         }
+    }
+
+    override val cinteropPath: Path? by lazy {
+        if (isTest || platforms.none { it.isDescendantOf(Platform.NATIVE) }) {
+            return@lazy null
+        }
+        // Maven-like layout is not supported for modules with native targets anyway
+        moduleFile.parent.toNioPath() / "cinterop$modifier"
     }
 
     override val composeResourcesPath: Path by lazy {

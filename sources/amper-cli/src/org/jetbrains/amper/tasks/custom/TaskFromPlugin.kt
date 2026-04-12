@@ -18,6 +18,7 @@ import org.jetbrains.amper.frontend.plugins.generated.ShadowCompilationArtifactK
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.tasks.EmptyTaskResult
 import org.jetbrains.amper.tasks.TaskResult
+import org.jetbrains.amper.tasks.artifacts.CinteropDefFileArtifact
 import org.jetbrains.amper.tasks.artifacts.JvmResourcesDirArtifact
 import org.jetbrains.amper.tasks.artifacts.KotlinJavaSourceDirArtifact
 import org.jetbrains.amper.tasks.artifacts.api.Artifact
@@ -55,6 +56,12 @@ class TaskFromPlugin(
         path: Path,
     ) : JvmResourcesDirArtifact(buildOutputRoot, fragment, path)
 
+    class ExternalTaskGeneratedCinteropDefFileArtifact(
+        buildOutputRoot: AmperBuildOutputRoot,
+        fragment: Fragment,
+        path: Path,
+    ) : CinteropDefFileArtifact(buildOutputRoot, fragment, path)
+
     override val consumes: List<ArtifactSelector<*, *>> = emptyList()
 
     override val produces: List<Artifact> = description.outputs
@@ -69,6 +76,11 @@ class TaskFromPlugin(
                     path = output.value,
                 )
                 GeneratedPathKind.JvmResources -> ExternalTaskGeneratedJvmResourcesArtifact(
+                    buildOutputRoot = buildOutputRoot,
+                    fragment = mark.associateWith,
+                    path = output.value,
+                )
+                GeneratedPathKind.CinteropDefFile -> ExternalTaskGeneratedCinteropDefFileArtifact(
                     buildOutputRoot = buildOutputRoot,
                     fragment = mark.associateWith,
                     path = output.value,

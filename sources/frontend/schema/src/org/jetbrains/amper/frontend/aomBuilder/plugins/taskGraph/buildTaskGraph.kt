@@ -46,12 +46,17 @@ internal fun buildTaskGraph(
         val compilation = TaskGraph.Node.Compilation(module).also { graphBuilder.nodes += it }
         val sourceGeneration = TaskGraph.Node.SourceGeneration(module).also { graphBuilder.nodes += it }
         val resourceGeneration = TaskGraph.Node.ResourceGeneration(module).also { graphBuilder.nodes += it }
+        // Take platform into account?
+        val cinteropGeneration = TaskGraph.Node.CinteropGeneration(module).also { graphBuilder.nodes += it }
         graphBuilder[compilation].apply {
             add(TaskGraph.Edge(sourceGeneration, DefaultTrace) {
                 FrontendTaskGraphBundle.message("task.graph.reasons.builtin.compilation.includes.sources")
             })
             add(TaskGraph.Edge(resourceGeneration, DefaultTrace) {
                 FrontendTaskGraphBundle.message("task.graph.reasons.builtin.compilation.includes.resources")
+            })
+            add(TaskGraph.Edge(cinteropGeneration, DefaultTrace) {
+                FrontendTaskGraphBundle.message("task.graph.reasons.builtin.compilation.includes.cinterops")
             })
         }
     }
@@ -116,6 +121,8 @@ internal fun buildTaskGraph(
                     graphBuilder[TaskGraph.Node.SourceGeneration(outputMark.associateWith.module)]
                 GeneratedPathKind.JvmResources ->
                     graphBuilder[TaskGraph.Node.ResourceGeneration(outputMark.associateWith.module)]
+                GeneratedPathKind.CinteropDefFile ->
+                    graphBuilder[TaskGraph.Node.CinteropGeneration(outputMark.associateWith.module)]
             } += TaskGraph.Edge(taskNode, outputMark.trace) {
                 FrontendTaskGraphBundle.message(
                     "task.graph.reasons.generation.includes.directory",

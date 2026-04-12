@@ -198,6 +198,8 @@ private fun selectFragmentByDescriptor(
     moduleBuildCtx: ModuleBuildCtx,
     descriptor: FragmentDescriptor,
 ): Fragment = moduleBuildCtx.module.fragments.first {
+    // FIXME: `first` will crash on incorrect user input here;
+    //  a diagnostic is needed
     it.isTest == descriptor.isTest && it.modifier == descriptor.modifier
 }
 
@@ -220,7 +222,8 @@ private fun collectGeneratedMarks(
     allOutputPaths: List<Path>,
     appliedPlugin: PluginYamlRoot,
 ): Map<Path, TaskFromPluginDescription.OutputPath> = buildList {
-    for (sources in appliedPlugin.generated.sources) {
+    val generated = appliedPlugin.generated
+    for (sources in generated.sources) {
         this += TaskFromPluginDescription.OutputPath(
             path = sources.directoryDelegate.asTraceableValue(),
             outputMark = TaskFromPluginDescription.OutputMark(
@@ -234,13 +237,24 @@ private fun collectGeneratedMarks(
         )
     }
 
-    for (resources in appliedPlugin.generated.resources) {
+    for (resources in generated.resources) {
         this += TaskFromPluginDescription.OutputPath(
             path = resources.directoryDelegate.asTraceableValue(),
             outputMark = TaskFromPluginDescription.OutputMark(
                 kind = GeneratedPathKind.JvmResources,
                 trace = resources.trace,
                 associateWith = selectFragmentByDescriptor(moduleBuildCtx, resources.fragment),
+            )
+        )
+    }
+
+    for (cinterop in generated.cinteropDefinitions) {
+        this += TaskFromPluginDescription.OutputPath(
+            path = cinterop.defFileDelegate.asTraceableValue(),
+            outputMark = TaskFromPluginDescription.OutputMark(
+                kind = GeneratedPathKind.CinteropDefFile,
+                trace = cinterop.trace,
+                associateWith = selectFragmentByDescriptor(moduleBuildCtx, cinterop.fragment),
             )
         )
     }

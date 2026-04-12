@@ -32,6 +32,7 @@ import org.jetbrains.amper.tasks.SourceRoot
 import org.jetbrains.amper.tasks.TaskOutputRoot
 import org.jetbrains.amper.tasks.TaskResult
 import org.jetbrains.amper.tasks.artifacts.ArtifactTaskBase
+import org.jetbrains.amper.tasks.artifacts.CinteropKlibsArtifact
 import org.jetbrains.amper.tasks.artifacts.KotlinJavaSourceDirArtifact
 import org.jetbrains.amper.tasks.artifacts.Selectors
 import org.jetbrains.amper.tasks.artifacts.api.Quantifier
@@ -71,6 +72,16 @@ internal class NativeCompileKlibTask(
         quantifier = Quantifier.AnyOrNone,
     )
 
+    private val cinteropKlibs by Selectors.fromModuleWithDependencies(
+        type = CinteropKlibsArtifact::class,
+        module = module,
+        isTest = isTest,
+        platform = platform,
+        userCacheRoot = userCacheRoot,
+        incrementalCache = incrementalCache,
+        quantifier = Quantifier.AnyOrNone,
+    )
+
     override suspend fun run(dependenciesResult: List<TaskResult>, executionContext: TaskGraphExecutionContext): TaskResult {
         val fragments = module.fragments.filter {
             it.platforms.contains(platform) && it.isTest == isTest
@@ -104,7 +115,8 @@ internal class NativeCompileKlibTask(
 
         logger.debug("native compile klib '${module.userReadableName}' -- ${fragments.joinToString(" ") { it.name }}")
 
-        val libraryPaths = compiledModuleDependencies + externalDependencies
+        val libraryPaths = compiledModuleDependencies + externalDependencies +
+                cinteropKlibs.flatMap { it.allKlibs() }
 
         val additionalSources = additionalKotlinJavaSourceDirs.map { artifact ->
             SourceRoot(

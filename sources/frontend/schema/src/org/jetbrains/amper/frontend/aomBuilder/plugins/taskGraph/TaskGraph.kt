@@ -74,5 +74,12 @@ internal interface TaskGraph {
         data class ResourceGeneration(
             val module: AmperModule,
         ) : Node
+
+        /**
+         * Module cinterop generation step for non-test [module].
+         */
+        data class CinteropGeneration(
+            val module: AmperModule,
+        ) : Node
     }
 }

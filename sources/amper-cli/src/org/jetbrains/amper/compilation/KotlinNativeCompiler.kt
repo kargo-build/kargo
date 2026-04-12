@@ -4,6 +4,7 @@
 
 package org.jetbrains.amper.compilation
 
+import io.opentelemetry.api.trace.Span
 import org.jetbrains.amper.ProcessRunner
 import org.jetbrains.amper.cli.AmperProjectTempRoot
 import org.jetbrains.amper.cli.telemetry.setAmperModule
@@ -17,6 +18,7 @@ import org.jetbrains.amper.jdk.provisioning.JdkProvider
 import org.jetbrains.amper.jvm.getDefaultJdk
 import org.jetbrains.amper.processes.ArgsMode
 import org.jetbrains.amper.processes.LoggingProcessOutputListener
+import org.jetbrains.amper.processes.ProcessResult
 import org.jetbrains.amper.processes.runJava
 import org.jetbrains.amper.telemetry.setListAttribute
 import org.jetbrains.amper.telemetry.spanBuilder
@@ -72,45 +74,81 @@ class KotlinNativeCompiler(
                 logger.debug("konanc ${ShellQuoting.quoteArgumentsPosixShellWay(args)}")
 
                 withKotlinCompilerArgFile(args, tempRoot) { argFile ->
-                    val konanLib = kotlinNativeHome / "konan" / "lib"
-
-                    // We call konanc via java because the konanc command line doesn't support spaces in paths:
-                    // https://youtrack.jetbrains.com/issue/KT-66952
-                    // TODO in the future we'll switch to kotlin tooling api and remove this raw java exec anyway
-                    val result = processRunner.runJava(
-                        jdk = jdk,
-                        workingDir = kotlinNativeHome,
-                        mainClass = "org.jetbrains.kotlin.cli.utilities.MainKt",
-                        classpath = listOf(
-                            konanLib / "kotlin-native-compiler-embeddable.jar",
-                            konanLib / "trove4j.jar",
-                        ),
+                    val result = runNativeCompilerCommandImpl(
+                        processRunner = processRunner,
                         programArgs = listOf("konanc", "@${argFile}"),
-                        argsMode = ArgsMode.ArgFile(tempRoot = tempRoot),
-                        // JVM args partially copied from <kotlinNativeHome>/bin/run_konan
-                        jvmArgs = listOf(
-                            "-ea",
-                            "-Xmx3G",
-                            "-XX:TieredStopAtLevel=1",
-                            "-Dfile.encoding=UTF-8",
-                            "-Dkonan.home=$kotlinNativeHome",
-                        ),
-                        outputListener = LoggingProcessOutputListener(logger),
+                        argsMode = ArgsMode.ArgFile(tempRoot = tempRoot)
                     )
-
-                    // TODO this is redundant with the java span of the external process run. Ideally, we
-                    //  should extract higher-level information from the raw output and use that in this span.
-                    span.setProcessResultAttributes(result)
-
-                    if (result.exitCode != 0) {
-                        val errors = result.stderr
-                            .lines()
-                            .filter { it.startsWith("error: ") || it.startsWith("exception: ") }
-                            .joinToString("\n")
-                        val errorsPart = if (errors.isNotEmpty()) ":\n\n$errors" else ""
-                        userReadableError("Kotlin native compilation failed$errorsPart")
-                    }
+                    processNativeCompilerCommandResult(span, result)
                 }
             }
+    }
+
+    suspend fun cinterop(
+        processRunner: ProcessRunner,
+        args: List<String>,
+    ) {
+        spanBuilder("cinterop")
+            .setListAttribute("args", args)
+            .setAttribute("version", kotlinVersion)
+            .use { span ->
+                logger.debug("cinterop ${ShellQuoting.quoteArgumentsPosixShellWay(args)}")
+                val result = runNativeCompilerCommandImpl(
+                    processRunner = processRunner,
+                    programArgs = listOf("cinterop") + args,
+                    argsMode = ArgsMode.CommandLine,
+                )
+                processNativeCompilerCommandResult(span, result)
+            }
+    }
+
+    private fun processNativeCompilerCommandResult(
+        span: Span,
+        result: ProcessResult,
+    ) {
+        // TODO this is redundant with the java span of the external process run. Ideally, we
+        //  should extract higher-level information from the raw output and use that in this span.
+        span.setProcessResultAttributes(result)
+
+        if (result.exitCode != 0) {
+            val errors = result.stderr
+                .lines()
+                .filter { it.startsWith("error: ") || it.startsWith("exception: ") }
+                .joinToString("\n")
+            val errorsPart = if (errors.isNotEmpty()) ":\n\n$errors" else ""
+            userReadableError("cinterop failed$errorsPart")
+        }
+    }
+
+    private suspend fun runNativeCompilerCommandImpl(
+        processRunner: ProcessRunner,
+        programArgs: List<String>,
+        argsMode: ArgsMode,
+    ): ProcessResult {
+        // We call konanc via java because the konanc command line doesn't support spaces in paths:
+        // https://youtrack.jetbrains.com/issue/KT-66952
+
+        val konanLib = kotlinNativeHome / "konan" / "lib"
+        // TODO in the future we'll switch to kotlin tooling api and remove this raw java exec anyway
+        return processRunner.runJava(
+            jdk = jdk,
+            workingDir = kotlinNativeHome,
+            mainClass = "org.jetbrains.kotlin.cli.utilities.MainKt",
+            classpath = listOf(
+                konanLib / "kotlin-native-compiler-embeddable.jar",
+                konanLib / "trove4j.jar",
+            ),
+            programArgs = programArgs, //listOf(command, "@${argFile}"),
+            argsMode = argsMode,
+            // JVM args partially copied from <kotlinNativeHome>/bin/run_konan
+            jvmArgs = listOf(
+                "-ea",
+                "-Xmx3G",
+                "-XX:TieredStopAtLevel=1",
+                "-Dfile.encoding=UTF-8",
+                "-Dkonan.home=$kotlinNativeHome",
+            ),
+            outputListener = LoggingProcessOutputListener(logger),
+        )
     }
 }

@@ -1,0 +1,4 @@
+modules:
+  - lib
+  - app-mac
+  - app-linux

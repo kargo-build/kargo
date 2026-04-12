@@ -1,0 +1,6 @@
+product:
+  type: linux/app
+  platforms: [ linuxX64 ]
+
+dependencies:
+  - ../lib

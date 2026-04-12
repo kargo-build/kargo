@@ -75,6 +75,12 @@ interface Fragment {
     val resourcesPath: Path
 
     /**
+     * Cinterop definition files directory.
+     * `null` if not supported by this fragment.
+     */
+    val cinteropPath: Path?
+
+    /**
      * Path to compose resources' directory.
      */
     val composeResourcesPath: Path

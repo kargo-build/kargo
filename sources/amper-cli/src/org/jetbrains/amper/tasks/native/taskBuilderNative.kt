@@ -8,6 +8,7 @@ import org.jetbrains.amper.compilation.KotlinCompilationType
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Platform
+import org.jetbrains.amper.frontend.fragmentsTargeting
 import org.jetbrains.amper.frontend.isDescendantOf
 import org.jetbrains.amper.tasks.CommonTaskType
 import org.jetbrains.amper.tasks.PlatformTaskType
@@ -32,6 +33,23 @@ fun ProjectTasksBuilder.setupNativeTasks() {
             processRunner = context.processRunner,
         )
     )
+
+    allModules().alsoPlatforms(Platform.NATIVE).withEach {
+        val cinteropTaskName = NativeTaskType.Cinterop.getTaskName(module, platform)
+        tasks.registerTask(
+            task = NativeCInteropGenerateKlibTask(
+                module = module,
+                platform = platform,
+                fragments = module.fragmentsTargeting(platform, false),
+                buildOutputRoot = context.buildOutputRoot,
+                userCacheRoot = context.userCacheRoot,
+                incrementalCache = context.incrementalCache,
+                taskName = cinteropTaskName,
+                jdkProvider = context.jdkProvider,
+                processRunner = context.processRunner,
+            )
+        )
+    }
 
     allModules()
         .alsoPlatforms(Platform.NATIVE)
@@ -198,5 +216,6 @@ private fun getNativeLinkTaskDetails(
 
 enum class NativeTaskType(override val prefix: String) : PlatformTaskType {
     CompileKLib("compile"),
+    Cinterop("cinterop"),
     Link("link"),
 }

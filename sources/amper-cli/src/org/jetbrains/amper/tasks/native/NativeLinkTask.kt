@@ -32,6 +32,10 @@ import org.jetbrains.amper.jdk.provisioning.JdkProvider
 import org.jetbrains.amper.tasks.ResolveExternalDependenciesTask
 import org.jetbrains.amper.tasks.TaskOutputRoot
 import org.jetbrains.amper.tasks.TaskResult
+import org.jetbrains.amper.tasks.artifacts.ArtifactTaskBase
+import org.jetbrains.amper.tasks.artifacts.CinteropKlibsArtifact
+import org.jetbrains.amper.tasks.artifacts.Selectors
+import org.jetbrains.amper.tasks.artifacts.api.Quantifier
 import org.jetbrains.amper.tasks.identificationPhrase
 import org.jetbrains.amper.tasks.ios.ManageXCodeProjectTask
 import org.jetbrains.amper.util.BuildType
@@ -62,12 +66,22 @@ internal class NativeLinkTask(
         KotlinArtifactsDownloader(userCacheRoot, incrementalCache),
     private val jdkProvider: JdkProvider,
     private val processRunner: ProcessRunner,
-): BuildTask {
+): ArtifactTaskBase(), BuildTask {
     init {
         require(platform.isLeaf)
         require(platform.isDescendantOf(Platform.NATIVE))
         require(compilationType != KotlinCompilationType.LIBRARY)
     }
+
+    private val cinteropKlibs by Selectors.fromModuleWithDependencies(
+        type = CinteropKlibsArtifact::class,
+        module = module,
+        isTest = isTest,
+        platform = platform,
+        userCacheRoot = userCacheRoot,
+        incrementalCache = incrementalCache,
+        quantifier = Quantifier.AnyOrNone,
+    )
 
     override suspend fun run(dependenciesResult: List<TaskResult>, executionContext: TaskGraphExecutionContext): Result {
         val fragments = module.fragments.filter {
@@ -106,7 +120,8 @@ internal class NativeLinkTask(
             .filter { it.taskName in exportedKLibTaskNames }
         check(exportedKLibDependencies.size == exportedKLibTaskNames.size)
 
-        val compiledKLibs = compileKLibDependencies.mapNotNull { it.compiledKlib }
+        val compiledKLibs = compileKLibDependencies.mapNotNull { it.compiledKlib } +
+                cinteropKlibs.flatMap { it.allKlibs() }
         val exportedKLibs = exportedKLibDependencies.mapNotNull { it.compiledKlib }
 
         val kotlinUserSettings = fragments.singleLeafFragment().serializableKotlinSettings()

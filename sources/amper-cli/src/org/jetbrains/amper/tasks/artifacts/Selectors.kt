@@ -121,14 +121,39 @@ object Selectors {
         quantifier: Q,
         includeSelf: Boolean = true,
         additionalFilter: (CompilationScopedArtifact) -> Boolean = { true },
+    ): ArtifactSelector<T, Q> = fromModuleWithDependencies(
+        type = type,
+        module = leafFragment.module,
+        platform = leafFragment.platform,
+        isTest = leafFragment.isTest,
+        userCacheRoot = userCacheRoot,
+        incrementalCache = incrementalCache,
+        quantifier = quantifier,
+        includeSelf = includeSelf,
+        additionalFilter = additionalFilter,
+    )
+
+    /**
+     * From the [module] and its dependencies, which has [platform] and [isTest] matching.
+     */
+    fun <T : CompilationScopedArtifact, Q : Quantifier.Multiple> fromModuleWithDependencies(
+        type: KClass<T>,
+        module: AmperModule,
+        platform: Platform,
+        isTest: Boolean,
+        userCacheRoot: AmperUserCacheRoot,
+        incrementalCache: IncrementalCache,
+        quantifier: Q,
+        includeSelf: Boolean = true,
+        additionalFilter: (CompilationScopedArtifact) -> Boolean = { true },
     ): ArtifactSelector<T, Q> {
-        val platform = leafFragment.platform
+        require(platform.isLeaf) { "Leaf platform required, got $platform" }
         val modules = buildSet {
-            if (includeSelf) add(leafFragment.module)
+            if (includeSelf) add(module)
             addAll(
-                leafFragment.module.getModuleDependencies(
-                    isTest = leafFragment.isTest,
-                    platform = leafFragment.platform,
+                module.getModuleDependencies(
+                    isTest = isTest,
+                    platform = platform,
                     dependencyReason = ResolutionScope.RUNTIME,
                     userCacheRoot = userCacheRoot,
                     incrementalCache = incrementalCache
@@ -140,10 +165,10 @@ object Selectors {
             predicate = {
                 it.module in modules &&
                         it.platform == platform &&
-                        it.isTest == leafFragment.isTest &&
+                        it.isTest == isTest &&
                         additionalFilter(it)
             },
-            description = "from module ${leafFragment.module.userReadableName} with platform $platform and its dependencies",
+            description = "from module ${module.userReadableName} with platform $platform and its dependencies",
             quantifier = quantifier,
         )
     }

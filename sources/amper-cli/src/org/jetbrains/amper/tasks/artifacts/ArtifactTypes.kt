@@ -13,6 +13,7 @@ import org.jetbrains.amper.tasks.artifacts.api.Artifact
 import java.io.Serializable
 import java.nio.file.Path
 import kotlin.io.path.div
+import kotlin.io.path.listDirectoryEntries
 
 /**
  * A base class for all artifact implementations.
@@ -67,7 +68,7 @@ abstract class CompilationScopedArtifact(
     val moduleName get() = module.userReadableName
 
     init {
-        require(platform.isLeaf) { "Only leaf platforms are expected here" }
+        require(platform.isLeaf) { "Only leaf platforms are expected here, got $platform" }
     }
 
     override fun idComponents() = listOf(module.userReadableName, platform.pretty, isTest.testSuffix)
@@ -90,3 +91,29 @@ open class JvmResourcesDirArtifact(
     fragment: Fragment,
     override val conventionPath: Path? = null,
 ) : FragmentScopedArtifact(buildOutputRoot, fragment)
+
+/**
+ * Cinterop .def file.
+ */
+open class CinteropDefFileArtifact(
+    buildOutputRoot: AmperBuildOutputRoot,
+    fragment: Fragment,
+    override val conventionPath: Path? = null,
+) : FragmentScopedArtifact(buildOutputRoot, fragment)
+
+/**
+ * A directory that contains compiled cinterop `.klib` files.
+ * The directory may be empty.
+ */
+open class CinteropKlibsArtifact(
+    buildOutputRoot: AmperBuildOutputRoot,
+    module: AmperModule,
+    platform: Platform,
+    override val conventionPath: Path? = null,
+) : CompilationScopedArtifact(buildOutputRoot, module, platform, false) {
+    init {
+        require(platform.isLeaf) { "Only leaf platforms are expected here, got $platform" }
+    }
+
+    fun allKlibs() = path.listDirectoryEntries("*.klib")
+}
