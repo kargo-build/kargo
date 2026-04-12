@@ -18,4 +18,4 @@ settings:
       <![Error] Expected `sequence [string]`, but got `mapping {}`!>args: value<!>
 
 dependencies:
-  - <![Error] Expected `ExternalMavenDependency ( maven-coordinates | maven-coordinates: ( "exported" | "compile-only" | "runtime-only" | "all" | {..} ) )`, but got `sequence []`!>[1,2,3]<!>
+  - <![Error] Wrong scoped dependency syntax. Possible syntax includes:  1. `<external-notation>` - a string with the format `<groupId>:<artifactId>:<version>`  2. `<local-notation>` - a relative path to another Amper module starting with the `.` symbol, e.g. `../foo`  3. `<catalog-notation>` - a special reference to the version catalog, starting with the `$` symbol, e.g. `$libs.foo`  4. `bom: <catalog-notation> | <external-notation>` - BOM dependency   Additional dependency attributes (not for BOM) can be customized after the `:`, making it a single key-value mapping, e.g., `<external-notation>: exported` or `<local-notation>: compile-only`, etc. A full form may also be used, e.g. `<notation>: { exported: true, scope: compile-only }`!>[1,2,3]<!>

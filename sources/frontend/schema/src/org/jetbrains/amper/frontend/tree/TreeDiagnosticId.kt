@@ -46,9 +46,10 @@ enum class TreeDiagnosticId : DiagnosticId {
 
     // Domain-specific
     CoordinatesInGradleFormat,
-    IncorrectBomDependencyStructure,
     InvalidTaskActionType,
+    BomIsNotSupported,
     LocalBomAreNotSupported,
+    LocalDependenciesAreNotSupported,
     MavenClassifiersAreNotSupported,
     MavenCoordinatesHaveLineBreak,
     MavenCoordinatesHavePartEndingWithDot,
@@ -58,4 +59,5 @@ enum class TreeDiagnosticId : DiagnosticId {
     MavenCoordinatesHaveTooManyParts,
     MavenCoordinatesShouldBuildValidPath,
     MissingTaskActionType,
+    WrongDependencyFormat,
 }
