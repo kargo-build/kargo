@@ -31,7 +31,7 @@ class SchemaTypingContext(
         DeclarationOfPluginYamlRoot(
             pluginSettingsPlaceholderDeclaration = declarations.settingsClassDeclaration,
             taskDeclaration = DeclarationOfTask(
-                taskActionDeclaration = SyntheticVariantDeclaration(
+                taskActionDeclaration = TaskActionVariantDeclaration(
                     qualifiedName = "org.jetbrains.amper.frontend.plugins.TaskAction",
                     variants = declarations.pluginData.declarations.tasks.map { taskInfo ->
                         declarations.ObjectDeclaration(
@@ -77,7 +77,7 @@ class SchemaTypingContext(
     }
 }
 
-private class SyntheticVariantDeclaration(
+internal class TaskActionVariantDeclaration(
     override val qualifiedName: String,
     override val variants: List<SchemaObjectDeclaration>,
 ) : SchemaVariantDeclaration {

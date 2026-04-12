@@ -5,98 +5,79 @@
 package org.jetbrains.amper.frontend.tree.reading
 
 import org.jetbrains.amper.frontend.contexts.Contexts
-import org.jetbrains.amper.frontend.plugins.TaskAction
-import org.jetbrains.amper.frontend.plugins.generated.ShadowDependency
-import org.jetbrains.amper.frontend.plugins.generated.ShadowDependencyCatalog
-import org.jetbrains.amper.frontend.plugins.generated.ShadowDependencyLocal
-import org.jetbrains.amper.frontend.plugins.generated.ShadowDependencyMaven
-import org.jetbrains.amper.frontend.schema.BomDependency
-import org.jetbrains.amper.frontend.schema.CatalogBomDependency
-import org.jetbrains.amper.frontend.schema.CatalogDependency
-import org.jetbrains.amper.frontend.schema.Dependency
-import org.jetbrains.amper.frontend.schema.ExternalMavenBomDependency
-import org.jetbrains.amper.frontend.schema.ExternalMavenDependency
-import org.jetbrains.amper.frontend.schema.InternalDependency
-import org.jetbrains.amper.frontend.schema.ScopedDependency
-import org.jetbrains.amper.frontend.schema.UnscopedBomDependency
-import org.jetbrains.amper.frontend.schema.UnscopedCatalogBomDependency
-import org.jetbrains.amper.frontend.schema.UnscopedCatalogDependency
-import org.jetbrains.amper.frontend.schema.UnscopedDependency
-import org.jetbrains.amper.frontend.schema.UnscopedExternalDependency
-import org.jetbrains.amper.frontend.schema.UnscopedExternalMavenBomDependency
-import org.jetbrains.amper.frontend.schema.UnscopedExternalMavenDependency
-import org.jetbrains.amper.frontend.schema.UnscopedModuleDependency
 import org.jetbrains.amper.frontend.tree.TreeDiagnosticId
 import org.jetbrains.amper.frontend.tree.TreeNode
 import org.jetbrains.amper.frontend.tree.copyWithTrace
+import org.jetbrains.amper.frontend.types.SchemaObjectDeclaration
 import org.jetbrains.amper.frontend.types.SchemaType
 import org.jetbrains.amper.frontend.types.SchemaVariantDeclaration
+import org.jetbrains.amper.frontend.types.TaskActionVariantDeclaration
+import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.problems.reporting.ProblemReporter
-import kotlin.reflect.KClass
 
 context(_: Contexts, _: ParsingConfig, reporter: ProblemReporter)
 internal fun parseVariant(
     value: YamlValue,
     type: SchemaType.VariantType,
-): TreeNode? = when (type.declaration.qualifiedName) {
-    Dependency::class.qualifiedName!! -> {
+): TreeNode? = when (type.declaration) {
+    DeclarationOfVariantDependency -> {
         val singleKeyValue = (value as? YamlValue.Mapping)?.keyValues?.singleOrNull()
         if (singleKeyValue != null && singleKeyValue.key.psi.text == "bom") {
-            parseNode(singleKeyValue.value, type.subVariantType(BomDependency::class))
+            parseNode(singleKeyValue.value, type.checkSubType(DeclarationOfVariantBomDependency))
                 .copyWithTrace(trace = singleKeyValue.asTrace())
         } else {
-            parseVariant(value, type.subVariantType(ScopedDependency::class))
+            parseVariant(value, type.checkSubType(DeclarationOfVariantScopedDependency))
         }
     }
-    BomDependency::class.qualifiedName -> when (peekValueAsKey(value)?.firstOrNull()) {
+    DeclarationOfVariantBomDependency -> when (peekValueAsKey(value)?.firstOrNull()) {
         '.' -> {
             reportParsing(value, TreeDiagnosticId.LocalBomAreNotSupported, "unexpected.bom.local")
             null
         }
-        '$' -> parseObject(value, type.leafType(CatalogBomDependency::class))
-        else -> parseObject(value, type.leafType(ExternalMavenBomDependency::class))
+        '$' -> parseObject(value, type.checkSubType(DeclarationOfCatalogBomDependency))
+        else -> parseObject(value, type.checkSubType(DeclarationOfExternalMavenBomDependency))
     }
-    ScopedDependency::class.qualifiedName -> when (peekValueAsKey(value)?.firstOrNull()) {
-        '.' -> parseObject(value, type.leafType(InternalDependency::class))
-        '$' -> parseObject(value, type.leafType(CatalogDependency::class))
-        else -> parseObject(value, type.leafType(ExternalMavenDependency::class))
+    DeclarationOfVariantScopedDependency -> when (peekValueAsKey(value)?.firstOrNull()) {
+        '.' -> parseObject(value, type.checkSubType(DeclarationOfInternalDependency))
+        '$' -> parseObject(value, type.checkSubType(DeclarationOfCatalogDependency))
+        else -> parseObject(value, type.checkSubType(DeclarationOfExternalMavenDependency))
     }
-    UnscopedDependency::class.qualifiedName -> {
+    DeclarationOfVariantUnscopedDependency -> {
         val singleKeyValue = (value as? YamlValue.Mapping)?.keyValues?.singleOrNull()
         if (singleKeyValue != null && singleKeyValue.key.psi.text == "bom") {
             singleKeyValue.value.let { bomDependency ->
-                parseVariant(bomDependency, type.subVariantType(UnscopedBomDependency::class))
+                parseVariant(bomDependency, type.checkSubType(DeclarationOfVariantUnscopedBomDependency))
                     ?.copyWithTrace(trace = singleKeyValue.asTrace())
             }
         } else {
             when (peekValueAsKey(value)?.firstOrNull()) {
-                '.' -> parseObject(value, type.leafType(UnscopedModuleDependency::class))
-                else -> parseVariant(value, type.subVariantType(UnscopedExternalDependency::class))
+                '.' -> parseObject(value, type.checkSubType(DeclarationOfUnscopedModuleDependency))
+                else -> parseVariant(value, type.checkSubType(DeclarationOfVariantUnscopedExternalDependency))
             }
         }
     }
-    UnscopedExternalDependency::class.qualifiedName -> when (peekValueAsKey(value)?.firstOrNull()) {
+    DeclarationOfVariantUnscopedExternalDependency -> when (peekValueAsKey(value)?.firstOrNull()) {
         '.' -> {
             reportParsing(value, TreeDiagnosticId.LocalBomAreNotSupported, "unexpected.local.module")
             null
         }
-        '$' -> parseObject(value, type.leafType(UnscopedCatalogDependency::class))
-        else -> parseObject(value, type.leafType(UnscopedExternalMavenDependency::class))
+        '$' -> parseObject(value, type.checkSubType(DeclarationOfUnscopedCatalogDependency))
+        else -> parseObject(value, type.checkSubType(DeclarationOfUnscopedExternalMavenDependency))
     }
-    UnscopedBomDependency::class.qualifiedName -> when (peekValueAsKey(value)?.firstOrNull()) {
+    DeclarationOfVariantUnscopedBomDependency -> when (peekValueAsKey(value)?.firstOrNull()) {
         '.' -> {
             reportParsing(value, TreeDiagnosticId.LocalBomAreNotSupported, "unexpected.bom.local")
             null
         }
-        '$' -> parseObject(value, type.leafType(UnscopedCatalogBomDependency::class))
-        else -> parseObject(value, type.leafType(UnscopedExternalMavenBomDependency::class))
+        '$' -> parseObject(value, type.checkSubType(DeclarationOfUnscopedCatalogBomDependency))
+        else -> parseObject(value, type.checkSubType(DeclarationOfUnscopedExternalMavenBomDependency))
     }
-    ShadowDependency::class.qualifiedName -> when (peekValueAsKey(value)?.firstOrNull()) {
-        '.' -> parseObject(value, type.leafType(ShadowDependencyLocal::class))
-        '$' -> parseObject(value, type.leafType(ShadowDependencyCatalog::class))
-        else -> parseObject(value, type.leafType(ShadowDependencyMaven::class))
+    DeclarationOfVariantShadowDependency -> when (peekValueAsKey(value)?.firstOrNull()) {
+        '.' -> parseObject(value, type.checkSubType(DeclarationOfShadowDependencyLocal))
+        '$' -> parseObject(value, type.checkSubType(DeclarationOfShadowDependencyCatalog))
+        else -> parseObject(value, type.checkSubType(DeclarationOfShadowDependencyMaven))
     }
-    TaskAction::class.qualifiedName -> {
+    is TaskActionVariantDeclaration -> {
         val tag = value.tag
         if (tag == null) {
             reporter.reportMessage(MissingTaskActionType(element = value.psi, taskActionType = type.declaration))
@@ -130,10 +111,16 @@ private fun peekValueAsKey(psi: YamlValue): String? = when (psi) {
     else -> null
 }
 
-private fun SchemaType.VariantType.leafType(kClass: KClass<*>): SchemaType.ObjectType =
-    declaration.variantTree.first { it.declaration.qualifiedName == kClass.qualifiedName }
-        .let { it as SchemaVariantDeclaration.Variant.LeafVariant }.declaration.toType()
+private fun SchemaType.VariantType.checkSubType(leaf: SchemaObjectDeclaration): SchemaType.ObjectType {
+    require(declaration.variantTree.any { it.declaration == leaf }) {
+        "Leaf variant declaration not found in variant tree: ${leaf.qualifiedName}"
+    }
+    return leaf.toType()
+}
 
-private fun SchemaType.VariantType.subVariantType(kClass: KClass<*>): SchemaType.VariantType =
-    declaration.variantTree.first { it.declaration.qualifiedName == kClass.qualifiedName }
-        .let { it as SchemaVariantDeclaration.Variant.SubVariant }.declaration.toType()
+private fun SchemaType.VariantType.checkSubType(sub: SchemaVariantDeclaration): SchemaType.VariantType {
+    require(declaration.variantTree.any { it.declaration == sub }) {
+        "Sub-variant declaration not found in variant tree: ${sub.qualifiedName}"
+    }
+    return sub.toType()
+}
