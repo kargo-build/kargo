@@ -159,6 +159,20 @@ Fragments:
         enabled: <default> false
         group: <default> null
         name: <default> null
+        pom: <default> {
+          description: <default> null
+          developers: <default> [
+          ]
+          licenses: <default> [
+          ]
+          name: <default> null
+          scm: <default> {
+            connection: <default> null
+            developerConnection: <default> null
+            url: <default> null
+          }
+          url: <default> null
+        }
         version: <default> null
       }
       springBoot: <default> {
@@ -330,6 +344,20 @@ Fragments:
         enabled: <default> false
         group: <default> null
         name: <default> null
+        pom: <default> {
+          description: <default> null
+          developers: <default> [
+          ]
+          licenses: <default> [
+          ]
+          name: <default> null
+          scm: <default> {
+            connection: <default> null
+            developerConnection: <default> null
+            url: <default> null
+          }
+          url: <default> null
+        }
         version: <default> null
       }
       springBoot: <default> {

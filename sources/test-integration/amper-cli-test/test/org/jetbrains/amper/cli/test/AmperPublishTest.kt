@@ -134,6 +134,74 @@ class AmperPublishTest : AmperCliTestBase() {
     }
 
     @Test
+    fun `publish to maven local (custom pom)`() = runSlowTest {
+        val mavenLocalForTest = createTempMavenLocalDir()
+        val groupDir = mavenLocalForTest.resolve("amper/test/jvm-publish-custom-pom")
+
+        runCli(
+            projectDir = testProject("jvm-publish-custom-pom"),
+            "publish", "mavenLocal",
+            amperJvmArgs = listOf(mavenRepoLocalJvmArg(mavenLocalForTest)),
+        )
+
+        groupDir.assertContainsRelativeFiles(
+            "artifactName/2.2/_remote.repositories",
+            "artifactName/2.2/artifactName-2.2-sources.jar",
+            "artifactName/2.2/artifactName-2.2.jar",
+            "artifactName/2.2/artifactName-2.2.pom",
+            "artifactName/maven-metadata-local.xml",
+        )
+
+        val pom = groupDir.resolve("artifactName/2.2/artifactName-2.2.pom")
+        assertEquals("""
+            <?xml version="1.0" encoding="UTF-8"?>
+            <project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd" xmlns="http://maven.apache.org/POM/4.0.0"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+              <modelVersion>4.0.0</modelVersion>
+              <groupId>amper.test.jvm-publish-custom-pom</groupId>
+              <artifactId>artifactName</artifactId>
+              <version>2.2</version>
+              <name>My Super Module</name>
+              <url>https://example.com/my-module</url>
+              <licenses>
+                <license>
+                  <name>Apache License, Version 2.0</name>
+                  <url>https://www.apache.org/licenses/LICENSE-2.0.txt</url>
+                </license>
+              </licenses>
+              <developers>
+                <developer>
+                  <id>john.doe</id>
+                  <name>John Doe</name>
+                  <email>john.doe@example.com</email>
+                  <organization>Example Inc.</organization>
+                  <organizationUrl>https://example.com</organizationUrl>
+                </developer>
+              </developers>
+              <scm>
+                <connection>scm:git:https://github.com/example/my-module</connection>
+                <developerConnection>scm:git:https://github.com/example/my-module</developerConnection>
+                <url>https://github.com/example/my-module</url>
+              </scm>
+              <dependencies>
+                <dependency>
+                  <groupId>io.ktor</groupId>
+                  <artifactId>ktor-client-core-jvm</artifactId>
+                  <version>2.3.9</version>
+                  <scope>runtime</scope>
+                </dependency>
+                <dependency>
+                  <groupId>org.jetbrains.kotlin</groupId>
+                  <artifactId>kotlin-stdlib</artifactId>
+                  <version>2.3.20</version>
+                  <scope>runtime</scope>
+                </dependency>
+              </dependencies>
+            </project>
+        """.trimIndent(), pom.readText().trim())
+    }
+
+    @Test
     fun `publish to maven local (jvm multi-module)`() = runSlowTest {
         val mavenLocalForTest = createTempMavenLocalDir()
         val groupDir = mavenLocalForTest.resolve("amper/test/jvm-publish-multimodule")
