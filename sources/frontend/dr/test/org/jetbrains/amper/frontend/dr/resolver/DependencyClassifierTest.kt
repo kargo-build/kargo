@@ -4,7 +4,6 @@
 
 package org.jetbrains.amper.frontend.dr.resolver
 
-import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
@@ -28,16 +27,7 @@ class DependencyClassifierTest: BaseModuleDrTest() {
         val jvmAppDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    ResolutionScope.COMPILE,
-                    setOf(ResolutionPlatform.JVM),
-                    false,
-                    false)
-                ,
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
             module = "jvm-app",
         )
 

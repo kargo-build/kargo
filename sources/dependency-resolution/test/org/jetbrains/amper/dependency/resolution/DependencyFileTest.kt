@@ -347,7 +347,7 @@ class DependencyFileTest: BaseDRTest() {
             }
         }.let {
             MavenCoordinates("org.jetbrains.kotlinx", "kotlinx-coroutines-core-jvm", "1.8.0").toMavenNode(it)
-        )
+        }
 
         // 1. check that dependencies are resolved and downloaded sucessfully
         val dependencyNode = getDependencyNode()
