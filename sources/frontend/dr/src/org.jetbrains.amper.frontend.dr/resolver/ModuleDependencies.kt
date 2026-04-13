@@ -279,6 +279,8 @@ class ModuleDependencies private constructor(
             "https://maven.google.com/",
         )
 
+        // todo (AB): [AMPER-4905] it's not very good to have long-running statics in IDE plugin
+        //  (it might be moved to Context resolution cache instead)
         private val alreadyReportedHttpRepositories = ConcurrentHashMap<String, Boolean>()
         private val alreadyReportedNonHttpsRepositories = ConcurrentHashMap<String, Boolean>()
 
