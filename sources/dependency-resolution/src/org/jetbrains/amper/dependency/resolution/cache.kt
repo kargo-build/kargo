@@ -14,10 +14,9 @@ class Cache : TypedKeyMap(), Closeable {
         map
             .filterValues { it is AutoCloseable }
             .forEach {
-                if (it !is AutoCloseable) return@forEach
                 if (it.key == httpClientKey) return@forEach  // calling side handles lifecycle of injected HttpClient
 
-                val closeable = it/* as AutoCloseable*/
+                val closeable = it as AutoCloseable
                 map.remove(it.key)
                 try {
                     closeable.close()

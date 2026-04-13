@@ -43,7 +43,7 @@ import org.jetbrains.amper.frontend.MavenDependencyBase
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.RepositoriesModulePart
-import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies.Companion.moduleDependencies
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies.Companion.resolveProjectDependencies
 import org.jetbrains.amper.frontend.dr.resolver.flow.Classpath
 import org.jetbrains.amper.frontend.dr.resolver.flow.toResolutionPlatform
 import org.jetbrains.amper.frontend.isDescendantOf
@@ -74,10 +74,10 @@ class ModuleDependencies private constructor(
     private val sharedResolutionCache: Cache,
 ) {
     private val mainDepsPerFragment: Map<Fragment, PerFragmentDependencies> =
-        module.perFragmentDependencies( false)
+        module.perFragmentDependencies(false)
 
     private val testDepsPerFragment: Map<Fragment, PerFragmentDependencies> =
-        module.perFragmentDependencies( true)
+        module.perFragmentDependencies(true)
 
     private val mainDepsPerPlatforms: Map<Set<Platform>, PerFragmentDependencies>
     private val testDepsPerPlatforms: Map<Set<Platform>, PerFragmentDependencies>
@@ -286,7 +286,7 @@ class ModuleDependencies private constructor(
          * This method calculates unresolved graphs for every fragment of every module and
          * then performs resolution of dependencies for all project modules.
          *
-         * It might be useful to cache the result of the mmethod [Model.moduleDependencies]
+         * It might be useful to cache the result of the method [Model.moduleDependencies]
          * and call resoltion based on the cached List of [ModuleDependencies] instead of calling this method directly.
          */
         suspend fun Model.resolveProjectDependencies(
@@ -309,14 +309,13 @@ class ModuleDependencies private constructor(
             moduleDependenciesList: List<ModuleDependencies>
         ): List<DependencyNodeHolderWithContext> {
             moduleDependenciesList.checkModules(model)
-            return buildProjectDependenciesGraph(resolutionSettings, moduleDependenciesList)
+            return buildProjectDependenciesGraph(moduleDependenciesList, resolutionSettings.openTelemetry)
         }
 
         private suspend fun buildProjectDependenciesGraph(
-            resolutionSettings: AmperResolutionSettings,
-            moduleDependenciesList: List<ModuleDependencies>
+            moduleDependenciesList: List<ModuleDependencies>,
+            openTelemetry: OpenTelemetry?,
         ): List<DependencyNodeHolderWithContext> {
-            val openTelemetry = resolutionSettings.openTelemetry
             return openTelemetry.spanBuilder("DR: building project graph").use {
                 buildList {
                     moduleDependenciesList.forEach {
@@ -348,17 +347,21 @@ class ModuleDependencies private constructor(
             resolutionRunSettings: ResolutionRunSettings,
             projectRoot: Path,
         ): ResolvedGraph {
-            val resolutionSettings = moduleDependenciesList.first().resolutionSettings
-            val openTelemetry = resolutionSettings.openTelemetry
-            val incrementalCache = resolutionSettings.incrementalCache
-            val fileCacheBuilder = resolutionSettings.fileCacheBuilder
+            val (openTelemetry, incrementalCache, fileCacheBuilder) = moduleDependenciesList.firstOrNull()
+                ?.let {
+                    Triple(it.resolutionSettings.openTelemetry,
+                        it.resolutionSettings.incrementalCache,
+                        it.resolutionSettings.fileCacheBuilder)
+                }
+                ?: return ResolvedGraph(RootDependencyNodeStub(), null)
+
             val filter = ModuleResolutionFilter(resolutionType = ResolutionType.ALL)
             // Wrapping into per-project cache entry
             // Goal: if nothing has changed, check inputs once, instead of checking inputs for every module where
             //       one library from shared module is checked as an input as many times as many modules depend on it transitively
             return with (resolutionRunSettings) {
                 openTelemetry.spanBuilder("DR: Resolving project dependencies").use {
-                    val moduleGraphs = buildProjectDependenciesGraph(resolutionSettings, moduleDependenciesList)
+                    val moduleGraphs = buildProjectDependenciesGraph(moduleDependenciesList, openTelemetry)
 
                     val resolutionId = CacheEntryKey.CompositeCacheEntryKey(
                         listOf(
@@ -598,15 +601,16 @@ class ModuleDependencies private constructor(
             if (this.isNullOrEmpty())
                 error("Deserialized node with key ${node.key} has no corresponding input node")
 
-            this.forEach {
+            val matchedNodes = this.filter {
                 (it as? T) ?: error(
                     "Deserialized node corresponds to unexpected input node of type " +
                             "${this::class.simpleName} while ${node::class.simpleName} is expected"
                 )
-                if (it.additionalMatch()) return it
-            }
+                it.additionalMatch()
+            }.takeIf { it.isNotEmpty() } ?: this
 
-            return (this.first() as T)
+            if (matchedNodes.size > 1) logger.warn("Found ${matchedNodes.size} matching nodes for ${node.key} while a single node is expected")
+            return matchedNodes.first() as T
         }
 
         /**

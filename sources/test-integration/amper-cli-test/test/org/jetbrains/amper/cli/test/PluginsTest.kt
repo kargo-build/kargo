@@ -80,7 +80,7 @@ class PluginsTest : AmperCliTestBase() {
             classpath base.dependencies = [{modulePath: $projectDir/app}]
             classpath base.dependencies[0] = {modulePath: $projectDir/app}
             classpath base.dependencies[0].modulePath = $projectDir/app
-            classpath base.resolvedFiles = [$buildDir/tasks/_app_jarJvm/app-jvm.jar, $buildDir/tasks/_lib_jarJvm/lib-jvm.jar, $buildDir/tasks/_core_jarJvm/core-jvm.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/kotlin/kotlin-stdlib/${DefaultVersions.kotlin}/kotlin-stdlib-${DefaultVersions.kotlin}.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/annotations/13.0/annotations-13.0.jar]
+            classpath base.resolvedFiles = [$buildDir/tasks/_app_jarJvm/app-jvm.jar, $buildDir/tasks/_lib_jarJvm/lib-jvm.jar, $buildDir/tasks/_core_jarJvm/core-jvm.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/kotlin/kotlin-stdlib/${DefaultVersions.kotlin}/kotlin-stdlib-${DefaultVersions.kotlin}.jar, ${Dirs.userCacheRoot}/.m2.cache/net/freeutils/jcharset/2.1/jcharset-2.1.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/annotations/13.0/annotations-13.0.jar]
             classpath core.dependencies = [{modulePath: $projectDir/core}]
             classpath core.dependencies[0] = {modulePath: $projectDir/core}
             classpath core.dependencies[0].modulePath = $projectDir/core
@@ -88,7 +88,7 @@ class PluginsTest : AmperCliTestBase() {
             classpath lib.dependencies = [{modulePath: $projectDir/lib}]
             classpath lib.dependencies[0] = {modulePath: $projectDir/lib}
             classpath lib.dependencies[0].modulePath = $projectDir/lib
-            classpath lib.resolvedFiles = [$buildDir/tasks/_lib_jarJvm/lib-jvm.jar, $buildDir/tasks/_core_jarJvm/core-jvm.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/kotlin/kotlin-stdlib/${DefaultVersions.kotlin}/kotlin-stdlib-${DefaultVersions.kotlin}.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/annotations/13.0/annotations-13.0.jar]
+            classpath lib.resolvedFiles = [$buildDir/tasks/_lib_jarJvm/lib-jvm.jar, $buildDir/tasks/_core_jarJvm/core-jvm.jar, ${Dirs.userCacheRoot}/.m2.cache/net/freeutils/jcharset/2.1/jcharset-2.1.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/kotlin/kotlin-stdlib/${DefaultVersions.kotlin}/kotlin-stdlib-${DefaultVersions.kotlin}.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/annotations/13.0/annotations-13.0.jar]
             classpath kotlin-poet.dependencies = [{coordinates: com.squareup:kotlinpoet:2.2.0}]
             classpath kotlin-poet.dependencies[0] = {coordinates: com.squareup:kotlinpoet:2.2.0}
             classpath kotlin-poet.dependencies[0].coordinates = com.squareup:kotlinpoet:2.2.0
@@ -101,6 +101,10 @@ class PluginsTest : AmperCliTestBase() {
             classpath compile.dependencies[0] = {modulePath: $projectDir/app}
             classpath compile.dependencies[0].modulePath = $projectDir/app
             classpath compile.resolvedFiles = [${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/kotlin/kotlin-stdlib/${DefaultVersions.kotlin}/kotlin-stdlib-${DefaultVersions.kotlin}.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/annotations/13.0/annotations-13.0.jar]
+            classpath moduleCompile.dependencies = [{modulePath: $projectDir/lib}]
+            classpath moduleCompile.dependencies[0] = {modulePath: $projectDir/lib}
+            classpath moduleCompile.dependencies[0].modulePath = $projectDir/lib
+            classpath moduleCompile.resolvedFiles = [${Dirs.userCacheRoot}/.m2.cache/net/freeutils/jcharset/2.1/jcharset-2.1.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/kotlin/kotlin-stdlib/${DefaultVersions.kotlin}/kotlin-stdlib-${DefaultVersions.kotlin}.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/annotations/13.0/annotations-13.0.jar]
             classpath combined.dependencies = [{coordinates: org.jetbrains.kotlin:kotlin-reflect:2.2.10}, {coordinates: com.squareup:kotlinpoet:2.2.0}, {modulePath: $projectDir/lib}]
             classpath combined.dependencies[0] = {coordinates: org.jetbrains.kotlin:kotlin-reflect:2.2.10}
             classpath combined.dependencies[0].coordinates = org.jetbrains.kotlin:kotlin-reflect:2.2.10
@@ -108,7 +112,7 @@ class PluginsTest : AmperCliTestBase() {
             classpath combined.dependencies[1].coordinates = com.squareup:kotlinpoet:2.2.0
             classpath combined.dependencies[2] = {modulePath: $projectDir/lib}
             classpath combined.dependencies[2].modulePath = $projectDir/lib
-            classpath combined.resolvedFiles = [$buildDir/tasks/_lib_jarJvm/lib-jvm.jar, $buildDir/tasks/_core_jarJvm/core-jvm.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/kotlin/kotlin-reflect/2.2.10/kotlin-reflect-2.2.10.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/kotlin/kotlin-stdlib/${DefaultVersions.kotlin}/kotlin-stdlib-${DefaultVersions.kotlin}.jar, ${Dirs.userCacheRoot}/.m2.cache/com/squareup/kotlinpoet-jvm/2.2.0/kotlinpoet-jvm-2.2.0.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/annotations/13.0/annotations-13.0.jar]
+            classpath combined.resolvedFiles = [$buildDir/tasks/_lib_jarJvm/lib-jvm.jar, $buildDir/tasks/_core_jarJvm/core-jvm.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/kotlin/kotlin-reflect/2.2.10/kotlin-reflect-2.2.10.jar, ${Dirs.userCacheRoot}/.m2.cache/net/freeutils/jcharset/2.1/jcharset-2.1.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/kotlin/kotlin-stdlib/${DefaultVersions.kotlin}/kotlin-stdlib-${DefaultVersions.kotlin}.jar, ${Dirs.userCacheRoot}/.m2.cache/com/squareup/kotlinpoet-jvm/2.2.0/kotlinpoet-jvm-2.2.0.jar, ${Dirs.userCacheRoot}/.m2.cache/org/jetbrains/annotations/13.0/annotations-13.0.jar]
             compilation result: {from: {modulePath: $projectDir/app}}
             compilation result path: $buildDir/tasks/_app_jarJvm/app-jvm.jar
         """.trimIndent().replace('/', File.separatorChar))

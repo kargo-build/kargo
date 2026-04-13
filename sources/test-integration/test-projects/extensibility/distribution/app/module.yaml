@@ -13,6 +13,10 @@ plugins:
       "compile":
         dependencies: [ . ]
         scope: compile
+      "moduleCompile":
+        dependencies:
+         - ../lib
+        scope: compile
       "combined" :
         dependencies:
          - $kotlin.reflect
