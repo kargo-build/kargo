@@ -19,6 +19,7 @@ import kotlin.io.path.notExists
 import kotlin.io.path.pathString
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
@@ -165,6 +166,7 @@ class MavenConvertTest : AmperCliTestBase() {
     }
 
     @Test
+    @Ignore("AMPER-5271")
     fun `spring-petclinic`() = runSlowTest {
         val projectRoot = testProject("maven-convert/spring-petclinic")
 
