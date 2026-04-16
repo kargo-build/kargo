@@ -26,8 +26,9 @@ fun generateBuildProperties(
     @Output taskOutputDirectory: Path,
     version: String?,
 ) {
-    checkNotNull(version) {
-        "`settings.publishing.version` is required to be set for build properties"
+    val effectiveVersion = System.getenv("GITHUB_REF_TAG_VERSION") ?: version
+    checkNotNull(effectiveVersion) {
+        "`settings.publishing.version` or GITHUB_REF_TAG_VERSION is required to be set for build properties"
     }
     val taskOutputDirectory = taskOutputDirectory.createDirectories()
 
@@ -57,7 +58,7 @@ fun generateBuildProperties(
         }
     }
 
-    val fileSpec = generateBuildInfoFile(version, commitHash, commitShortHash, commitDate)
+    val fileSpec = generateBuildInfoFile(effectiveVersion, commitHash, commitShortHash, commitDate)
     val content = fileSpec.toString().toByteArray()
     val outputDir = taskOutputDirectory.resolve(PACKAGE_NAME.replace('.', '/'))
     outputDir.createDirectories()
