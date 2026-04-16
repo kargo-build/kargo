@@ -93,12 +93,12 @@ Unlike standard Maven dependencies which resolve to pre-compiled binary artifact
 
 ### The Pre-Scanner Phase
 
-Amper-based build systems normally expect all modules and their `module.yaml` files to be present on the local filesystem before the build starts. To support Git-backed modules, Kargo introduces a specialized **Pre-Scanner** phase that runs before the main project model is built:
+Kargo-based build systems normally expect all modules and their `module.yaml` files to be present on the local filesystem before the build starts. To support Git-backed modules, Kargo introduces a specialized **Pre-Scanner** phase that runs before the main project model is built:
 
 1.  **Discovery**: Kargo performs a fast scan of your `module.yaml` files (and any discovered sub-modules) to find `sources:` or `dependencies:` blocks containing Git references.
 2.  **Cloning/Updating**: For each Git source found, Kargo checks its local cache (`~/.kargo/sources-cache`). If the requested version is missing or is a mutable branch that needs updating, Kargo clones or fetches the repository.
 3.  **Recursive Scan**: After a Git repository is cloned, Kargo immediately scans *its* `module.yaml` to see if it has transitive Git dependencies. This process repeats until the entire Git-source graph is resolved.
-4.  **Injection**: Once all Git sources are present on disk, Kargo "injects" them into the project context. The main Amper engine then sees these directories as regular local modules, enabling top-tier features like cross-repository code navigation and refactoring in the IntelliJ IDE.
+4.  **Injection**: Once all Git sources are present on disk, Kargo "injects" them into the project context. The main Kargo engine then sees these directories as regular local modules, enabling top-tier features like cross-repository code navigation and refactoring in the IntelliJ IDE.
 
 ### Git Sources in `dependencies:` block
 
