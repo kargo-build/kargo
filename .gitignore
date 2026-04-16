@@ -10,6 +10,7 @@
 .kotlin
 androidTestProjects
 build/**
+dist/**
 build-from-sources
 shared test caches/
 !build/kargo/**
