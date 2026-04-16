@@ -18,18 +18,12 @@ import com.intellij.mock.MockProject
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileTypes.FileType
-import com.intellij.openapi.progress.ProgressManager
-import com.intellij.openapi.progress.impl.CoreProgressManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.ThrowableComputable
 import com.intellij.openapi.util.registry.Registry
 import com.intellij.psi.util.ReadActionCache
 import com.intellij.util.ProcessingContext
 import com.intellij.util.ui.EDT
-import kotlinx.coroutines.currentCoroutineContext
-import kotlinx.coroutines.ensureActive
-import kotlinx.coroutines.runBlocking
 import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.useWithoutCoroutines
 import org.jetbrains.yaml.YAMLFileType
@@ -40,7 +34,6 @@ import org.toml.lang.parse.TomlParserDefinition
 import org.toml.lang.psi.TomlFileType
 import org.toml.lang.psi.impl.TomlASTFactory
 import java.lang.invoke.MethodHandles
-import java.util.function.Supplier
 
 open class IntelliJApplicationConfigurator {
     open fun registerApplicationExtensions(application: MockApplication) {}
@@ -89,6 +82,10 @@ object MockProjectInitializer {
         return spanBuilder("Init mock IntelliJ project").useWithoutCoroutines {
             System.setProperty("idea.home.path", "") // TODO: Is it correct?
 
+            // Tells the IntelliJ Platform code not to use the APIs added to the IntelliJ coroutine fork on top of Kotlin
+            // vanilla coroutines. We exclude the IntelliJ fork from dependencies in Amper, so only vanilla coroutines APIs are available
+            System.setProperty("ide.can.use.coroutines.fork", "false")
+
             disableEdtChecks()
 
             val disposable = Disposer.newDisposable()
@@ -96,7 +93,6 @@ object MockProjectInitializer {
             ourDisposable = disposable
             appEnv.registerLangAppServices()
             @Suppress("UnstableApiUsage")
-            appEnv.application.registerService(ProgressManager::class.java, MockProgressManager::class.java)
             appEnv.application.registerService(ReadActionCache::class.java, ReadActionCacheImpl())
             intelliJApplicationConfigurator.registerApplicationExtensions(appEnv.application)
 
@@ -141,22 +137,6 @@ object MockProjectInitializer {
         override fun getDefaultExtension() = "kt"
         override fun getIcon(): Nothing? = null
         override fun isBinary() = false
-    }
-
-    private class MockProgressManager : CoreProgressManager() {
-        override fun doCheckCanceled() {
-            runBlocking {
-                currentCoroutineContext().ensureActive()
-            }
-        }
-
-        override fun <T : Any?, E : Exception?> computeInNonCancelableSection(computable: ThrowableComputable<T?, E?>): T? {
-            return computable.compute()
-        }
-
-        override fun isInNonCancelableSection(): Boolean {
-            return false
-        }
     }
 
     // Copy-pasted from IDEA (lack of this service causes PSI Scalar elements textValue calculation failure)

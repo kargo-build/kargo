@@ -17,7 +17,6 @@ import org.jetbrains.amper.frontend.schema.KeystoreProperty
 import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.frontend.schema.storeFile
 import org.jetbrains.amper.frontend.types.generated.*
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
@@ -70,11 +69,6 @@ abstract class SigningConfigurationIncorrect : AomSingleModuleDiagnosticFactory 
 }
 
 object SigningEnabledWithoutPropertiesFileFactory : SigningConfigurationIncorrect() {
-    @Deprecated(
-        message = "Use SigningEnabledWithoutPropertiesFile.ID",
-        replaceWith = ReplaceWith("SigningEnabledWithoutPropertiesFile.ID"),
-    )
-    val diagnosticId: BuildProblemId = SigningEnabledWithoutPropertiesFile.ID
 
     override fun analyze(moduleDir: Path, android: AndroidSettings, problemReporter: ProblemReporter) {
         val signing = android.signing
@@ -91,11 +85,6 @@ object SigningEnabledWithoutPropertiesFileFactory : SigningConfigurationIncorrec
 }
 
 object KeystorePropertiesDoesNotContainKeyFactory : SigningConfigurationIncorrect() {
-    @Deprecated(
-        message = "Use KeystorePropertiesDoesNotContainKey.ID",
-        replaceWith = ReplaceWith("KeystorePropertiesDoesNotContainKey.ID"),
-    )
-    val diagnosticId: BuildProblemId = KeystorePropertiesDoesNotContainKey.ID
 
     override fun analyze(moduleDir: Path, android: AndroidSettings, problemReporter: ProblemReporter) {
         val signing = android.signing
@@ -117,11 +106,6 @@ object KeystorePropertiesDoesNotContainKeyFactory : SigningConfigurationIncorrec
 }
 
 object MandatoryFieldInPropertiesFileMustBePresentFactory : SigningConfigurationIncorrect() {
-    @Deprecated(
-        message = "Use MandatoryFieldInPropertiesFileMustBePresent.ID",
-        replaceWith = ReplaceWith("MandatoryFieldInPropertiesFileMustBePresent.ID"),
-    )
-    val diagnosticId: BuildProblemId = MandatoryFieldInPropertiesFileMustBePresent.ID
 
     override fun analyze(moduleDir: Path, android: AndroidSettings, problemReporter: ProblemReporter) {
         val signing = android.signing
@@ -145,11 +129,6 @@ object MandatoryFieldInPropertiesFileMustBePresentFactory : SigningConfiguration
 }
 
 object KeystoreMustExistFactory : SigningConfigurationIncorrect() {
-    @Deprecated(
-        message = "Use KeystoreFileDoesNotExist.ID",
-        replaceWith = ReplaceWith("KeystoreFileDoesNotExist.ID"),
-    )
-    val diagnosticId: BuildProblemId = KeystoreFileDoesNotExist.ID
 
     override fun analyze(moduleDir: Path, android: AndroidSettings, problemReporter: ProblemReporter) {
         val signing = android.signing
@@ -173,13 +152,8 @@ object KeystoreMustExistFactory : SigningConfigurationIncorrect() {
 class SigningEnabledWithoutPropertiesFile(
     val targetProperty: SchemaValueDelegate<*>, val propertiesFilePath: Path
 ) : PsiBuildProblem(Level.Warning, BuildProblemType.InconsistentConfiguration) {
-    companion object {
-        const val ID = "keystore.properties.does.not.exist"
-    }
 
     override val element: PsiElement get() = targetProperty.extractPsiElement()
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.SigningEnabledWithoutPropertiesFile
     override val message: @Nls String
         get() = SchemaBundle.message(
@@ -192,13 +166,8 @@ class KeystorePropertiesDoesNotContainKey(
     val key: String,
     val propertiesFilePath: Path,
 ) : PsiBuildProblem(Level.Warning, BuildProblemType.Generic) {
-    companion object {
-        const val ID = "keystore.properties.key.does.not.exist"
-    }
 
     override val element: PsiElement get() = targetProperty.extractPsiElement()
-    @Deprecated("Should be replaced with `problemId` property", replaceWith = ReplaceWith("problemId"))
-    override val buildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.KeystorePropertiesDoesNotContainKey
 
     override val message: @Nls String
@@ -210,13 +179,8 @@ class KeystorePropertiesDoesNotContainKey(
 class MandatoryFieldInPropertiesFileMustBePresent(
     val targetProperty: SchemaValueDelegate<*>, val key: String, val propertiesFilePath: Path
 ) : PsiBuildProblem(Level.Warning, BuildProblemType.Generic) {
-    companion object {
-        const val ID = "keystore.properties.value.required"
-    }
 
     override val element: PsiElement get() = targetProperty.extractPsiElement()
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.MandatoryFieldInPropertiesFileMustBePresent
     override val message: @Nls String
         get() = SchemaBundle.message(
@@ -227,13 +191,8 @@ class MandatoryFieldInPropertiesFileMustBePresent(
 class KeystoreFileDoesNotExist(
     val targetProperty: SchemaValueDelegate<*>, val keystorePath: Path
 ) : PsiBuildProblem(Level.Warning, BuildProblemType.UnresolvedReference) {
-    companion object {
-        const val ID = "keystore.properties.file.does.not.exist"
-    }
 
     override val element: PsiElement get() = targetProperty.extractPsiElement()
-    @Deprecated("Should be replaced with `problemId` property", replaceWith = ReplaceWith("problemId"))
-    override val buildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.KeystoreFileDoesNotExist
     override val message: @Nls String
         get() = SchemaBundle.message(

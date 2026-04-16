@@ -1,10 +1,11 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.dependency.resolution
 
-import kotlinx.coroutines.test.runTest
+import org.jetbrains.amper.test.dr.toMavenNode
+import org.jetbrains.amper.test.runTestWithMdc
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
@@ -85,30 +86,31 @@ class LocalRepositoryTest : BaseDRTest() {
     }
 
     @Test
-    fun `check maven local storage is ignored if primary storage misses artifact, but its checksum doesn't match`() = runTest {
-        checkLocalRepositoryUsage(
-            filesThatShouldNotBeDownloaded = listOf(
-                "atomicfu-jvm-0.23.2.pom",
-                "atomicfu-jvm-0.23.2.module"
-            ),
-            // Jar file has an incorrect checksums in maven local storage, => we ignore it
-            // Checksums are not taken from maven local storage
-            filesThatMustBeDownloaded = listOf(
-                "atomicfu-jvm-0.23.2.jar",
-                "atomicfu-jvm-0.23.2.pom.sha256",
-                "atomicfu-jvm-0.23.2.module.sha256"
-            ),
-            // Corrupt JAR file stored in maven local storage, => it should be re-downloaded
-            updateLocalRepository = { mavenLocalRepository ->
-                val mavenLocalPath = (mavenLocalRepository as MavenLocalRepository).repository
-                val atomicfuJarPath =
-                    mavenLocalPath.resolve("org/jetbrains/kotlinx/atomicfu-jvm/0.23.2/atomicfu-jvm-0.23.2.jar")
-                assertTrue(atomicfuJarPath.exists())
-                atomicfuJarPath.appendText("No artifact from local storage have incorrect checksum and should be ignored")
-            },
-            initLocalRepository = { cacheRoot -> initEtalonMavenLocalStorage(cacheRoot) }
-        )
-    }
+    fun `check maven local storage is ignored if primary storage misses artifact, but its checksum doesn't match`() =
+        runTestWithMdc {
+            checkLocalRepositoryUsage(
+                filesThatShouldNotBeDownloaded = listOf(
+                    "atomicfu-jvm-0.23.2.pom",
+                    "atomicfu-jvm-0.23.2.module"
+                ),
+                // Jar file has an incorrect checksums in maven local storage, => we ignore it
+                // Checksums are not taken from maven local storage
+                filesThatMustBeDownloaded = listOf(
+                    "atomicfu-jvm-0.23.2.jar",
+                    "atomicfu-jvm-0.23.2.pom.sha256",
+                    "atomicfu-jvm-0.23.2.module.sha256"
+                ),
+                // Corrupt JAR file stored in maven local storage, => it should be re-downloaded
+                updateLocalRepository = { mavenLocalRepository ->
+                    val mavenLocalPath = (mavenLocalRepository as MavenLocalRepository).repository
+                    val atomicfuJarPath =
+                        mavenLocalPath.resolve("org/jetbrains/kotlinx/atomicfu-jvm/0.23.2/atomicfu-jvm-0.23.2.jar")
+                    assertTrue(atomicfuJarPath.exists())
+                    atomicfuJarPath.appendText("No artifact from local storage have incorrect checksum and should be ignored")
+                },
+                initLocalRepository = { cacheRoot -> initEtalonMavenLocalStorage(cacheRoot) }
+            )
+        }
 
     private suspend fun initEtalonGradleLocalStorage(cacheRoot: Path): LocalRepository {
         // Installing Gradle local repository at the custom location
@@ -161,7 +163,7 @@ class LocalRepositoryTest : BaseDRTest() {
         filesThatMustBeDownloaded: List<String> = emptyList(),
         updateLocalRepository: (LocalRepository) -> Unit = {},
         initLocalRepository: suspend (Path) -> LocalRepository = { cacheRoot -> initEtalonMavenLocalStorage(cacheRoot) }
-    ) = runTest {
+    ) = runTestWithMdc {
         val atomicfuCoordinates = "org.jetbrains.kotlinx:atomicfu-jvm:0.23.2"
         val urlPrefix =
             "https://cache-redirector.jetbrains.com/repo1.maven.org/maven2/org/jetbrains/kotlinx/atomicfu-jvm/0.23.2"

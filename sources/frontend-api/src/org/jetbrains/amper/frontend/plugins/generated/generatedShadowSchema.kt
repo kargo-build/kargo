@@ -66,8 +66,12 @@ public class ShadowCompilationArtifact : SchemaNode() {
     @SchemaDoc(doc = "The local module to get the compilation result from.")
     public val from: ShadowDependencyLocal by nested()
 
+    @CanBeReferenced
+    @SchemaDoc(doc = "The kind of the compilation artifact.")
+    public val kind: ShadowCompilationArtifactKind by value()
+
     @IgnoreForSchema
-    @SchemaDoc(doc = "Path to the compilation artifact.\nIt's a JAR for JVM.")
+    @SchemaDoc(doc = "Path to the compilation artifact.\nThe contents are dependent on the [kind].")
     public lateinit var artifact: Path
 }
 
@@ -120,6 +124,20 @@ public class ShadowModuleSources : SchemaNode() {
 
 /**
  * Generated!
+ * Shadow for `org.jetbrains.amper.plugins.CompilationArtifact.Kind`
+ */
+public enum class ShadowCompilationArtifactKind(
+    override val schemaValue: String,
+) : SchemaEnum {
+    @SchemaDoc(doc = "A single JAR compiled from module sources.\nIf there is a need to request unpacked classes, use [Classes] instead.")
+    Jar("jar"),
+    @SchemaDoc(doc = "A directory containing all the module's compiled classes.")
+    Classes("classes"),
+    ;
+}
+
+/**
+ * Generated!
  * Shadow for `org.jetbrains.amper.plugins.ResolutionScope`
  */
 public enum class ShadowResolutionScope(
@@ -154,6 +172,7 @@ public object ShadowMaps {
             "org.jetbrains.amper.plugins.Dependency.Maven" to ShadowDependencyMaven::class,
             "org.jetbrains.amper.plugins.ModuleSources" to ShadowModuleSources::class,
             "org.jetbrains.amper.plugins.Dependency" to ShadowDependency::class,
+            "org.jetbrains.amper.plugins.CompilationArtifact.Kind" to ShadowCompilationArtifactKind::class,
             "org.jetbrains.amper.plugins.ResolutionScope" to ShadowResolutionScope::class,
             "org.jetbrains.amper.plugins.SourcesKind" to ShadowSourcesKind::class,
             )
@@ -165,6 +184,7 @@ public object ShadowMaps {
             ShadowDependencyMaven::class to "org.jetbrains.amper.plugins.Dependency${'$'}Maven",
             ShadowModuleSources::class to "org.jetbrains.amper.plugins.ModuleSources",
             ShadowDependency::class to "org.jetbrains.amper.plugins.Dependency",
+            ShadowCompilationArtifactKind::class to "org.jetbrains.amper.plugins.CompilationArtifact${'$'}Kind",
             ShadowResolutionScope::class to "org.jetbrains.amper.plugins.ResolutionScope",
             ShadowSourcesKind::class to "org.jetbrains.amper.plugins.SourcesKind",
             )

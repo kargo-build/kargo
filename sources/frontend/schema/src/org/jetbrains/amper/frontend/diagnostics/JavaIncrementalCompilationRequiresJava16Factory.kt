@@ -10,7 +10,6 @@ import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.problems.reporting.BuildProblem
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemSource
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
@@ -22,11 +21,6 @@ import org.jetbrains.amper.problems.reporting.ProblemReporter
 private const val MinJavaVersionForJIC = 16
 
 object JavaIncrementalCompilationRequiresJava16Factory : AomSingleModuleDiagnosticFactory {
-    @Deprecated(
-        message = "Use JavaIncrementalCompilationRequiresJava16.ID",
-        replaceWith = ReplaceWith("JavaIncrementalCompilationRequiresJava16.ID"),
-    )
-    val diagnosticId: BuildProblemId = JavaIncrementalCompilationRequiresJava16.ID
 
     override fun analyze(module: AmperModule, problemReporter: ProblemReporter) {
         val reportedPlaces = mutableSetOf<Pair<Trace, Trace>>()
@@ -58,12 +52,7 @@ class JavaIncrementalCompilationRequiresJava16(
     val actualJdkVersionTrace: Trace,
     val minJdkVersion: Int,
 ) : BuildProblem {
-    companion object {
-        const val ID = "java.incremental.compilation.requires.higher.jdk"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.JavaIncrementalCompilationRequiresJava16
     override val message = SchemaBundle.message("java.incremental.compilation.requires.higher.jdk", minJdkVersion, actualJdkVersion)
     override val level: Level = Level.Error

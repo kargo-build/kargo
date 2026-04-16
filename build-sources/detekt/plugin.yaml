@@ -14,3 +14,11 @@ tasks:
     action: !org.jetbrains.amper.plugins.detekt.runDetectForBaseline
       commonParameters: ${analyze.action.commonParameters}
       outputBaselineFile: ${analyze.action.baselineFile}
+
+checks:
+  - performedBy: analyze
+    name: detekt
+
+commands:
+  - name: updateDetektBaseline
+    performedBy: updateBaseline

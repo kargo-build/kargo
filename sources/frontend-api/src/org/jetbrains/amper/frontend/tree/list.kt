@@ -6,7 +6,6 @@ package org.jetbrains.amper.frontend.tree
 
 import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.contexts.Contexts
-import org.jetbrains.amper.frontend.types.SchemaType
 
 /**
  * This is a list node of a value tree that can hold indexed children.
@@ -20,7 +19,6 @@ import org.jetbrains.amper.frontend.types.SchemaType
  */
 sealed interface ListNode : TreeNode {
     val children: List<TreeNode>
-    val type: SchemaType.ListType
 }
 
 /**
@@ -44,78 +42,69 @@ interface CompleteListNode : RefinedListNode, CompleteTreeNode {
  */
 fun ListNode(
     children: List<TreeNode>,
-    type: SchemaType.ListType,
     trace: Trace,
     contexts: Contexts,
-) : ListNode = ListNodeImpl(children, type, contexts, trace)
+) : ListNode = ListNodeImpl(children, contexts, trace)
 
 /**
  * Creates the [org.jetbrains.amper.frontend.tree.RefinedListNode] instance.
  */
 fun RefinedListNode(
     children: List<RefinedTreeNode>,
-    type: SchemaType.ListType,
     trace: Trace,
     contexts: Contexts,
-) : RefinedListNode = RefinedListNodeImpl(children, type, contexts, trace)
+) : RefinedListNode = RefinedListNodeImpl(children, contexts, trace)
 
 /**
  * Creates the [org.jetbrains.amper.frontend.tree.CompleteListNode] instance.
  */
 fun CompleteListNode(
     children: List<CompleteTreeNode>,
-    type: SchemaType.ListType,
     trace: Trace,
     contexts: Contexts,
-) : CompleteListNode = CompleteListNodeImpl(children, type, contexts, trace)
+) : CompleteListNode = CompleteListNodeImpl(children, contexts, trace)
 
 /**
  * Copies the list node instance.
  */
 fun ListNode.copy(
     children: List<TreeNode> = this.children,
-    type: SchemaType.ListType = this.type,
     trace: Trace = this.trace,
     contexts: Contexts = this.contexts,
-): ListNode = ListNode(children, type, trace, contexts)
+): ListNode = ListNode(children, trace, contexts)
 
 /**
  * Copies the refined list node instance.
  */
 fun RefinedListNode.copy(
     children: List<RefinedTreeNode> = this.children,
-    type: SchemaType.ListType = this.type,
     trace: Trace = this.trace,
     contexts: Contexts = this.contexts,
-): RefinedListNode = RefinedListNode(children, type, trace, contexts)
+): RefinedListNode = RefinedListNode(children, trace, contexts)
 
 /**
  * Copies the complete list node instance.
  */
 fun CompleteListNode.copy(
     children: List<CompleteTreeNode> = this.children,
-    type: SchemaType.ListType = this.type,
     trace: Trace = this.trace,
     contexts: Contexts = this.contexts,
-): CompleteListNode = CompleteListNode(children, type, trace, contexts)
+): CompleteListNode = CompleteListNode(children, trace, contexts)
 
 private class ListNodeImpl(
     override val children: List<TreeNode>,
-    override val type: SchemaType.ListType,
     override val contexts: Contexts,
     override val trace: Trace,
 ) : ListNode
 
 private class RefinedListNodeImpl(
     override val children: List<RefinedTreeNode>,
-    override val type: SchemaType.ListType,
     override val contexts: Contexts,
     override val trace: Trace,
 ) : RefinedListNode
 
 private class CompleteListNodeImpl(
     override val children: List<CompleteTreeNode>,
-    override val type: SchemaType.ListType,
     override val contexts: Contexts,
     override val trace: Trace,
 ) : CompleteListNode

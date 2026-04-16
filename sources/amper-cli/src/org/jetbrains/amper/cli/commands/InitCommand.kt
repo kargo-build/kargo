@@ -14,7 +14,7 @@ import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.choice
 import com.github.ajalt.clikt.parameters.types.path
 import org.jetbrains.amper.buildinfo.AmperBuild
-import org.jetbrains.amper.cli.interactiveSelectList
+import org.jetbrains.amper.cli.terminal.interactiveSelectList
 import org.jetbrains.amper.cli.userReadableError
 import org.jetbrains.amper.system.info.OsFamily
 import org.jetbrains.amper.templates.AmperProjectTemplate

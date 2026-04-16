@@ -34,7 +34,7 @@ import org.jetbrains.yaml.psi.YAMLPsiElement
 
 val MinimalModule.unwrapAliases get() = aliases?.mapValues { it.value.leaves }.orEmpty()
 
-internal val defaultContextsInheritance by lazy {
+val defaultContextsInheritance by lazy {
     PlatformsInheritance() + MainTestInheritance + DefaultInheritance
 }
 
@@ -61,7 +61,6 @@ internal fun tryReadMinimalModule(moduleFilePath: VirtualFile): MinimalModuleHol
                         source = trace.asBuildProblemSource(),
                         diagnosticId = FrontendDiagnosticId.ProductNotDefined,
                         messageKey = "product.not.defined.empty",
-                        buildProblemId = "product.not.defined",
                     )
                     listOf("product", "type") -> collectingReporter.reportBundleError(
                         source = trace.asBuildProblemSource(),
@@ -104,8 +103,6 @@ internal fun tryReadMinimalModule(moduleFilePath: VirtualFile): MinimalModuleHol
     }
 
     return MinimalModuleHolder(
-        moduleFilePath = moduleFilePath,
-        pathResolver = pathResolver,
         // We can cast here because we know that minimal module
         // properties should be used outside any context.
         module = minimalModule,
@@ -144,29 +141,9 @@ private fun ProblemReporter.reportMissingExplicitPlatforms(product: ModuleProduc
     )
 }
 
-internal class MinimalModuleHolder(
-    val moduleFilePath: VirtualFile,
-    val module: MinimalModule,
-    pathResolver: FrontendPathResolver,
-) {
-    val appliedTemplates by lazy {
-        module.apply?.map { it.value }.orEmpty()
-    }
-
+internal class MinimalModuleHolder(val module: MinimalModule) {
     val platformsInheritance by lazy {
         val aliases = module.aliases.orEmpty().mapValues { it.value.leaves }
         PlatformsInheritance(aliases)
-    }
-
-    val pathInheritance by lazy {
-        // Order first by files and then by platforms.
-        val appliedTemplates = module.apply?.map { it.value }.orEmpty()
-        val filesOrder = appliedTemplates.mapNotNull { pathResolver.loadVirtualFileOrNull(it) } +
-                listOf(moduleFilePath)
-        PathInheritance(filesOrder)
-    }
-
-    val combinedInheritance by lazy {
-        platformsInheritance + pathInheritance + MainTestInheritance + DefaultInheritance
     }
 }

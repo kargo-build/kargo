@@ -1,7 +1,13 @@
 product: jvm/lib
 
+description: |
+  An executable that runs Java incremental compilation.
+  
+  It runs the compilation in-process, so it's expected to be run as a separate process itself (using a JDK as runtime).
+
 apply:
   - ../../common.module-template.yaml
+  - ../../used-in-jic.module-template.yaml
 
 repositories:
   - id: ijSnapshots
@@ -19,3 +25,8 @@ dependencies:
   - $libs.intellij.jps.build.dependency.graph
   - org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0
   - $libs.opentelemetry.sdk.common
+
+settings:
+  jvm:
+    # Used in JIC (max 16), but common template sets it to 21, so we take the lowest version 16
+    release: 16

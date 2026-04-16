@@ -11,8 +11,7 @@ import org.jetbrains.amper.tasks.AllRunSettings
 import org.jetbrains.amper.tasks.ResolveExternalDependenciesTask
 import org.jetbrains.amper.tasks.jvm.JvmRuntimeClasspathTask
 import org.jetbrains.amper.test.Dirs
-import org.jetbrains.amper.test.TestCollector
-import org.jetbrains.amper.test.TestCollector.Companion.runTestWithCollector
+import org.jetbrains.amper.backend.test.TestCollector.Companion.runTestWithCollector
 import org.junit.jupiter.api.Disabled
 import org.junit.jupiter.api.fail
 import java.nio.file.Path

@@ -13,7 +13,6 @@ import org.jetbrains.amper.cli.userReadableError
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.core.downloader.Downloader
 import org.jetbrains.amper.core.extract.cleanDirectory
-import org.jetbrains.amper.diagnostics.DeadLockMonitor
 import org.jetbrains.amper.engine.TaskGraphExecutionContext
 import org.jetbrains.amper.engine.TestTask
 import org.jetbrains.amper.frontend.AmperModule
@@ -197,8 +196,6 @@ class JvmTestTask(
             .setListAttribute("junit-args", junitArgs)
             .use {
                 logger.info("Testing module '${module.userReadableName}' for platform '${platform.pretty}'...")
-
-                DeadLockMonitor.disable()
 
                 val result = processRunner.runJava(
                     jdk = jdk,

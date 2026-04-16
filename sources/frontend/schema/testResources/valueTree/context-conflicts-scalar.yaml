@@ -1,0 +1,25 @@
+product:
+  type: lib
+  platforms:
+    - jvm
+    - android
+    - iosArm64
+    - wasmJs
+
+aliases:
+  jvmAndAndroid: [ jvm, android ]
+  nonAndroid: [ jvm, iosArm64, wasmJs ]
+  jvmAndIos: [ jvm, iosArm64 ]
+
+settings@nonAndroid:
+  kotlin:
+    # Shouldn't have a diagnostic because `jvmAndIos` is more specific
+    progressiveMode: false
+
+settings@jvmAndAndroid:
+  kotlin:
+    <![Error] Conflicting values for property `progressiveMode`!>progressiveMode: false<!>
+
+settings@jvmAndIos:
+  kotlin:
+    <![Error] Conflicting values for property `progressiveMode`!>progressiveMode: true<!>

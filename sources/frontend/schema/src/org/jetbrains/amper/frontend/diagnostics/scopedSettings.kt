@@ -22,7 +22,6 @@ import org.jetbrains.amper.frontend.messages.extractPsiElement
 import org.jetbrains.amper.frontend.tree.KeyValue
 import org.jetbrains.amper.frontend.tree.TreeNode
 import org.jetbrains.amper.frontend.tree.visitMappingNodes
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
@@ -35,11 +34,6 @@ import org.jetbrains.amper.stdlib.collections.joinToString
 private val naturalHierarchyExtStr = naturalHierarchyExt.mapKeys { it.key.schemaValue }
 
 object IncorrectSettingsSectionFactory : TreeDiagnosticFactory {
-    @Deprecated(
-        message = "Use IncorrectSettingsSection.ID",
-        replaceWith = ReplaceWith("IncorrectSettingsSection.ID"),
-    )
-    val diagnosticId: BuildProblemId = IncorrectSettingsSection.ID
 
     override fun analyze(root: TreeNode, minimalModule: MinimalModule, problemReporter: ProblemReporter) =
         root.visitMappingNodes { tree ->
@@ -137,13 +131,8 @@ class IncorrectSettingsSection internal constructor(
     level: Level,
     buildProblemType: BuildProblemType = BuildProblemType.Generic,
 ) : PsiBuildProblem(level, buildProblemType) {
-    companion object {
-        const val ID = "settings.incorrect.section"
-    }
 
     override val message = SchemaBundle.message(messageKey, *values)
-    @Deprecated("Should be replaced with `problemId` property", replaceWith = ReplaceWith("problemId"))
-    override val buildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.IncorrectSettingsSection
 
     // highlight only property keys

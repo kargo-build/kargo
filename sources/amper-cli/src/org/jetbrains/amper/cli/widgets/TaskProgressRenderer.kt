@@ -27,6 +27,7 @@ import org.jetbrains.amper.engine.TaskProgressListener
 import java.util.Collections.swap
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 import kotlin.time.TimeSource
 
@@ -54,13 +55,13 @@ class TaskProgressRenderer(
             launch {
                 while (true) {
                     updateState()
-                    delay(100)
+                    delay(100.milliseconds)
                 }
             }
 
             val mutex = Mutex()
             try {
-                flow.debounce(30).collectLatest { snapshot ->
+                flow.debounce(30.milliseconds).collectLatest { snapshot ->
                     // animation code is single-threaded
                     mutex.withLock {
                         animation.update(snapshot)

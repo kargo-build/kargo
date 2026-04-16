@@ -1,0 +1,4 @@
+product: jvm/app
+
+apply:
+  - ./template-loop/t1.module-template.yaml

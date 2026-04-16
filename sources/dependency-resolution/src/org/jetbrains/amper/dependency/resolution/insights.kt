@@ -26,28 +26,24 @@ internal class DependencyNodeWithChildren(val node: DependencyNode): DependencyN
 
 /**
  * Returned filtered dependencies graph,
- * containing paths from the root to the maven dependency node corresponding to the given coordinates (group and module)
+ * containing paths from the given root node to the maven dependency node corresponding to the given coordinates ([group] and [module])
  * and having the version equal to the actual resolved version of this dependency in the graph.
  * If the resolved dependency version is enforced by constraint, then the path to that constraint is presented
- * in the returned graph together with paths to all versions of this dependency.
+ * in a returned graph together with paths to all versions of this dependency.
  *
  * Every node of the returned graph is of the type [DependencyNodeWithChildren] holding the corresponding node of the original graph inside.
  */
-fun filterGraph(group: String, module: String, graph: DependencyNode, resolvedVersionOnly: Boolean = false): DependencyNode {
-    val nodes = graph.distinctBfsSequence(
-        childrenPredicate = { child, parent ->
-            !resolvedVersionOnly
-                    || child.correspondsToResolvedVersionOf(group, module)
-                    || (!child.belongsTo(group, module) && parent.children.none { it.correspondsToResolvedVersionOf(group, module) })
-        }
-    ).filter { it.belongsTo(group, module) }
-        .toSet()
+fun DependencyNode.filterGraph(group: String, module: String, resolvedVersionOnly: Boolean = false): DependencyNode {
+    val graph = this
+
+    val nodes = graph.distinctBfsSequence()
+        .filter { it.belongsTo(group, module) }
         .let {
             if (resolvedVersionOnly && it.any { it is MavenDependencyNode })
                 // Ignoring redundant constraints
                 it.filterIsInstance<MavenDependencyNode>().toSet()
             else
-                it
+                it.toSet()
         }
 
     if (nodes.isEmpty()) return DependencyNodeWithChildren(graph) // root node without children
@@ -139,7 +135,9 @@ private fun Set<DependencyNode>.addDecisiveParents(nodesWithDecisiveParents: Mut
             } else {
                 if (effectiveNodes.any { it is MavenDependencyNode }) {
                     // Constraints are redundant
-                    effectiveNodes.filterIsInstance<MavenDependencyNode>().toSet()
+                    (effectiveNodes.filterIsInstance<MavenDependencyNode>()
+                            + if (!resolvedVersionOnly) dependencies.filter { it.group == groupForInsight && it.module == moduleForInsight } else emptySet()
+                    ).toSet()
                 } else {
                     // constraints only => take both dependencies and constraints
                     (dependencies + effectiveNodes).toSet()

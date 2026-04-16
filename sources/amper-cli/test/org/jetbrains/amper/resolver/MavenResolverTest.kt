@@ -1,21 +1,21 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.resolver
 
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runTest
 import org.jetbrains.amper.cli.AmperBuildOutputRoot
 import org.jetbrains.amper.cli.AmperVersion
 import org.jetbrains.amper.cli.UserReadableError
 import org.jetbrains.amper.core.AmperUserCacheRoot
-import org.jetbrains.amper.dependency.resolution.MavenCoordinates
 import org.jetbrains.amper.dependency.resolution.MavenRepository
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
-import org.jetbrains.amper.frontend.dr.resolver.CliReportingMavenResolver
+import org.jetbrains.amper.CliReportingMavenResolver
 import org.jetbrains.amper.incrementalcache.IncrementalCache
+import org.jetbrains.amper.test.dr.toMavenCoordinates
+import org.jetbrains.amper.test.runTestWithMdc
 import org.junit.jupiter.api.assertThrows
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
@@ -179,7 +179,7 @@ class MavenResolverTest {
     }
 
     @Test
-    fun negativeResolvePlatformSupportWasNotFound() = runTest(timeout = Duration.INFINITE ) {
+    fun negativeResolvePlatformSupportWasNotFound() = runTestWithMdc(timeout = Duration.INFINITE) {
         val resolver = CliReportingMavenResolver(AmperUserCacheRoot(amperCacheRoot), incrementalCache)
 
         // kotlinx-datetime:0.2.1 is available for macos_x64
@@ -277,7 +277,4 @@ class MavenResolverTest {
     }
 
     private fun List<String>.toMavenCoordinates() = map { it.toMavenCoordinates() }
-
-    private fun String.toMavenCoordinates() =
-        split(":").let { MavenCoordinates(it[0], it[1], it[2]) }
 }

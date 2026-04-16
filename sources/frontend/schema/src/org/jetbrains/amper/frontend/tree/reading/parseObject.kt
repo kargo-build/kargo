@@ -12,9 +12,9 @@ import org.jetbrains.amper.frontend.contexts.TestCtx
 import org.jetbrains.amper.frontend.diagnostics.UnknownProperty
 import org.jetbrains.amper.frontend.tree.KeyValue
 import org.jetbrains.amper.frontend.tree.MappingNode
-import org.jetbrains.amper.frontend.tree.ScalarNode
 import org.jetbrains.amper.frontend.tree.StringNode
 import org.jetbrains.amper.frontend.tree.TreeDiagnosticId
+import org.jetbrains.amper.frontend.tree.TreeNode
 import org.jetbrains.amper.frontend.tree.copy
 import org.jetbrains.amper.frontend.types.SchemaObjectDeclaration
 import org.jetbrains.amper.frontend.types.SchemaType
@@ -26,7 +26,7 @@ internal fun parseObject(
     value: YamlValue,
     type: SchemaType.ObjectType,
     allowTypeTag: Boolean = false,
-): MappingNode? {
+): TreeNode {
     if (!allowTypeTag) {
         value.tag?.let { tag ->
             if (!tag.text.startsWith("!!")) {  // Standard "!!" tags are reported in `parseValue`
@@ -48,19 +48,19 @@ private fun parseObjectWithFromKeyProperty(
     valueAsKeyProperty: SchemaObjectDeclaration.Property,
     value: YamlValue,
     type: SchemaType.ObjectType,
-): MappingNode? {
+): TreeNode {
+    val otherProperties = type.declaration.properties.filterNot { it.isFromKeyAndTheRestNested }
     val argumentType = valueAsKeyProperty.type as SchemaType.ScalarType // should be scalar by design
     return when (value) {
-        is YamlValue.Mapping -> {
+        is YamlValue.Mapping if otherProperties.isNotEmpty() -> {
             val argKeyValue = value.keyValues.singleOrNull() ?: run {
                 reportParsing(value, TreeDiagnosticId.MappingShouldHaveSingleKeyValue, "validation.types.invalid.ctor.arg.key", type.render())
-                return null
+                return errorNode(value, type)
             }
             val argumentValue = parseScalarKey(argKeyValue.key, argumentType)
-                ?: return null
             val nestedRemainingObject = argKeyValue.value
-            val remainingProperties = parseObjectWithoutFromKeyProperty(nestedRemainingObject, type)
-                ?: return null
+            val remainingProperties = parseObjectWithoutFromKeyProperty(nestedRemainingObject, type) as? MappingNode
+                ?: return errorNode(value, type)
             remainingProperties.copy(
                 children = listOf(
                     KeyValue(
@@ -75,35 +75,36 @@ private fun parseObjectWithFromKeyProperty(
         }
         is YamlValue.Scalar -> {
             val trace = value.asTrace()
-            mappingNode(
+            objectNode(
                 children = listOf(
                     KeyValue(
                         keyTrace = value.asTrace(),
                         trace = trace,
-                        value = parseNode(value, argumentType) ?: return null,
+                        value = parseNode(value, argumentType),
                         propertyDeclaration = valueAsKeyProperty,
                     )
                 ),
-                origin = value, type = type,
+                origin = value,
+                declaration = type.declaration,
             )
         }
         else -> {
             // `renderOnlyNestedTypeSyntax` is needed to include the `(prop | prop: (...))` syntax.
             reportUnexpectedValue(value, type, renderOnlyNestedTypeSyntax = false)
-            null
+            errorNode(value, type)
         }
     }
 }
 
 context(_: Contexts, _: ParsingConfig, _: ProblemReporter)
-private fun parseObjectWithoutFromKeyProperty(value: YamlValue, type: SchemaType.ObjectType): MappingNode? {
+private fun parseObjectWithoutFromKeyProperty(value: YamlValue, type: SchemaType.ObjectType): TreeNode {
     return when (value) {
         is YamlValue.Mapping -> parseObjectFromMap(value, type)
         is YamlValue.Scalar -> parseObjectFromScalarShorthand(value, type)
         is YamlValue.Sequence -> parseObjectFromListShorthand(value, type)
         else -> {
             reportUnexpectedValue(value, type)
-            null
+            errorNode(value, type)
         }
     }
 }
@@ -142,12 +143,12 @@ private fun parseObjectFromMap(value: YamlValue.Mapping, type: SchemaType.Object
         )
     }
 
-    return mappingNode(
+    return objectNode(
         children = value.keyValues.mapNotNull { keyValue ->
             parseObjectProperty(keyValue)
         },
         origin = value,
-        type = type,
+        declaration = type.declaration,
     )
 }
 
@@ -155,13 +156,13 @@ context(_: Contexts, _: ParsingConfig, _: ProblemReporter)
 private fun parseObjectFromScalarShorthand(
     scalar: YamlValue.Scalar,
     type: SchemaType.ObjectType,
-): MappingNode? {
-    fun parseScalarShorthandValue(): Pair<SchemaObjectDeclaration.Property, ScalarNode?>? {
+): TreeNode {
+    fun parseScalarShorthandValue(): Pair<SchemaObjectDeclaration.Property, TreeNode>? {
         val boolean = type.declaration.getBooleanShorthand()
         val secondary = type.declaration.getSecondaryShorthand()
 
         if (boolean != null && scalar.textValue == boolean.name) {
-            return boolean to booleanNode(scalar, SchemaType.BooleanType, true)
+            return boolean to booleanNode(scalar, true)
         }
         return when (val type = secondary?.type) {
             is SchemaType.EnumType -> secondary to parseEnum(
@@ -176,22 +177,20 @@ private fun parseObjectFromScalarShorthand(
 
     val (property, result) = parseScalarShorthandValue() ?: run {
         reportUnexpectedValue(scalar, type)
-        return null
+        return errorNode(scalar, type)
     }
 
-    val value = result ?: return null
-
     val trace = scalar.asTrace()
-    return mappingNode(
+    return objectNode(
         children = listOf(
             KeyValue(
                 keyTrace = trace,
                 trace = trace,
-                value = value,
+                value = result,
                 propertyDeclaration = property,
             )
         ),
-        type = type,
+        declaration = type.declaration,
         origin = scalar,
     )
 }
@@ -200,14 +199,14 @@ context(_: Contexts, _: ParsingConfig, _: ProblemReporter)
 private fun parseObjectFromListShorthand(
     sequence: YamlValue.Sequence,
     type: SchemaType.ObjectType,
-): MappingNode? {
+): TreeNode {
     val listShorthandProperty = type.declaration.getSecondaryShorthand()?.takeIf { it.type is SchemaType.ListType }
 
     if (listShorthandProperty != null) {
         val propertyType = listShorthandProperty.type as SchemaType.ListType
         // At this point we are committed to read this as a shorthand, so
         val trace = sequence.asTrace()
-        return mappingNode(
+        return objectNode(
             children = listOfNotNull(
                 KeyValue(
                     keyTrace = trace,
@@ -216,12 +215,13 @@ private fun parseObjectFromListShorthand(
                     propertyDeclaration = listShorthandProperty,
                 )
             ),
-            type = type, origin = sequence,
+            declaration = type.declaration,
+            origin = sequence,
         )
     }
     // shorthand is unsupported
     reportUnexpectedValue(sequence, type)
-    return null
+    return errorNode(sequence, type)
 }
 
 context(_: Contexts, config: ParsingConfig, _: ProblemReporter)
@@ -232,8 +232,8 @@ private fun parsePropertyKeyContexts(
         parseScalarKey(key, SchemaType.StringType) as StringNode? ?: return null
     }.value
     if (config.supportContexts) {
-        val keyWithoutContext = keyText.substringBefore('@')
-        val context = if (keyWithoutContext === keyText) null else keyText.substringAfter('@')
+        val context = keyText.indexOf('@').takeUnless { it == -1 }?.let { keyText.substring(it + 1) }
+        val keyWithoutContext = if (context != null) keyText.substringBefore('@') else keyText
         if (context != null && '+' in context) {
             reportParsing(key, TreeDiagnosticId.MultipleQualifiersAreNotSupported, "multiple.qualifiers.are.unsupported")
             return null

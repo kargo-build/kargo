@@ -24,33 +24,44 @@ import org.jetbrains.amper.maven.list
 import org.jetbrains.amper.maven.mapping
 import org.jetbrains.amper.maven.scalar
 import org.slf4j.LoggerFactory
-import javax.xml.stream.XMLInputFactory
 import javax.xml.stream.XMLStreamConstants.CDATA
 import javax.xml.stream.XMLStreamConstants.CHARACTERS
 import javax.xml.stream.XMLStreamConstants.END_ELEMENT
 import javax.xml.stream.XMLStreamConstants.START_ELEMENT
 import javax.xml.stream.XMLStreamReader
-import kotlin.io.path.Path
-import kotlin.io.path.div
-import kotlin.io.path.exists
-import kotlin.io.path.inputStream
 
 private val logger = LoggerFactory.getLogger("UnknownPluginContributor")
 
-val unsupportedVariables = setOf($$"${basedir}", $$"${project.build.outputDirectory}")
+
+private val NETWORK_URL_PATTERN = Regex("""(https?|ftp|ftps|mailto|data)://[^\s]*""")
+private val UNIX_PATH_PATTERN = Regex("""(?<![/.\w-])/[^\s:/][^\s]*""")
+private val WINDOWS_DRIVE_PATTERN = Regex("""(?i)(?<!\w)[a-z]:[/\\]""")
+private val WINDOWS_UNC_PATTERN = Regex("""(?<!\\)\\\\[^\s\\]+""")
 
 internal fun ProjectTreeBuilder.contributeUnknownPlugins(
     reactorProjects: Set<MavenProject>,
     pluginXmls: List<MavenPluginXml>,
+    enableCompatibilityPlugins: Boolean = false,
 ) {
     val pluginXmlMap = pluginXmls.associateBy { "${it.groupId}:${it.artifactId}" }
 
     reactorProjects.filterJarProjects().forEach { project ->
-        module(project.basedir.toPath() / "module.yaml") {
+        module(project) {
+            val hasUnknownPlugins = project.buildPlugins.any { plugin ->
+                pluginXmlMap.containsKey("${plugin.groupId}:${plugin.artifactId}")
+            }
+
+            if (hasUnknownPlugins && !enableCompatibilityPlugins) {
+                addYamlComment(YamlComment(
+                    path = listOf(Module::mavenPlugins.name),
+                    beforeKeyComment = MavenConverterBundle.message("disabled.plugins.hint"),
+                ))
+            }
+
             project.buildPlugins.forEach { plugin ->
                 val pluginXml = pluginXmlMap["${plugin.groupId}:${plugin.artifactId}"]
                 if (pluginXml != null) {
-                    contributeUnknownPlugin(plugin, pluginXml)
+                    contributeUnknownPlugin(plugin, pluginXml, enableCompatibilityPlugins)
                 }
             }
         }
@@ -60,6 +71,7 @@ internal fun ProjectTreeBuilder.contributeUnknownPlugins(
 private fun ProjectTreeBuilder.ModuleTreeBuilder.contributeUnknownPlugin(
     plugin: Plugin,
     pluginXml: MavenPluginXml,
+    enableCompatibilityPlugins: Boolean = false,
 ) {
     val executions = plugin.executions
     val pluginConfiguration = plugin.configuration as? Xpp3Dom
@@ -103,7 +115,7 @@ private fun ProjectTreeBuilder.ModuleTreeBuilder.contributeUnknownPlugin(
             else -> null
         }
 
-        contributePluginMojo(pluginXml, mojo, configuration)
+        contributePluginMojo(pluginXml, mojo, configuration, enableCompatibilityPlugins)
     }
 }
 
@@ -111,6 +123,7 @@ private fun ProjectTreeBuilder.ModuleTreeBuilder.contributePluginMojo(
     pluginXml: MavenPluginXml,
     mojo: Mojo,
     configuration: Xpp3Dom?,
+    enableCompatibilityPlugins: Boolean = false,
 ) {
     val pluginKey = "${pluginXml.artifactId}.${mojo.goal}"
 
@@ -124,22 +137,28 @@ private fun ProjectTreeBuilder.ModuleTreeBuilder.contributePluginMojo(
         }
     }
 
+    val enabledValue = if (enableCompatibilityPlugins) "true" else "false"
+
     withDefaultContext {
         val mavenPluginConfiguration = context(SimpleTreeNodeFactory(trace, contexts)) {
             mapping {
                 if (hasConfiguration) {
                     put(pluginKey, mapping {
-                        put(MavenMojoSettings::enabled.name, scalar("true"))
+                        put(MavenMojoSettings::enabled.name, scalar(enabledValue))
                         put(MavenMojoSettings::configuration.name, mapping {
-                            mapConfiguration(configuration, mojo)   
+                            mapConfiguration(configuration, mojo)
                         })
                     })
+                } else if (enableCompatibilityPlugins) {
+                    put(pluginKey, scalar(MavenMojoSettings::enabled.name))
                 } else {
-                    put(pluginKey, scalar("enabled")) // shorthand
+                    put(pluginKey, mapping {
+                        put(MavenMojoSettings::enabled.name, scalar(enabledValue))
+                    })
                 }
             }
         }
-        
+
         mavenPlugins(mavenPluginConfiguration, unsafe = true)
     }
 }
@@ -205,83 +224,36 @@ private fun SimpleMappingBuilder.mapConfigurationValue(
             })
         }
         else -> {
-            mapPlexusConfiguration(element)
+            val xmlString = element.toString()
+                .removePrefix("""<?xml version="1.0" encoding="UTF-8"?>""")
+                .trim()
+            put(element.name, scalar(xmlString))
         }
     }
 }
 
 private fun Xpp3Dom.value(): String? {
-    val originalValue = (inputLocation as? InputLocation)?.originalValue()
-    return if (originalValue != null && unsupportedVariables.any { it in originalValue }) {
-        originalValue
-    } else {
-        value
-    }
-}
+    val interpretedValue = value ?: return null
 
-context(_: SimpleTreeNodeFactory)
-private fun SimpleMappingBuilder.mapPlexusConfiguration(
-    element: Xpp3Dom,
-) {
-    if (element.value != null) {
-        put(element.name, scalar(element.value))
-    } else if (element.childCount > 0) {
-        val childNames = element.children.filterIsInstance<Xpp3Dom>().map { it.name }.distinct()
-
-        if (childNames.size == 1 && element.childCount > 1) {
-            put(element.name, list {
-                element.children.forEach { child ->
-                    if (child is Xpp3Dom) {
-                        if (child.value != null) {
-                            add(scalar(child.value))
-                        }
-                    }
-                }
-            })
-        } else {
-            put(element.name, mapping {
-                element.children.forEach { child ->
-                    if (child is Xpp3Dom) {
-                        mapPlexusConfiguration(child)
-                    }
-                }
-            })
+    if (containsAbsolutePath(interpretedValue)) {
+        val originalValue = (inputLocation as? InputLocation)?.findElement { readElementText(it) }
+        if (originalValue != null) {
+            return originalValue
         }
     }
+
+    return interpretedValue
 }
 
-internal fun InputLocation.originalValue(): String? {
-    val sourcePath = source?.location ?: return null
-    val path = Path(sourcePath)
-    if (!path.exists()) return null
 
-    val targetLine = lineNumber
-    val targetColumn = columnNumber
+internal fun containsAbsolutePath(value: String): Boolean {
+    val maskedValue = NETWORK_URL_PATTERN.replace(value, " ")
 
-    try {
-        val factory = XMLInputFactory.newInstance()
-        path.inputStream().use { inputStream ->
-            val reader = factory.createXMLStreamReader(inputStream)
-            while (reader.hasNext()) {
-                val event = reader.next()
-                if (event == START_ELEMENT) {
-                    val location = reader.location
-                    if (location.lineNumber == targetLine) {
-                        val elementNameLength = reader.localName.length
-                        // <elementName>
-                        val expectedMavenColumn = location.columnNumber + elementNameLength + 2
-                        if (expectedMavenColumn == targetColumn) {
-                            return readElementText(reader)
-                        }
-                    }
-                }
-            }
-        }
-    } catch (e: Exception) {
-        logger.warn("Failed to read original value from $sourcePath at line $targetLine, column $targetColumn", e)
-    }
+    if (maskedValue.contains("file:")) return true
 
-    return null
+    return UNIX_PATH_PATTERN.containsMatchIn(maskedValue) ||
+            WINDOWS_DRIVE_PATTERN.containsMatchIn(maskedValue) ||
+            WINDOWS_UNC_PATTERN.containsMatchIn(maskedValue)
 }
 
 private fun readElementText(reader: XMLStreamReader): String? {

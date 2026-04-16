@@ -6,11 +6,9 @@ package org.jetbrains.amper.frontend.tree.reading
 
 import org.jetbrains.amper.frontend.contexts.Contexts
 import org.jetbrains.amper.frontend.contexts.EmptyContexts
-import org.jetbrains.amper.frontend.tree.ErrorNode
 import org.jetbrains.amper.frontend.tree.KeyValue
 import org.jetbrains.amper.frontend.tree.ListNode
 import org.jetbrains.amper.frontend.tree.MappingNode
-import org.jetbrains.amper.frontend.tree.ScalarNode
 import org.jetbrains.amper.frontend.tree.StringNode
 import org.jetbrains.amper.frontend.tree.TreeDiagnosticId
 import org.jetbrains.amper.frontend.tree.TreeNode
@@ -21,10 +19,9 @@ import org.jetbrains.amper.problems.reporting.ProblemReporter
 context(contexts: Contexts, _: ParsingConfig, _: ProblemReporter)
 internal fun parseList(value: YamlValue.Sequence, type: SchemaType.ListType): ListNode {
     return ListNode(
-        children = value.items.mapNotNull { value ->
+        children = value.items.map { value ->
             parseNode(value, type.elementType)
         },
-        type = type,
         trace = value.asTrace(),
         contexts = contexts,
     )
@@ -35,10 +32,9 @@ internal fun parseMap(value: YamlValue.Mapping, type: SchemaType.MapType): Mappi
     val children = value.keyValues.mapNotNull { keyValue: YamlKeyValue ->
         parseKeyValueForMap(keyValue, type)
     }
-    return mappingNode(
+    return mapNode(
         children = children,
         origin = value,
-        type = type,
     )
 }
 
@@ -69,10 +65,9 @@ internal fun parseMapFromSequence(value: YamlValue.Sequence, type: SchemaType.Ma
         parseSingleKeyValue(it)
     }
 
-    return mappingNode(
+    return mapNode(
         origin = value,
         children = children,
-        type = type,
     )
 }
 
@@ -95,7 +90,7 @@ context(_: Contexts, _: ParsingConfig, _: ProblemReporter)
 internal fun parseScalarKey(
     key: YamlValue,
     type: SchemaType.ScalarType,
-): ScalarNode? {
+): TreeNode {
     key.tag?.let { tag ->
         if (tag.text.startsWith("!!")) {
             reportParsing(tag, TreeDiagnosticId.TagsAreNotSupported, "validation.structure.unsupported.standard.tag", tag.text)
@@ -106,7 +101,7 @@ internal fun parseScalarKey(
     when (key) {
         is YamlValue.Missing -> {
             reportParsing(key, TreeDiagnosticId.MappingKeyIsMissing, "validation.structure.missing.key")
-            return null
+            return errorNode(key, type)
         }
         is YamlValue.Scalar -> {
             if (containsReferenceSyntax(key)) {
@@ -116,7 +111,7 @@ internal fun parseScalarKey(
         }
         else -> {
             reportParsing(key, TreeDiagnosticId.CompoundKeysAreNotSupported, "validation.types.unexpected.compound.key")
-            return null
+            return errorNode(key, type)
         }
     }
 }
@@ -126,7 +121,4 @@ internal fun parseNodeFromKeyValue(
     keyValue: YamlKeyValue,
     type: SchemaType,
     explicitContexts: Contexts,
-): TreeNode {
-    return parseNode(keyValue.value, type, explicitContexts)
-        ?: ErrorNode(keyValue.asTrace())
-}
+): TreeNode = parseNode(keyValue.value, type, explicitContexts)

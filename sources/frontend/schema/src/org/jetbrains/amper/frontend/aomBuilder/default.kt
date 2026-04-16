@@ -4,9 +4,11 @@
 
 package org.jetbrains.amper.frontend.aomBuilder
 
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.AmperModuleFileSource
+import org.jetbrains.amper.frontend.AmperPlugin
 import org.jetbrains.amper.frontend.Artifact
 import org.jetbrains.amper.frontend.ClassBasedSet
 import org.jetbrains.amper.frontend.DefaultScopedNotation
@@ -21,6 +23,8 @@ import org.jetbrains.amper.frontend.VersionCatalog
 import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.classBasedSet
 import org.jetbrains.amper.frontend.plugins.AmperMavenPluginDescription
+import org.jetbrains.amper.frontend.plugins.CheckFromPlugin
+import org.jetbrains.amper.frontend.plugins.CustomCommandFromPlugin
 import org.jetbrains.amper.frontend.plugins.TaskFromPluginDescription
 import org.jetbrains.amper.frontend.schema.MavenPluginSettings
 import org.jetbrains.amper.frontend.schema.PluginSettings
@@ -32,14 +36,15 @@ data class DefaultModel(
     override val projectRoot: Path,
     override val modules: List<AmperModule>,
     override val unreadableModuleFiles: Set<VirtualFile>,
+    override val amperPlugins: List<AmperPlugin>,
 ) : Model
 
 internal open class DefaultModule(
-    override val userReadableName: String,
-    override val description: String?,
+    override val userReadableName: @NlsSafe String,
+    override val description: @NlsSafe String?,
     override val type: ProductType,
     override val source: AmperModuleFileSource,
-    override val aliases: Map<String, Set<Platform>>,
+    override val aliases: Map<@NlsSafe String, Set<Platform>>,
     override val usedCatalog: VersionCatalog,
     override val usedTemplates: List<VirtualFile>,
     override var parts: ClassBasedSet<ModulePart<*>> = classBasedSet(),
@@ -50,6 +55,8 @@ internal open class DefaultModule(
     override var fragments = emptyList<Fragment>()
     override var artifacts = emptyList<Artifact>()
     override var tasksFromPlugins = emptyList<TaskFromPluginDescription>()
+    override var checksFromPlugins = emptyList<CheckFromPlugin>()
+    override var customCommandsFromPlugins = emptyList<CustomCommandFromPlugin>()
     override var amperMavenPluginsDescriptions = emptyList<AmperMavenPluginDescription>()
 }
 

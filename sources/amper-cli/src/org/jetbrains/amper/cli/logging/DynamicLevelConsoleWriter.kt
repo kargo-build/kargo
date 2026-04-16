@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.cli.logging
@@ -7,7 +7,6 @@ package org.jetbrains.amper.cli.logging
 import com.github.ajalt.mordant.rendering.TextStyle
 import com.github.ajalt.mordant.rendering.Theme
 import com.github.ajalt.mordant.terminal.Terminal
-import org.jetbrains.amper.cli.logging.DoNotLogToTerminalCookie.REPEL_TERMINAL_LOGGING_MDC_NAME
 import org.tinylog.Level
 import org.tinylog.core.LogEntry
 import org.tinylog.core.LogEntryValue
@@ -34,7 +33,7 @@ class DynamicLevelConsoleWriter(properties: Map<String, String>): AbstractFormat
     override fun write(logEntry: LogEntry) {
         terminal?.let { term ->
             if (logEntry.level.ordinal >= minimumLevel.ordinal) {
-                if (!logEntry.context.containsKey(REPEL_TERMINAL_LOGGING_MDC_NAME)) {
+                if (!logEntry.context.containsKey(DISABLED_MDC_KEY)) {
                     val isError = logEntry.level.ordinal >= Level.ERROR.ordinal
                     val message = render(logEntry).trim()
                     val style = term.theme.styleForLevel(logEntry.level)
@@ -62,4 +61,14 @@ class DynamicLevelConsoleWriter(properties: Map<String, String>): AbstractFormat
 
     override fun flush() = Unit
     override fun close() = Unit
+
+    companion object {
+        internal const val DISABLED_MDC_KEY = "CONSOLE_LOGGING_DISABLED"
+    }
 }
+
+/**
+ * Under this block, all logging will go only to files, not to the user terminal
+ */
+internal inline fun <T> withoutConsoleLogging(block: () -> T): T =
+    withMDCEntry(DynamicLevelConsoleWriter.DISABLED_MDC_KEY, "1") { block() }

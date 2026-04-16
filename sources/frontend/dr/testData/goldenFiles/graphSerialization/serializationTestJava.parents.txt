@@ -59,3 +59,4 @@
 (org.junit:junit-bom:5.10.1, org.junit.platform:junit-platform-suite:1.10.1)
 (org.junit:junit-bom:5.10.1, org.junit.platform:junit-platform-testkit:1.10.1)
 (org.junit:junit-bom:5.10.1, org.junit.vintage:junit-vintage-engine:5.10.1)
+(root, module:D2)

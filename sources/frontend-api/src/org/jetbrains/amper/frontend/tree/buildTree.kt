@@ -101,7 +101,7 @@ context(c: BuilderContext<K, *>)
 operator fun <K> ValueSinkPoint<TypeDescriptor.CustomObject, K>.invoke(node: MappingNode, unsafe: Boolean = false) {
     if (!unsafe) {
         require((type as? SchemaType.ObjectType)?.declaration == node.declaration) {
-            "Expected $type, got ${node.type}"
+            "Expected $type, got ${node.declaration}"
         }
     }
     c.sink.supply(this, node)
@@ -113,7 +113,8 @@ operator fun <K> ValueSinkPoint<TypeDescriptor.CustomObject, K>.invoke(node: Map
 @JvmName("invokeString")
 context(c: BuilderContext<K, *>)
 operator fun <K> ValueSinkPoint<TypeDescriptor.String, K>.invoke(value: String) {
-    c.sink.supply(this, StringNode(value, type as SchemaType.StringType, c.trace, c.contexts))
+    // Note: technically one has to check/assert that the string adheres to the semantics
+    c.sink.supply(this, StringNode(value, (type as SchemaType.StringType).semantics, c.trace, c.contexts))
 }
 
 /**
@@ -122,7 +123,7 @@ operator fun <K> ValueSinkPoint<TypeDescriptor.String, K>.invoke(value: String) 
 @JvmName("invokePath")
 context(c: BuilderContext<K, *>)
 operator fun <K> ValueSinkPoint<TypeDescriptor.Path, K>.invoke(value: Path) {
-    c.sink.supply(this, PathNode(value, type as SchemaType.PathType, c.trace, c.contexts))
+    c.sink.supply(this, PathNode(value, c.trace, c.contexts))
 }
 
 /**
@@ -131,7 +132,7 @@ operator fun <K> ValueSinkPoint<TypeDescriptor.Path, K>.invoke(value: Path) {
 @JvmName("invokeBoolean")
 context(c: BuilderContext<K, *>)
 operator fun <K> ValueSinkPoint<TypeDescriptor.Boolean, K>.invoke(value: Boolean) {
-    c.sink.supply(this, BooleanNode(value, type as SchemaType.BooleanType, c.trace, c.contexts))
+    c.sink.supply(this, BooleanNode(value, c.trace, c.contexts))
 }
 
 /**
@@ -140,7 +141,7 @@ operator fun <K> ValueSinkPoint<TypeDescriptor.Boolean, K>.invoke(value: Boolean
 @JvmName("invokeInt")
 context(c: BuilderContext<K, *>)
 operator fun <K> ValueSinkPoint<TypeDescriptor.Int, K>.invoke(value: Int) {
-    c.sink.supply(this, IntNode(value, type as SchemaType.IntType, c.trace, c.contexts))
+    c.sink.supply(this, IntNode(value, c.trace, c.contexts))
 }
 
 /**
@@ -149,7 +150,7 @@ operator fun <K> ValueSinkPoint<TypeDescriptor.Int, K>.invoke(value: Int) {
 @JvmName("invokeEnum")
 context(c: BuilderContext<K, *>)
 operator fun <K, E : Enum<E>> ValueSinkPoint<TypeDescriptor.Enum<E>, K>.invoke(value: E) {
-    c.sink.supply(this, EnumNode(value.name, descriptor.declaration.toType(), c.trace, c.contexts))
+    c.sink.supply(this, EnumNode(value.name, descriptor.declaration, c.trace, c.contexts))
 }
 
 /**
@@ -176,7 +177,7 @@ inline operator fun <K, D> ValueSinkPoint<TypeDescriptor.Object<D>, K>.invoke(
     }
     val newC = BuilderContext(c.trace, c.contexts, childConsumer, descriptor.declaration)
     newC.block()
-    c.sink.supply(this, MappingNode(children, descriptor.declaration.toType(), c.trace, c.contexts))
+    c.sink.supply(this, MappingNode(children, descriptor.declaration, c.trace, c.contexts))
 }
 
 /**
@@ -271,7 +272,7 @@ inline operator fun <K, P : TypeDescriptor> ValueSinkPoint<TypeDescriptor.List<P
     )
     newC.block()
     if (!skipIfEmpty || children.isNotEmpty()) {
-        c.sink.supply(this, ListNode(children = children, listType, c.trace, c.contexts))
+        c.sink.supply(this, ListNode(children = children, c.trace, c.contexts))
     }
 }
 
@@ -308,7 +309,7 @@ inline operator fun <K, P : TypeDescriptor> ValueSinkPoint<TypeDescriptor.Map<P>
     val newC = BuilderContext(c.trace, c.contexts, childSink, MapBuilder(descriptor.element, mapType.valueType))
     newC.block()
     if (!skipIfEmpty || children.isNotEmpty()) {
-        c.sink.supply(this, MappingNode(children = children, mapType, c.trace, c.contexts))
+        c.sink.supply(this, MappingNode(children = children, declaration = null, c.trace, c.contexts))
     }
 }
 

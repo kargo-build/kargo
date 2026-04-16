@@ -5,6 +5,8 @@
 
 product: jvm/lib
 
+description: Dependency resolution engine for Maven dependencies with Kotlin Multiplatform support.
+
 apply:
   - ../common.module-template.yaml
   - ../used-in-idea.module-template.yaml
@@ -24,13 +26,12 @@ dependencies:
 test-dependencies:
   - ../test-base
   - $libs.opentelemetry.sdkTesting
-  - $libs.tinylog.api
-  - $libs.tinylog.impl
-  - $libs.tinylog.slf4j
-  - $libs.tinylog.jul
   - $libs.system.stubs.jupiter
 
 settings:
+  jvm:
+    # Used in IDEA (max 21) and Kotlin Notebook (max 11), so we take the lowest version 11
+    release: 11
   kotlin:
     serialization:
       format: json

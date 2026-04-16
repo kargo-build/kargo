@@ -1,0 +1,4 @@
+product:
+  type: jvm/amper-plugin
+pluginInfo:
+  id: my-plugin

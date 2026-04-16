@@ -15,7 +15,6 @@ import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.aomBuilder.readProjectModel
 import org.jetbrains.amper.frontend.project.AmperProjectContext
-import org.jetbrains.amper.frontend.project.StandaloneAmperProjectContext
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.plugins.prepareMavenPlugins
 import org.jetbrains.amper.plugins.preparePlugins
@@ -35,13 +34,16 @@ internal suspend fun findProjectContext(explicitProjectDir: Path?, explicitBuild
     spanBuilder("Find Amper project context").use {
         with(CliProblemReporter) {
             val context = if (explicitProjectDir != null) {
-                StandaloneAmperProjectContext.create(explicitProjectDir.absolute(), explicitBuildDir?.absolute())
+                AmperProjectContext.create(
+                    rootDir = explicitProjectDir.absolute(),
+                    buildDir = explicitBuildDir?.absolute(),
+                )
                     ?: userReadableError(
                         "The given path '$explicitProjectDir' is not a valid Amper project root directory. " +
                                 "Make sure you have a project file or a module file at the root of your Amper project."
                     )
             } else {
-                StandaloneAmperProjectContext.find(
+                AmperProjectContext.find(
                     start = Path(System.getProperty("user.dir")),
                     buildDir = explicitBuildDir?.absolute(),
                 )

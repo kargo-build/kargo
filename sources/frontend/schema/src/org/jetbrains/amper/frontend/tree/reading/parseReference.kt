@@ -27,7 +27,10 @@ internal fun parseReferenceOrInterpolation(
             val reference by match
             val closingBrace by match
             if (closingBrace == null) {
-                reportParsing(scalar, TreeDiagnosticId.ReferenceMissesClosingBrace, "validation.reference.missing.closing.brace")
+                reportParsing(
+                    scalar, TreeDiagnosticId.ReferenceMissesClosingBrace,
+                    "validation.reference.missing.closing.brace",
+                )
                 return null
             }
             val referenceText = reference
@@ -52,16 +55,19 @@ internal fun parseReferenceOrInterpolation(
     require(parts.isNotEmpty())
 
     return if (parts.size > 1) {
-        if (type !is SchemaType.StringInterpolatableType) {
+        if (type !is SchemaType.StringInterpolatableType || (type is SchemaType.StringType && type.semantics != null)) {
             // TODO: more granular range reporting
-            reportParsing(scalar, TreeDiagnosticId.TypeDoesNotSupportInterpolation, "validation.types.unsupported.interpolation", type.render(includeSyntax = false))
+            reportParsing(
+                scalar, TreeDiagnosticId.TypeDoesNotSupportInterpolation,
+                "validation.types.unsupported.interpolation", type.render(includeSyntax = false),
+            )
             return null
         }
         StringInterpolationNode(
             parts = parts,
             trace = scalar.asTrace(),
             contexts = contexts,
-            type = type,
+            expectedType = type,
         )
     } else {
         val reference = checkNotNull(parts.first() as StringInterpolationNode.Part.Reference) {
@@ -71,7 +77,7 @@ internal fun parseReferenceOrInterpolation(
             referencedPath = reference.referencePath,
             trace = scalar.asTrace(),
             contexts = contexts,
-            type = type,
+            expectedType = type,
         )
     }
 }

@@ -1,0 +1,5 @@
+product: jvm/lib
+
+apply:
+  - ./template-conflicts/first.yaml
+  - ./template-conflicts/second.yaml

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.compilation
@@ -8,6 +8,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.Serializable
+import org.jetbrains.amper.dependency.resolution.Repository
 import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.kotlin.CompilerPluginConfig
@@ -94,12 +95,13 @@ internal data class ResolvedCompilerPlugin(
  */
 internal suspend fun KotlinArtifactsDownloader.downloadCompilerPlugins(
     plugins: List<SCompilerPluginConfig>,
+    repositories: List<Repository>,
 ): List<ResolvedCompilerPlugin> = coroutineScope {
     plugins.map {
         async {
             ResolvedCompilerPlugin(
                 id = it.id,
-                classpath = downloadKotlinCompilerPlugin(it),
+                classpath = downloadKotlinCompilerPlugin(pluginConfig = it, repositories = repositories),
                 options = it.options
             )
         }

@@ -262,7 +262,7 @@ fun getDependencyFile(
 data class DependencyFilePlain private constructor(
     override val isAutoAddedDocumentation: Boolean = false,
     override val isDocumentation: Boolean = false,
-    override val extension: String = ".jar",
+    override val extension: String = "jar",
     private val pathAsString: String? = null,
     override val kmpSourceSet: String? = null,
     override val kmpPlatforms: Set<ResolutionPlatform>? = null
@@ -1481,7 +1481,12 @@ class SnapshotDependencyFileImpl(
     }
 }
 
-internal fun getNameWithoutExtension(node: MavenDependency): String = "${node.module}-${node.version.orUnspecified()}"
+internal fun getNameWithoutExtension(node: MavenDependency, withClassifier: Boolean = true): String {
+    val moduleName = node.module
+    val versionSuffix = "-${node.version.orUnspecified()}"
+    val classifierSuffix = node.classifier?.takeIf { withClassifier }?.let { "-$it" } ?: ""
+    return "$moduleName$versionSuffix$classifierSuffix"
+}
 
 private fun fileFromVariant(dependency: MavenDependencyImpl, name: String) =
     dependency.variants.flatMap { it.files }.singleOrNull { it.name == name }

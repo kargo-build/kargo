@@ -1,0 +1,22 @@
+product:
+  type: lib
+  platforms:
+    - jvm
+    - android
+    - iosArm64
+
+aliases:
+  jvmAndAndroid: [ jvm, android ]
+  jvmAndIos: [ jvm, iosArm64 ]
+
+settings@jvmAndAndroid:
+  kotlin:
+    progressiveMode: true
+
+settings@jvmAndIos:
+  kotlin:
+    progressiveMode: false
+
+settings@jvm:
+  kotlin:
+    progressiveMode: true

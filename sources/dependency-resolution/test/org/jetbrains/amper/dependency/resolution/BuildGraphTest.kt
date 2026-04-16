@@ -5,6 +5,7 @@
 package org.jetbrains.amper.dependency.resolution
 
 import org.intellij.lang.annotations.Language
+import org.jetbrains.amper.dependency.resolution.MavenRepository.Companion.MavenCentral
 import org.jetbrains.amper.dependency.resolution.diagnostics.BomDeclaredAsRegularDependency
 import org.jetbrains.amper.dependency.resolution.diagnostics.DependencyResolutionDiagnostics
 import org.jetbrains.amper.dependency.resolution.diagnostics.PlatformsAreNotSupported
@@ -12,6 +13,7 @@ import org.jetbrains.amper.dependency.resolution.diagnostics.PomResolvedWithMeta
 import org.jetbrains.amper.dependency.resolution.diagnostics.RegularDependencyDeclaredAsBom
 import org.jetbrains.amper.dependency.resolution.diagnostics.Severity
 import org.jetbrains.amper.dependency.resolution.diagnostics.UnableToDownloadChecksums
+import org.jetbrains.amper.test.dr.toMavenNode
 import org.junit.jupiter.api.TestInfo
 import java.nio.file.Path
 import kotlin.io.path.div
@@ -265,8 +267,8 @@ class BuildGraphTest : BaseDRTest() {
      * (where the parameter `transitive` of the API method [Resolver.buildGraph] is set to `false`).
      */
     @Test
-    fun `non transitive resolution basic BOM support`(testInfo: TestInfo) = runDrTest {
-        val root = context().use { context ->
+    fun `non transitive resolution basic BOM support`() = runDrTest {
+        val root = context().let { context ->
             val root = listOf(
                 "bom:org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.6.4",
                 "org.jetbrains.kotlinx:kotlinx-coroutines-core",
@@ -378,7 +380,7 @@ class BuildGraphTest : BaseDRTest() {
      * of transitive dependencies are correctly processed (ignored).
      *
      * Particularly, pom.xml of 'myfaces:myfaces-parent:1.1.0' declares dependency
-     * on 'commons-fileupload:commons-fileupload:1.0' with leading space in artifactId:
+     * on 'commons-fileupload:commons-fileupload:1.0' with a leading space in artifactId:
      *   <artifactId> commons-fileupload</artifactId>
      */
     @Test
@@ -395,7 +397,7 @@ class BuildGraphTest : BaseDRTest() {
      * which is unexpected by library authors.
      * Maven parser relaxes restriction here on the consumer side and allows such tag names.
      * So does Amper. Although it is not a generic behavior, but a case-by-case support (rare/unique examples).
-     * See [pomResolver.sanitizePom] for more details.
+     * See [org.jetbrains.amper.dependency.resolution.maven.sanitizePom] for more details.
      *
      * ```
      * <compilerArguments>
@@ -526,7 +528,35 @@ class BuildGraphTest : BaseDRTest() {
             scope = ResolutionScope.RUNTIME,
             verifyMessages = true
         )
-        assertFiles(testInfo, root, true)
+        downloadAndAssertFiles(testInfo, root, withSources = true, checkAutoAddedDocumentation = false)
+    }
+
+    /**
+     * This test checks that a classifier is taken into account and the appropriate artifact is resolved
+     */
+    @Test
+    fun `org_bytedeco opencv 4_5_5-1_5_7 windows-x86_64`(testInfo: TestInfo) = runDrTest {
+        val root = doTestByFile(
+            testInfo = testInfo,
+            dependency = listOf("org.bytedeco:opencv:4.5.5-1.5.7:windows-x86_64"),
+            scope = ResolutionScope.RUNTIME,
+            verifyMessages = true
+        )
+        downloadAndAssertFiles(testInfo, root)
+    }
+
+    /**
+     * This test checks that a dependency classifier specified in Gradle metadata is taken into account
+     * and the appropriate artifact is added to the graph
+     */
+    @Test
+    fun `bayern_steinbrecher JavaUtility 0_10`(testInfo: TestInfo) = runDrTest {
+        val root = doTestByFile(
+            testInfo = testInfo,
+            scope = ResolutionScope.RUNTIME,
+            verifyMessages = true
+        )
+        downloadAndAssertFiles(testInfo, root)
     }
 
     /**
@@ -804,7 +834,10 @@ class BuildGraphTest : BaseDRTest() {
             """.trimIndent()
         )
         downloadAndAssertFiles(
-            listOf("listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar"),
+            listOf(
+                "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava-sources.jar",
+                "listenablefuture-9999.0-empty-to-avoid-conflict-with-guava.jar",
+            ),
             root,
             withSources = true,
             checkAutoAddedDocumentation = false
@@ -1126,6 +1159,42 @@ class BuildGraphTest : BaseDRTest() {
         doTest(root, verifyMessages = true)
     }
 
+    /**
+     * This test checks that if Gradle metadata of a library declares dependency on Maven BOM (via 'platform' category),
+     * the DR doesn't expect BOM jar to exist
+     * (it doesn't attach a BOM file to the [MavenDependencyNode] and doesn't try to download it).
+     *
+     * Before the fix of https://youtrack.jetbrains.com/issue/AMPER-5196,
+     * the file asm-bom.jar was added as an artifact of the related graph node,
+     * but it is absent in the remote repository (as expected since it is BOM) which leaded to the diagnostic ERROR.
+     *
+     * The issue was caused by the fact that pom.xml of published asm-bom lacks packagingType, and
+     * thus is treated as jar by default.
+     * This is a publiation mistake (sine BOM should be published with pachagingType=pom).
+     * However, DR should not add a jar to the node corresponding to a BOM anyway
+     * even if such a jar is presented in the remote repository (which would have been a publication mistake as well).
+     */
+    @Test
+    fun `check gradle metadata dependency on maven bom published without packaging type`(testInfo: TestInfo) = runSlowDrTest {
+        val root = doTestByFile(
+            testInfo,
+            repositories = listOf(
+                MavenCentral,
+                MavenRepository("https://www.jetbrains.com/intellij-repository/releases"),
+                MavenRepository("https://cache-redirector.jetbrains.com/intellij-dependencies"),
+                MavenRepository("https://download.jetbrains.com/teamcity-repository"),
+                MavenRepository("https://packages.jetbrains.team/maven/p/dpgpv/maven"),
+                MavenRepository("https://packages.jetbrains.team/maven/p/grazi/grazie-platform-public"),
+            ),
+            scope = ResolutionScope.RUNTIME,
+            dependency = listOf(
+                "com.github.ben-manes.caffeine:caffeine:3.1.2",
+            ),
+        )
+
+        downloadAndAssertFiles(testInfo, root)
+    }
+
     @Test
     fun `com_google_guava guava 33_0_0-android`(testInfo: TestInfo) = runDrTest {
         val root = doTest(
@@ -1264,7 +1333,7 @@ class BuildGraphTest : BaseDRTest() {
      * SNAPSHOT libraries are published to https://www.jetbrains.com/intellij-repository/snapshots
      */
     @Test
-    fun `com_jetbrains_intellij_platform core-impl 253_29346_50-EAP-SNAPSHOT`(testInfo: TestInfo) = runDrTest {
+    fun `com_jetbrains_intellij_platform core-impl 261_22158_182-EAP-SNAPSHOT`(testInfo: TestInfo) = runDrTest {
         doTestByFile(
             testInfo,
             repositories = listOf(REDIRECTOR_MAVEN_CENTRAL, REDIRECTOR_INTELLIJ_DEPS, REDIRECTOR_INTELLIJ_SNAPSHOTS)
@@ -1665,7 +1734,7 @@ class BuildGraphTest : BaseDRTest() {
      */
     @Test
     fun `kotlin test with junit`() = runDrTest {
-        context().use { context ->
+        context().also { context ->
             val root = listOf(
                 "org.jetbrains.kotlin:kotlin-stdlib:1.9.20",
                 "org.jetbrains.kotlin:kotlin-test-junit:1.9.20",
@@ -1887,7 +1956,7 @@ class BuildGraphTest : BaseDRTest() {
 
     @Test
     fun `kotlin test with junit5`() = runDrTest {
-        context().use { context ->
+        context().also { context ->
             val root = listOf(
                 "org.jetbrains.kotlin:kotlin-test-junit5:1.9.20",
                 "org.jetbrains.kotlin:kotlin-stdlib:1.9.20",
@@ -1920,7 +1989,7 @@ class BuildGraphTest : BaseDRTest() {
 
     @Test
     fun `datetime and kotlin test with junit`() = runDrTest {
-        context().use { context ->
+        context().also { context ->
             val root = listOf(
                 "org.jetbrains.kotlin:kotlin-stdlib:1.9.20",
                 "org.jetbrains.kotlinx:kotlinx-datetime:0.4.0",
@@ -1956,7 +2025,7 @@ class BuildGraphTest : BaseDRTest() {
 
     @Test
     fun `jackson and guava`() = runDrTest {
-        context().use { context ->
+        context().also { context ->
             val root = listOf(
                 "org.antlr:antlr4-runtime:4.7.1",
                 "org.abego.treelayout:org.abego.treelayout.core:1.0.3",
@@ -2307,7 +2376,8 @@ class BuildGraphTest : BaseDRTest() {
                         org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.6.1
                         org.jetbrains:annotations:13.0
                     """.trimIndent(),
-                    it.joinToString("\n")
+                    it.joinToString("\n"),
+                    "Unexpected list of MavenDependencyNodes"
                 )
             }
     }

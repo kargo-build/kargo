@@ -74,6 +74,7 @@ class KotlinNativeCompiler(
 
                 withKotlinCompilerArgFile(args, tempRoot) { argFile ->
                     val result = processRunner.runNativeCommand("konanc", listOf("@$argFile"), ArgsMode.ArgFile(tempRoot))
+
                     // TODO this is redundant with the java span of the external process run. Ideally, we
                     //  should extract higher-level information from the raw output and use that in this span.
                     span.setProcessResultAttributes(result)
@@ -139,6 +140,7 @@ class KotlinNativeCompiler(
             // JVM args partially copied from <kotlinNativeHome>/bin/run_konan
             jvmArgs = listOf(
                 "-ea",
+                "-Xmx3G",
                 "-XX:TieredStopAtLevel=1",
                 "-Dfile.encoding=UTF-8",
                 "-Dkonan.home=$kotlinNativeHome",

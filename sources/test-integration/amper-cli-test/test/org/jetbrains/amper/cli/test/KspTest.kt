@@ -112,6 +112,26 @@ class KspTest: AmperCliTestBase() {
             "src/ksp/kotlin/com/sample/myprocessor/gen/MyNativeClassGenerated.kt",
         )
 
+        buildResult.generatedFilesDir(module = "consumer", fragment = "js").assertContainsRelativeFiles(
+            "resources/ksp/com/sample/myprocessor/gen/annotated-classes.txt",
+            "src/ksp/kotlin/com/sample/myprocessor/gen/MyCommonClassGenerated.kt",
+            "src/ksp/kotlin/com/sample/myprocessor/gen/MyJsClassGenerated.kt",
+            "src/ksp/kotlin/com/sample/myprocessor/gen/MyWebClassGenerated.kt",
+        )
+
+        buildResult.generatedFilesDir(module = "consumer", fragment = "wasmJs").assertContainsRelativeFiles(
+            "resources/ksp/com/sample/myprocessor/gen/annotated-classes.txt",
+            "src/ksp/kotlin/com/sample/myprocessor/gen/MyCommonClassGenerated.kt",
+            "src/ksp/kotlin/com/sample/myprocessor/gen/MyWasmJsClassGenerated.kt",
+            "src/ksp/kotlin/com/sample/myprocessor/gen/MyWebClassGenerated.kt",
+        )
+
+        buildResult.generatedFilesDir(module = "consumer", fragment = "wasmWasi").assertContainsRelativeFiles(
+            "resources/ksp/com/sample/myprocessor/gen/annotated-classes.txt",
+            "src/ksp/kotlin/com/sample/myprocessor/gen/MyCommonClassGenerated.kt",
+            "src/ksp/kotlin/com/sample/myprocessor/gen/MyWasmWasiClassGenerated.kt",
+        )
+
         if (OsFamily.current.isMac) {
             buildResult.generatedFilesDir(module = "consumer", fragment = "iosArm64").assertContainsRelativeFiles(
                 "resources/ksp/com/sample/myprocessor/gen/annotated-classes.txt",
@@ -142,6 +162,20 @@ class KspTest: AmperCliTestBase() {
         generatedResourceFor(fragment = "android").assertContentEquals("""
             com.sample.ksp.localprocessor.consumer.MyCommonClass
             com.sample.ksp.localprocessor.consumer.MyAndroidClass
+        """.trimIndent())
+        generatedResourceFor(fragment = "js").assertContentEquals("""
+            com.sample.ksp.localprocessor.consumer.MyWebClass
+            com.sample.ksp.localprocessor.consumer.MyJsClass
+            com.sample.ksp.localprocessor.consumer.MyCommonClass
+        """.trimIndent())
+        generatedResourceFor(fragment = "wasmJs").assertContentEquals("""
+            com.sample.ksp.localprocessor.consumer.MyWebClass
+            com.sample.ksp.localprocessor.consumer.MyWasmJsClass
+            com.sample.ksp.localprocessor.consumer.MyCommonClass
+        """.trimIndent())
+        generatedResourceFor(fragment = "wasmWasi").assertContentEquals("""
+            com.sample.ksp.localprocessor.consumer.MyWasmWasiClass
+            com.sample.ksp.localprocessor.consumer.MyCommonClass
         """.trimIndent())
         // mingw (and not mingwX64) because of how we collapse fragments right now
         generatedResourceFor(fragment = "mingwX64").assertContentEquals("""

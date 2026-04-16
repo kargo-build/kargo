@@ -1,5 +1,7 @@
 product: jvm/lib
 
+description: Public API for extending Amper with custom plugins and tasks.
+
 apply:
   - ../../common.module-template.yaml
   - ../../detekt.module-template.yaml
@@ -16,7 +18,3 @@ settings:
     # Currently, we add the amper-extensibility-api as a regular dependency downloaded from maven,
     # so we have to publish it.
     enabled: true
-
-tasks:
-  testJvm:
-    dependsOn: [ apiCheck@binary-compatibility-validator ]

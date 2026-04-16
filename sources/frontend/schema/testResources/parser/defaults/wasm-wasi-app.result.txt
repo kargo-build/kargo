@@ -1,7 +1,7 @@
 Fragments:
   common
     External dependencies:
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.20, trace=DefaultTrace, compile=true, runtime=true, exported=false)
     Src folders:
       src
     Fragment dependencies:
@@ -37,7 +37,7 @@ Fragments:
         enabled: <default> false
         experimental: <default> {
           hotReload: <default> {
-            version: <default> 1.0.0-rc01
+            version: <default> 1.0.0
           }
         }
         resources: <default> {
@@ -45,7 +45,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.10.1
+        version: <default> 1.10.3
       }
       ios: <default> {
         framework: <default> {
@@ -141,13 +141,13 @@ Fragments:
         }
         suppressWarnings: <default> false
         verbose: <default> false
-        version: <default> 2.3.10
+        version: <default> 2.3.20
       }
       kover: <default> null
       ktor: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 3.4.0
+        version: <default> 3.4.1
       }
       lombok: <default> {
         enabled: <default> false
@@ -158,20 +158,34 @@ Fragments:
         enabled: <default> false
         group: <default> null
         name: <default> null
+        pom: <default> {
+          description: <default> null
+          developers: <default> [
+          ]
+          licenses: <default> [
+          ]
+          name: <default> null
+          scm: <default> {
+            connection: <default> null
+            developerConnection: <default> null
+            url: <default> null
+          }
+          url: <default> null
+        }
         version: <default> null
       }
       springBoot: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 4.0.2
+        version: <default> 4.0.5
       }
     }
 
   commonTest
     External dependencies:
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test-annotations-common:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.20, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test-annotations-common:2.3.20, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test:2.3.20, trace=DefaultTrace, compile=true, runtime=true, exported=false)
     Src folders:
       test
     Fragment dependencies:
@@ -208,7 +222,7 @@ Fragments:
         enabled: <default> false
         experimental: <default> {
           hotReload: <default> {
-            version: <default> 1.0.0-rc01
+            version: <default> 1.0.0
           }
         }
         resources: <default> {
@@ -216,7 +230,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.10.1
+        version: <default> 1.10.3
       }
       ios: <default> {
         framework: <default> {
@@ -312,13 +326,13 @@ Fragments:
         }
         suppressWarnings: <default> false
         verbose: <default> false
-        version: <default> 2.3.10
+        version: <default> 2.3.20
       }
       kover: <default> null
       ktor: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 3.4.0
+        version: <default> 3.4.1
       }
       lombok: <default> {
         enabled: <default> false
@@ -329,18 +343,32 @@ Fragments:
         enabled: <default> false
         group: <default> null
         name: <default> null
+        pom: <default> {
+          description: <default> null
+          developers: <default> [
+          ]
+          licenses: <default> [
+          ]
+          name: <default> null
+          scm: <default> {
+            connection: <default> null
+            developerConnection: <default> null
+            url: <default> null
+          }
+          url: <default> null
+        }
         version: <default> null
       }
       springBoot: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 4.0.2
+        version: <default> 4.0.5
       }
     }
 
   wasmWasi
     External dependencies:
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.20, trace=DefaultTrace, compile=true, runtime=true, exported=false)
     Src folders:
       src@wasmWasi
     Fragment dependencies:
@@ -377,7 +405,7 @@ Fragments:
         enabled: <default> false
         experimental: <default> {
           hotReload: <default> {
-            version: <default> 1.0.0-rc01
+            version: <default> 1.0.0
           }
         }
         resources: <default> {
@@ -385,7 +413,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.10.1
+        version: <default> 1.10.3
       }
       ios: <default> {
         framework: <default> {
@@ -481,13 +509,13 @@ Fragments:
         }
         suppressWarnings: <default> false
         verbose: <default> false
-        version: <default> 2.3.10
+        version: <default> 2.3.20
       }
       kover: <default> null
       ktor: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 3.4.0
+        version: <default> 3.4.1
       }
       lombok: <default> {
         enabled: <default> false
@@ -498,20 +526,34 @@ Fragments:
         enabled: <default> false
         group: <default> null
         name: <default> null
+        pom: <default> {
+          description: <default> null
+          developers: <default> [
+          ]
+          licenses: <default> [
+          ]
+          name: <default> null
+          scm: <default> {
+            connection: <default> null
+            developerConnection: <default> null
+            url: <default> null
+          }
+          url: <default> null
+        }
         version: <default> null
       }
       springBoot: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 4.0.2
+        version: <default> 4.0.5
       }
     }
 
   wasmWasiTest
     External dependencies:
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test-annotations-common:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
-      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test:2.3.10, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-stdlib:2.3.20, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test-annotations-common:2.3.20, trace=DefaultTrace, compile=true, runtime=true, exported=false)
+      MavenDependency(coordinates=org.jetbrains.kotlin:kotlin-test:2.3.20, trace=DefaultTrace, compile=true, runtime=true, exported=false)
     Src folders:
       test@wasmWasi
     Fragment dependencies:
@@ -549,7 +591,7 @@ Fragments:
         enabled: <default> false
         experimental: <default> {
           hotReload: <default> {
-            version: <default> 1.0.0-rc01
+            version: <default> 1.0.0
           }
         }
         resources: <default> {
@@ -557,7 +599,7 @@ Fragments:
           exposedAccessors: <default> false
           packageName: <default>
         }
-        version: <default> 1.10.1
+        version: <default> 1.10.3
       }
       ios: <default> {
         framework: <default> {
@@ -653,13 +695,13 @@ Fragments:
         }
         suppressWarnings: <default> false
         verbose: <default> false
-        version: <default> 2.3.10
+        version: <default> 2.3.20
       }
       kover: <default> null
       ktor: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 3.4.0
+        version: <default> 3.4.1
       }
       lombok: <default> {
         enabled: <default> false
@@ -670,12 +712,26 @@ Fragments:
         enabled: <default> false
         group: <default> null
         name: <default> null
+        pom: <default> {
+          description: <default> null
+          developers: <default> [
+          ]
+          licenses: <default> [
+          ]
+          name: <default> null
+          scm: <default> {
+            connection: <default> null
+            developerConnection: <default> null
+            url: <default> null
+          }
+          url: <default> null
+        }
         version: <default> null
       }
       springBoot: <default> {
         applyBom: <default> true
         enabled: <default> false
-        version: <default> 4.0.2
+        version: <default> 4.0.5
       }
     }
 

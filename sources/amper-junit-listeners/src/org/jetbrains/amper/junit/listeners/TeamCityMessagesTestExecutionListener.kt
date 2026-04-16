@@ -5,7 +5,6 @@
 package org.jetbrains.amper.junit.listeners
 
 import jetbrains.buildServer.messages.serviceMessages.MessageWithAttributes
-import jetbrains.buildServer.messages.serviceMessages.PublishArtifacts
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessage
 import jetbrains.buildServer.messages.serviceMessages.ServiceMessageTypes
 import jetbrains.buildServer.messages.serviceMessages.TestFailed
@@ -262,7 +261,12 @@ class TeamCityMessagesTestExecutionListener(
 
     override fun fileEntryPublished(testIdentifier: TestIdentifier, file: FileEntry) {
         if (shouldIgnore(testIdentifier)) return
-        emit(PublishArtifacts(file.path.pathString).withFlowId(testIdentifier).withTimestamp(file.timestamp))
+        val testMetadata = TestMetadata(
+            testName = testIdentifier.teamCityName,
+            name = "attached-file-${file.timestamp}-${file.path.pathString.hashCode()}",
+            value = file.path.pathString,
+        )
+        emit(testMetadata.withFlowId(testIdentifier).withTimestamp(file.timestamp))
     }
 
     private fun emit(serviceMessage: ServiceMessage) {

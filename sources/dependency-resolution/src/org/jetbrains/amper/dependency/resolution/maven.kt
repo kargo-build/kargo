@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.dependency.resolution
@@ -10,9 +10,9 @@ import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Transient
-import org.jetbrains.amper.dependency.resolution.LocalM2RepositoryFinder.findPath
 import org.jetbrains.amper.dependency.resolution.attributes.Attribute
 import org.jetbrains.amper.dependency.resolution.attributes.AttributeValue
 import org.jetbrains.amper.dependency.resolution.attributes.Category
@@ -95,13 +95,12 @@ interface MavenDependencyNode : DependencyNode {
     val overriddenBy: Set<DependencyNode>
 
     override val key: Key<MavenDependency>
-        get() = Key<MavenDependency>("$group:$module")
 
     override val graphEntryName: String
         get() = if (dependency.version == originalVersion) {
             dependency.toString()
         } else {
-            "$group:$module:${originalVersion.orUnspecified()} -> ${dependency.version}"
+            getOriginalMavenCoordinates().toPrettyString(overridingVersion = dependency.version)
         }
 
     fun getOriginalMavenCoordinates(): MavenCoordinates = dependency.coordinates.copy(version = originalVersion)
@@ -111,27 +110,34 @@ interface MavenDependencyNode : DependencyNode {
     fun getParentKmpLibraryCoordinates(): MavenCoordinates?
 }
 
+internal fun MavenDependencyNode.getKey(): Key<MavenDependency> = Key<MavenDependency>("$group:$module")
+
 val MavenDependencyNode.group
     get() = dependency.group
 val MavenDependencyNode.module
     get() = dependency.module
+val MavenDependencyNode.classifier
+    get() = dependency.classifier
 
 @Serializable
+@SerialName("MDN")
 internal class SerializableMavenDependencyNode internal constructor(
     override val originalVersion: String?,
-    override val versionFromBom: String?,
-    override val isBom: Boolean,
-    override val messages: List<Message>,
+    override val versionFromBom: String? = null,
+    override val isBom: Boolean = false,
+    override val messages: List<Message> = emptyList(),
     private val dependencyRef: MavenDependencyReference,
-    override val parentsRefs: MutableSet<DependencyNodeReference> = mutableSetOf(),
     override val childrenRefs: MutableList<DependencyNodeReference> = mutableListOf(),
     internal val overriddenByRefs: MutableSet<DependencyNodeReference> = mutableSetOf(),
-    private val coordinatesForPublishing: MavenCoordinates,
-    private val parentKmpLibraryCoordinates: MavenCoordinates?,
+    private val coordinatesForPublishing: MavenCoordinates? = null,
+    private val parentKmpLibraryCoordinates: MavenCoordinates? = null,
     @Transient
     private val graphContext: DependencyGraphContext = currentGraphContext()
 ) : MavenDependencyNode, SerializableDependencyNodeBase(graphContext) {
-    override fun getMavenCoordinatesForPublishing(): MavenCoordinates = coordinatesForPublishing
+
+    override val key by lazy { getKey() }
+
+    override fun getMavenCoordinatesForPublishing(): MavenCoordinates = coordinatesForPublishing ?: getOriginalMavenCoordinates()
     override fun getParentKmpLibraryCoordinates(): MavenCoordinates? = parentKmpLibraryCoordinates
 
     override val overriddenBy: Set<DependencyNode> by lazy { overriddenByRefs.map { it.toNodePlain(graphContext) }.toSet() }
@@ -157,9 +163,7 @@ class MavenDependencyNodeWithContext internal constructor(
     parentNodes: Set<DependencyNodeWithContext> = emptySet(),
 ) : MavenDependencyNode, DependencyNodeWithContext {
 
-    override val parents: Set<DependencyNode> get() = context.nodeParents
-
-    constructor(
+    internal constructor(
         templateContext: Context,
         coordinates: MavenCoordinates,
         isBom: Boolean,
@@ -170,17 +174,34 @@ class MavenDependencyNodeWithContext internal constructor(
         parentNodes,
     )
 
+    override val context: Context = templateContext.copyWithNewNodeCache(parentNodes)
+
+    override val parents: Set<DependencyNode> get() = context.nodeParents
+
     @Volatile
     override var dependency: MavenDependencyImpl = dependency
-        set(value) {
+        private set(value) {
             assert(group == value.group) { "Groups don't match. Expected: $group, actual: ${value.group}" }
             assert(module == value.module) { "Modules don't match. Expected: $module, actual: ${value.module}" }
             field = value
         }
 
+    /**
+     * This method is intended to be used when the dependency version is updated
+     * (due to conflict resolution or due to unspecified version substitution).
+     * It updates dependency reference and recalculates children immediately
+     * causes actualizing parents of old children no longer referenced from this node after update.
+     */
+    internal fun updateDependency(dependency: MavenDependencyImpl) {
+        this.dependency = dependency
+        children // causes actualizing parents of old children no longer referenced from this node
+    }
+
     override val originalVersion: String? = dependency.version
 
     override val isBom: Boolean = dependency.isBom
+
+    override val key = getKey()
 
     /**
      * This version taken from imported BOM is set to this field by dependency resolution (on the build graph stage)
@@ -195,7 +216,6 @@ class MavenDependencyNodeWithContext internal constructor(
     override var overriddenBy: Set<DependencyNode> = emptySet()
         internal set
 
-    override val context: Context = templateContext.copyWithNewNodeCache(parentNodes)
     override val children: List<DependencyNodeWithContext> by PropertyWithDependencyGeneric(
         dependencyProviders = listOf(
             { thisRef: MavenDependencyNodeWithContext -> thisRef.dependency.children },
@@ -204,12 +224,13 @@ class MavenDependencyNodeWithContext internal constructor(
         valueProvider = { dependencies ->
             val children = dependencies[0] as List<*>
             val dependencyConstraints = dependencies[1] as List<*>
-            children.map { it as MavenDependencyImpl }.mapNotNull {
+            val parentsClosure = this.withTransitiveParents()
+            children.map { it as MavenDependencyImpl }.mapNotNull { mavenDependency ->
                 context
-                    .getOrCreateNode(it, this)
+                    .getOrCreateNode(mavenDependency, this)
                     // skip children that form cyclic dependencies
                     .let { child ->
-                        child.takeIf { !child.isDescendantOf(child) }
+                        child.takeIf { !child.formsCycle(parentsClosure) }
                             .also { if (it == null) child.context.nodeParents.remove(this) }
                     }
             } + dependencyConstraints.map {
@@ -240,7 +261,7 @@ class MavenDependencyNodeWithContext internal constructor(
     override fun toString(): String = if (dependency.version == originalVersion) {
         dependency.toString()
     } else {
-        "$group:$module:${originalVersion.orUnspecified()} -> ${dependency.version}"
+        getOriginalMavenCoordinates().toPrettyString(overridingVersion = dependency.version)
     }
 
     override val cacheEntryKey: CacheEntryKey
@@ -249,16 +270,36 @@ class MavenDependencyNodeWithContext internal constructor(
             isBom
         ))
 
-    private fun DependencyNode.isDescendantOf(
-        parent: DependencyNode,
+    /**
+     * Check that adding the node is safe, i.e., doesn't lead to a cycle in the dependency graph.
+     *
+     * This method uses the precalculated list of its parents (if it has the only parent) to optimize
+     * performance (avoiding traversing parents' hierarchy for each child).
+     * If it has more than one parent, then the actual parents closure is calculated
+     * (because the node might have been referenced from several places and not all of them are known
+     * at the moment precalculated parents closure is calculated.)
+     */
+    private fun DependencyNode.formsCycle(precalculatedParentsClosure: Set<DependencyNode>): Boolean {
+        return if (this.parents.size == 1) {
+            precalculatedParentsClosure.any { it.key == this.key }
+        } else {
+            this.transitiveParents().any { it.key == this.key }
+        }
+    }
+
+    private fun DependencyNode.withTransitiveParents(): Set<DependencyNode> {
+        return transitiveParents() + this
+    }
+
+    private fun DependencyNode.transitiveParents(
         visited: MutableSet<DependencyNode> = mutableSetOf(),
-    ): Boolean {
-        return (parents - visited)
-            .let {
-                visited.addAll(it)
-                it.any { it.key == parent.key }
-                        || it.any { it.isDescendantOf(parent, visited) }
+    ): Set<DependencyNode> {
+        parents.forEach {
+            if (visited.add(it)) {
+                it.transitiveParents(visited)
             }
+        }
+        return visited
     }
 
     /**
@@ -351,7 +392,7 @@ interface MavenDependencyConstraintNode : DependencyNode {
 
     val overriddenBy: Set<DependencyNode>
 
-    override val key: Key<*> get() = Key<MavenDependency>("$group:$module") // reusing the same key as MavenDependencyNode
+    override val key: Key<MavenDependency>
 
     override val graphEntryName: String
         get() = if (dependencyConstraint.version == version) {
@@ -361,40 +402,52 @@ interface MavenDependencyConstraintNode : DependencyNode {
         }
 }
 
-@Serializable
+internal fun MavenDependencyConstraintNode.getKey(): Key<MavenDependency> = Key<MavenDependency>("$group:$module") // reusing the same key as MavenDependencyNode
+
+@Serializable(with = MavenDependencyConstraintReference.Serializer::class)
 class MavenDependencyConstraintReference(
-    val index: Int
-) {
+    override val index: MavenDependencyConstraintIndex
+): GraphEntryReference {
     fun toNodePlain(graphContext: DependencyGraphContext): MavenDependencyConstraint =
         graphContext.getMavenDependencyConstraint(index)
+
+    internal companion object Serializer : ReferenceSerializer<MavenDependencyConstraintReference>() {
+        override fun Int.toReference() = MavenDependencyConstraintReference(this)
+        override fun getReferenceClass() = MavenDependencyConstraintReference::class
+    }
 }
 
 
 @Serializable
+@SerialName("MDCN")
 internal class SerializableMavenDependencyConstraintNode internal constructor(
     override val group: String,
     override val module: String,
     override val version: Version,
     private val dependencyConstraintRef: MavenDependencyConstraintReference,
-    override val parentsRefs: MutableSet<DependencyNodeReference> = mutableSetOf(),
     override val childrenRefs: List<DependencyNodeReference> = mutableListOf(),
     internal val overriddenByRefs: MutableSet<DependencyNodeReference> = mutableSetOf(),
-    override val messages: List<Message>,
+    override val messages: List<Message> = emptyList(),
     @Transient
     private val graphContext: DependencyGraphContext = currentGraphContext()
 ) : MavenDependencyConstraintNode, SerializableDependencyNodeBase(graphContext) {
 
     override val dependencyConstraint: MavenDependencyConstraint by lazy { dependencyConstraintRef.toNodePlain(graphContext) }
 
+    override val key: Key<MavenDependency> by lazy { getKey() } // reusing the same key as MavenDependencyConstraintNode
+
     override val overriddenBy: Set<DependencyNode> by lazy { overriddenByRefs.map { it.toNodePlain(graphContext) }.toSet() }
 
 }
 
-internal class MavenDependencyConstraintNodeWithContext internal constructor(
+class MavenDependencyConstraintNodeWithContext internal constructor(
     templateContext: Context,
     dependencyConstraint: MavenDependencyConstraintImpl,
     parentNodes: Set<DependencyNodeWithContext> = emptySet(),
 ):  MavenDependencyConstraintNode, DependencyNodeWithContext {
+
+    override val context: Context = templateContext.copyWithNewNodeCache(parentNodes)
+
     @Volatile
     override var dependencyConstraint: MavenDependencyConstraintImpl = dependencyConstraint
         set(value) {
@@ -407,10 +460,11 @@ internal class MavenDependencyConstraintNodeWithContext internal constructor(
     override val module: String = dependencyConstraint.module
     override val version: Version = dependencyConstraint.version
 
+    override val key: Key<MavenDependency> = getKey() // reusing the same key as MavenDependencyConstraintNode
+
     override var overriddenBy: Set<DependencyNode> = emptySet()
         internal set
 
-    override val context: Context = templateContext.copyWithNewNodeCache(parentNodes)
     override val children: List<DependencyNodeWithContext> = emptyList()
     override val messages: List<Message> = emptyList()
 
@@ -474,7 +528,9 @@ fun Context.createOrReuseDependency(
     isBom: Boolean = false
 ): MavenDependencyImpl =
     this.resolutionCache.computeIfAbsent(Key<MavenDependencyImpl>(
-        "${coordinates.groupId}:${coordinates.artifactId}:${coordinates.version.orUnspecified()}:$isBom"
+        "${coordinates.groupId}:${coordinates.artifactId}:${coordinates.version.orUnspecified()}" +
+                "${coordinates.classifier?.let{":$it"} ?: ""}:$isBom" +
+                "${settings.scope}:${settings.platforms.joinToString { it.pretty }}"
     )) {
         MavenDependencyImpl(this.settings, coordinates, isBom)
     }
@@ -484,7 +540,10 @@ internal fun Context.createOrReuseDependencyConstraint(
     module: String,
     version: Version
 ): MavenDependencyConstraintImpl =
-    this.resolutionCache.computeIfAbsent(Key<MavenDependencyConstraintImpl>("$group:$module:$version")) {
+    this.resolutionCache.computeIfAbsent(Key<MavenDependencyConstraintImpl>(
+        "$group:$module:$version" +
+                "${settings.scope}:${settings.platforms.joinToString { it.pretty }}"
+    )) {
         MavenDependencyConstraintImpl(group, module, version)
     }
 
@@ -514,6 +573,7 @@ data class MavenDependencyConstraintImpl(
 ) : MavenDependencyConstraint
 
 @Serializable
+@SerialName("MDC")
 data class MavenDependencyConstraintPlain(
     override val group: String,
     override val module: String,
@@ -559,12 +619,9 @@ interface MavenDependency {
                     messages,
                     files(true).map { DependencyFilePlain(it) },
                     pomPath?.absolutePathString(),
-                    // todo (AB) : ResolutionConfigPlain could be deduplicated with reference
-                    ResolutionConfigPlain(
-                        resolutionConfig.scope, resolutionConfig.platforms,
-                        // todo (AB) : List<Repositories> could be deduplicated
-                        resolutionConfig.repositories),
-                    state
+                    resolutionConfig.toSerializableReference(graphContext),
+                    state,
+                    graphContext
                 )
                 graphContext.registerMavenDependencyPlain(this, mavenDependencyPlain)
 
@@ -579,34 +636,46 @@ val MavenDependency.module
     get() = coordinates.artifactId
 val MavenDependency.version
     get() = coordinates.version
+val MavenDependency.classifier
+    get() = coordinates.classifier
 
 @Serializable
+@SerialName("MD")
 class MavenDependencyPlain internal constructor (
     override val coordinates: MavenCoordinates,
-    override val packaging: String?,
-    override val messages: List<Message>,
+    override val packaging: String? = null,
+    override val messages: List<Message> = emptyList(),
     val files: List<DependencyFilePlain>,
     private val pomPathAsString: String? = null,
-    override val resolutionConfig: ResolutionConfigPlain,
-    override val state: ResolutionState = ResolutionState.RESOLVED
+    private val resolutionConfigReference: ResolutionConfigReference,
+    override val state: ResolutionState = ResolutionState.RESOLVED,
+    @Transient
+    private val graphContext: DependencyGraphContext = currentGraphContext()
 ) : MavenDependency {
 
     @Transient
     override val pomPath: Path? = pomPathAsString?.let { Path(it) }
 
+    override val resolutionConfig by lazy { resolutionConfigReference.toNodePlain(graphContext) }
+
     override fun files(withSources: Boolean): List<DependencyFile> {
         return if (withSources) files else files.filterNot { it.isDocumentation }
     }
 
-    override fun toString() = "$group:$module:${version.orUnspecified()}"
+    override fun toString() = coordinates.toPrettyString()
 }
 
-@Serializable
+@Serializable(with = MavenDependencyReference.Serializer::class)
 class MavenDependencyReference(
-    private val index: MavenDependencyIndex
-) {
+    override val index: MavenDependencyIndex
+): GraphEntryReference {
     fun toNodePlain(graphContext: DependencyGraphContext): MavenDependency =
         graphContext.getMavenDependency(index)
+
+    internal companion object Serializer : ReferenceSerializer<MavenDependencyReference>() {
+        override fun Int.toReference() = MavenDependencyReference(this)
+        override fun getReferenceClass() = MavenDependencyReference::class
+    }
 }
 
 /**
@@ -639,11 +708,14 @@ class MavenDependencyImpl internal constructor(
         private set
 
     @Volatile
-    internal var variants: List<Variant> = listOf()
+    private var downloadState: DownloadState = DownloadState.INITIAL
+
+    @Volatile
+    internal var variants: List<Variant> = emptyList()
 
     @Volatile
 
-    internal var sourceSetsFiles: List<DependencyFileImpl> = listOf()
+    internal var sourceSetsFiles: List<DependencyFileImpl> = emptyList()
         private set
 
     @Volatile
@@ -651,11 +723,11 @@ class MavenDependencyImpl internal constructor(
         private set
 
     @Volatile
-    var children: List<MavenDependencyImpl> = listOf()
+    var children: List<MavenDependencyImpl> = emptyList()
         private set
 
     @Volatile
-    internal var dependencyConstraints: List<MavenDependencyConstraintImpl> = listOf()
+    internal var dependencyConstraints: List<MavenDependencyConstraintImpl> = emptyList()
         private set
 
     internal var metadataResolutionFailureMessage: Message? = null
@@ -673,9 +745,16 @@ class MavenDependencyImpl internal constructor(
 
     private val mutex = Mutex()
 
-    internal val moduleFile = getDependencyFile(this, getNameWithoutExtension(this), "module")
+    internal val moduleFile = getDependencyFile(
+        dependency = this,
+        nameWithoutExtension = getNameWithoutExtension(this, withClassifier = false),
+        extension = "module"
+    )
     private var moduleMetadata: Module? = null
-    val pom = getDependencyFile(this, getNameWithoutExtension(this), "pom")
+    val pom = getDependencyFile(dependency = this,
+        nameWithoutExtension = getNameWithoutExtension(this, withClassifier = false),
+        extension = "pom"
+    )
     private var pomText: String? = null
     override val pomPath: Path?
         get() = pom.path
@@ -720,7 +799,7 @@ class MavenDependencyImpl internal constructor(
                                 }
                             }
                         }
-                    packaging?.takeIf { it != "pom" }?.let { packagingTypeFromPom ->
+                    packaging?.takeIf { it != "pom" && !isBom }?.let { packagingTypeFromPom ->
                         val nameWithoutExtension = getNameWithoutExtension(dependency)
 
                         val extension = resolveArtifactExtension(packagingTypeFromPom)
@@ -749,7 +828,7 @@ class MavenDependencyImpl internal constructor(
             }
         }
 
-    override fun toString(): String = "$group:$module:${version.orUnspecified()}"
+    override fun toString(): String = coordinates.toPrettyString()
 
     suspend fun resolveChildren(
         context: Context,
@@ -839,6 +918,9 @@ class MavenDependencyImpl internal constructor(
             ResolutionLevel.LOCAL -> ResolutionState.UNSURE
             ResolutionLevel.NETWORK -> if (transitive) ResolutionState.RESOLVED else ResolutionState.RESOLVED_WITHOUT_CHILDREN
         }
+
+    private fun getTargetDownloadState(downloadSources: Boolean): DownloadState =
+        if (downloadSources) DownloadState.WITHOUT_SOURCES else DownloadState.COMPLETE
 
     private fun resetMetadataDiagnostics() {
         metadataResolutionFailureMessage = null
@@ -1151,6 +1233,7 @@ class MavenDependencyImpl internal constructor(
     fun getAutoAddedSourcesDependencyFile() =
         getDependencyFile(
             this,
+            // Sources are published once for all classifiers, this is why 'moduleFile'.'nameWithoutExtension' is taken
             "${this.moduleFile.nameWithoutExtension}-sources",
             "jar",
             isDocumentation = true,
@@ -1218,7 +1301,8 @@ class MavenDependencyImpl internal constructor(
         reportError: (reason: String) -> Unit = {},
     ): MavenCoordinates {
         val resolvedVersion = resolveVersion(reportError)
-        return mavenCoordinatesTrimmed(groupId = group, artifactId = module, version = resolvedVersion)
+        val classifier = thirdPartyCompatibility?.artifactSelector?.classifier
+        return mavenCoordinatesTrimmed(groupId = group, artifactId = module, version = resolvedVersion, classifier = classifier)
     }
 
     private fun Dependency.toMavenDependency(
@@ -1323,7 +1407,9 @@ class MavenDependencyImpl internal constructor(
     ): Module? {
         if (skipIsDownloadedCheck || moduleFile.isDownloadedOrDownload(level, context, diagnosticReporter)) {
             try {
-                return moduleFile.readText().parseMetadata()
+                return computeIfAbsentInResolutionCache(context, "parsedMetadata") {
+                    moduleFile.readText().parseMetadata()
+                }
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -1348,6 +1434,27 @@ class MavenDependencyImpl internal constructor(
             )
         }
         return null
+    }
+
+    private  inline fun <reified T: Any> Context.retrieveCachedEntry(key: String): T? = resolutionCache[Key<T>(key)]
+
+    internal suspend inline fun <reified T: Any> MavenDependencyImpl.computeIfAbsentInResolutionCache(
+        context: Context,
+        keyName: String,
+        crossinline block: suspend () -> T?
+    ): T? {
+        val keyScope = "$coordinates:$isBom"
+        val scopedKey = "$keyScope:keyName=$keyName"
+
+        return context.retrieveCachedEntry(scopedKey)
+            ?: run {
+                val mutex = context.resolutionCache.computeIfAbsent(Key<Mutex>(scopedKey)) { Mutex() }
+                mutex.withLock {
+                    context.retrieveCachedEntry(scopedKey)
+                        ?: block()
+                            ?.also { context.resolutionCache[Key<T>(scopedKey)] = it }
+                }
+            }
     }
 
     private suspend fun detectKotlinMetadataLibrary(
@@ -1394,14 +1501,16 @@ class MavenDependencyImpl internal constructor(
         kotlinMetadataVariant: Variant,
         diagnosticsReporter: DiagnosticReporter
     ) {
-        val kmpMetadata = kmpMetadataFile.getPath()?.let {
-            readJarEntry(it, "META-INF/kotlin-project-structure-metadata.json")
-        } ?: run {
-            diagnosticsReporter.addMessage(KotlinProjectStructureMetadataMissing.asMessage(kmpMetadataFile.fileName))
-            return
-        }
-
-        val kotlinProjectStructureMetadata = kmpMetadata.parseKmpLibraryMetadata()
+        val kotlinProjectStructureMetadata: KotlinProjectStructureMetadata =
+            computeIfAbsentInResolutionCache(context, "kotlinProjectStructureMetadata") {
+                val kmpMetadata = kmpMetadataFile.getPath()?.let {
+                    readJarEntry(it, "META-INF/kotlin-project-structure-metadata.json")
+                }
+                kmpMetadata?.parseKmpLibraryMetadata()
+            } ?: run {
+                diagnosticsReporter.addMessage(KotlinProjectStructureMetadataMissing.asMessage(kmpMetadataFile.fileName))
+                return
+            }
 
         val resolvedVariants = context.settings.platforms.associateWith {
             resolveVariants(moduleMetadata, context.settings, it).withoutDocumentationAndMetadata
@@ -1590,15 +1699,20 @@ class MavenDependencyImpl internal constructor(
             }
         val kmpLibraryWithSourceSet = context.debugSpanBuilder("resolveKmpLibraryWithSourceSet")
             .use {
-                resolveKmpLibraryWithSourceSet(
-                    sourceSetName,
-                    kmpMetadataFile,
+                kmpMetadataFile.dependency.computeIfAbsentInResolutionCache(
                     context,
-                    kotlinProjectStructureMetadata,
-                    moduleMetadata,
-                    level,
-                    diagnosticsReporter
-                ) ?: run {
+                    "kmp:$sourceSetName:$level:${kotlinProjectStructureMetadata == null}:${kmpMetadataFile.fileName}"
+                ) {
+                    resolveKmpLibraryWithSourceSet(
+                        sourceSetName,
+                        kmpMetadataFile,
+                        context,
+                        kotlinProjectStructureMetadata,
+                        moduleMetadata,
+                        level,
+                        diagnosticsReporter
+                    )
+                }?: run {
                     logger.debug("Source set $sourceSetName for Kotlin Multiplatform library ${kmpMetadataFile.fileName} is not found")
                     return@use null
                 }
@@ -1883,7 +1997,7 @@ class MavenDependencyImpl internal constructor(
             dependencyConstraints = project.resolveDependenciesConstraints(context)
         } else {
             if (transitive) {
-                (project.dependencies?.dependencies ?: listOf()).filter {
+                (project.dependencies?.dependencies ?: emptyList()).filter {
                     context.settings.scope.matches(it)
                 }.filterNot {
                     shouldIgnoreDependency(it.groupId, it.artifactId, context)
@@ -1903,7 +2017,7 @@ class MavenDependencyImpl internal constructor(
         if (packaging == "jar" && !isSpecialKmpLibrary()) {
             val nonJvmPlatforms =
                 context.settings.platforms.filter { it != ResolutionPlatform.JVM && it != ResolutionPlatform.ANDROID }
-            // JAR packed dependencies without metadata shouldn't be used for non-JVM platforms
+            // JAR-packed dependencies without metadata shouldn't be used for non-JVM platforms
             if (nonJvmPlatforms.isNotEmpty()) {
                 diagnosticsReporter.addMessage(
                     PlatformsAreNotSupported(
@@ -1929,7 +2043,7 @@ class MavenDependencyImpl internal constructor(
         ?: emptyList()
 
     private fun Project.resolveDependenciesConstraints(context: Context): List<MavenDependencyConstraintImpl> {
-        return (dependencyManagement?.dependencies?.dependencies ?: listOf()).filter {
+        return (dependencyManagement?.dependencies?.dependencies ?: emptyList()).filter {
             it.version != null && it.optional != true
         }.map {
             context.createOrReuseDependencyConstraint(it.groupId, it.artifactId, Version(requires = it.version))
@@ -1949,6 +2063,20 @@ class MavenDependencyImpl internal constructor(
         get() = filter { it.isDocumentation() }
 
     suspend fun downloadDependencies(context: Context, downloadSources: Boolean = false) {
+        if (downloadState < getTargetDownloadState(downloadSources)) {
+            mutex.withLock {
+                if (downloadState < getTargetDownloadState(downloadSources)) {
+                    context.debugSpanBuilder("MavenDependencyNode.downloadDependencies")
+                        .setAttribute("coordinates", this.toString())
+                        .use {
+                            downloadDependenciesImpl(context, downloadSources)
+                        }
+                }
+            }
+        }
+    }
+
+    private suspend fun downloadDependenciesImpl(context: Context, downloadSources: Boolean = false) {
         val withSources = downloadSources || alwaysDownloadSources()
 
         val allFiles = files(withSources)
@@ -1965,6 +2093,8 @@ class MavenDependencyImpl internal constructor(
         }
 
         allFiles.forEach { it.postProcess(context, withSources, ResolutionLevel.NETWORK, it.diagnosticsReporter) }
+
+        downloadState = getTargetDownloadState(downloadSources)
     }
 
     private fun alwaysDownloadSources() = isKotlinStdlib()
@@ -2086,13 +2216,22 @@ data class MavenCoordinates(
     val packagingType: String? = null,
     val classifier: String? = null,
 ) {
-    override fun toString(): String {
-        return "$groupId:$artifactId:${version.orUnspecified()}" +
+    override fun toString(): String = toPrettyString(withPackagingType = true)
+
+    fun toPrettyString(withPackagingType: Boolean = false, overridingVersion:String? = null): String {
+        return "$groupId:$artifactId" +
+                ":${version.orUnspecified()}" +
+                (overridingVersion?.let { " -> $it" } ?: "") +
                 (if (classifier != null) ":$classifier" else "") +
-                (if (packagingType != null) "@$packagingType" else "")
+                (if (withPackagingType && packagingType != null) "@$packagingType" else "")
     }
 }
 
+/**
+ * The format of the 'available-at' element is described by the following link
+ * https://github.com/gradle/gradle/blob/master/platforms/documentation/docs/src/docs/design/gradle-module-metadata-latest-specification.md#available-at-value
+ * It doesn't have a built-in notion of classifier.
+ */
 internal fun AvailableAt.toCoordinates() =
     mavenCoordinatesTrimmed(group, module, version)
 

@@ -15,7 +15,6 @@ import org.jetbrains.amper.frontend.leaves
 import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.messages.extractPsiElement
 import org.jetbrains.amper.frontend.schema.ModuleProduct
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
@@ -80,16 +79,10 @@ internal fun mapAliasesToLeaves(
 
 data class AliasesAreNotSupportedInSinglePlatformModule(override val element: PsiElement)
     : PsiBuildProblem(Level.Warning, BuildProblemType.Generic) {
-    companion object {
-        const val ID = "aliases.are.not.supported.in.single.platform.module"
-    }
 
-    @Deprecated("Should be replaced with `problemId` property", replaceWith = ReplaceWith("problemId"))
-    override val buildProblemId: BuildProblemId
-        get() = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.AliasInSinglePlatformModule
     override val message: @Nls String
-        get() = SchemaBundle.message(ID)
+        get() = SchemaBundle.message("aliases.are.not.supported.in.single.platform.module")
 }
 
 data class AliasUsesNonLeafPlatform(
@@ -98,37 +91,25 @@ data class AliasUsesNonLeafPlatform(
     @UsedInIdePlugin
     val canBeExpandedTo: Set<Platform>?,
 ) : PsiBuildProblem(Level.Error, BuildProblemType.Generic) {
-    companion object {
-        const val ID = "alias.uses.non.leaf.platform"
-    }
 
     override val element: PsiElement
         get() = nonLeafPlatform.extractPsiElement()
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId
-        get() = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.AliasUsesNonLeafPlatform
     override val message: @Nls String
-        get() = SchemaBundle.message(ID, alias.value, nonLeafPlatform.value.pretty)
+        get() = SchemaBundle.message("alias.uses.non.leaf.platform", alias.value, nonLeafPlatform.value.pretty)
 }
 
 data class AliasWithNonLeafPlatformExpandsToNothing(
     val alias: TraceableString,
     val nonLeafPlatform: TraceableEnum<Platform>,
 ) : PsiBuildProblem(Level.Error, BuildProblemType.Generic) {
-    companion object {
-        const val ID = "alias.with.non.leaf.platform.expands.to.nothing"
-    }
 
     override val element: PsiElement
         get() = nonLeafPlatform.extractPsiElement()
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId
-        get() = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.AliasExpandsToNothing
     override val message: @Nls String
         get() = SchemaBundle.message(
-            ID,
+            "alias.with.non.leaf.platform.expands.to.nothing",
             alias.value,
             nonLeafPlatform.value.pretty,
             nonLeafPlatform.value.leaves.map(Platform::pretty),
@@ -139,49 +120,31 @@ data class AliasUsesUndeclaredPlatform(
     val alias: TraceableString,
     val undeclaredPlatform: TraceableEnum<Platform>,
 ) : PsiBuildProblem(Level.Error, BuildProblemType.Generic) {
-    companion object {
-        const val ID = "alias.uses.undeclared.platform"
-    }
 
     override val element: PsiElement
         get() = undeclaredPlatform.extractPsiElement()
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId
-        get() = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.AliasUsesUndeclaredPlatform
     override val message: @Nls String
-        get() = SchemaBundle.message(ID, alias.value, undeclaredPlatform.value.pretty)
+        get() = SchemaBundle.message("alias.uses.undeclared.platform", alias.value, undeclaredPlatform.value.pretty)
 }
 
 data class AliasIsEmpty(val alias: TraceableString) : PsiBuildProblem(Level.Error, BuildProblemType.Generic) {
-    companion object {
-        const val ID = "alias.is.empty"
-    }
 
     override val element: PsiElement
         get() = alias.extractPsiElement()
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId
-        get() = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.AliasIsEmpty
     override val message: @Nls String
-        get() = SchemaBundle.message(ID, alias.value)
+        get() = SchemaBundle.message("alias.is.empty", alias.value)
 }
 
 data class AliasIntersectsWithNaturalHierarchy(
     val alias: TraceableString,
     val existingPlatform: Platform,
 ) : PsiBuildProblem(Level.Warning, BuildProblemType.Generic) {
-    companion object {
-        const val ID = "alias.intersects.with.natural.hierarchy"
-    }
 
     override val element: PsiElement
         get() = alias.extractPsiElement()
-    @Deprecated("Should be replaced with `problemId` property", replaceWith = ReplaceWith("problemId"))
-    override val buildProblemId: BuildProblemId
-        get() = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.AliasIntersectsWithNaturalHierarchy
     override val message: @Nls String
-        get() = SchemaBundle.message(ID, alias.value, existingPlatform.pretty)
+        get() = SchemaBundle.message("alias.intersects.with.natural.hierarchy", alias.value, existingPlatform.pretty)
 }

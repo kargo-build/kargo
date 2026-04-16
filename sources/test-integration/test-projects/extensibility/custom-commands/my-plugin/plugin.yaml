@@ -1,0 +1,5 @@
+tasks:
+  uploadPictures:
+    action: !org.jetbrains.amper.plugins.my.uploadPictures {}
+commands:
+  - uploadPictures

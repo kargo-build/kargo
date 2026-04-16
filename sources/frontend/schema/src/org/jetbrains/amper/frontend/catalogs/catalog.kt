@@ -170,7 +170,7 @@ private class BuiltInCatalog(
             put("ktor.server.cio", library("io.ktor:ktor-server-cio", ktorVersion))
             put("ktor.server.compression", library("io.ktor:ktor-server-compression", ktorVersion))
             put("ktor.server.conditionalHeaders", library("io.ktor:ktor-server-conditional-headers", ktorVersion))
-            put("ktor.server.configYaml", library("io.ktor:ktor-server-config-yaml", ktorVersion))
+            put("ktor.server.config.yaml", library("io.ktor:ktor-server-config-yaml", ktorVersion))
             put("ktor.server.contentNegotiation", library("io.ktor:ktor-server-content-negotiation", ktorVersion))
             put("ktor.server.core", library("io.ktor:ktor-server-core", ktorVersion))
             put("ktor.server.cors", library("io.ktor:ktor-server-cors", ktorVersion))
@@ -184,8 +184,8 @@ private class BuiltInCatalog(
             put("ktor.server.htmlBuilder", library("io.ktor:ktor-server-html-builder", ktorVersion))
             put("ktor.server.httpRedirect", library("io.ktor:ktor-server-http-redirect", ktorVersion))
             put("ktor.server.i18n", library("io.ktor:ktor-server-i18n", ktorVersion))
-            put("ktor.server.jetty", library("io.ktor:ktor-server-jetty", ktorVersion))
-            put("ktor.server.jetty.jakarta", library("io.ktor:ktor-server-jetty-jakarta", ktorVersion))
+            put("ktor.server.jetty", library("io.ktor:ktor-server-jetty-jakarta", ktorVersion))
+            put("ktor.server.jetty.legacy", library("io.ktor:ktor-server-jetty", ktorVersion))
             put("ktor.server.jte", library("io.ktor:ktor-server-jte", ktorVersion))
             put("ktor.server.locations", library("io.ktor:ktor-server-locations", ktorVersion))
             put("ktor.server.methodOverride", library("io.ktor:ktor-server-method-override", ktorVersion))
@@ -200,16 +200,16 @@ private class BuiltInCatalog(
             put("ktor.server.rateLimit", library("io.ktor:ktor-server-rate-limit", ktorVersion))
             put("ktor.server.requestValidation", library("io.ktor:ktor-server-request-validation", ktorVersion))
             put("ktor.server.resources", library("io.ktor:ktor-server-resources", ktorVersion))
-            put("ktor.server.servlet", library("io.ktor:ktor-server-servlet", ktorVersion))
-            put("ktor.server.servlet.jakarta", library("io.ktor:ktor-server-servlet-jakarta", ktorVersion))
+            put("ktor.server.servlet", library("io.ktor:ktor-server-servlet-jakarta", ktorVersion))
+            put("ktor.server.servlet.legacy", library("io.ktor:ktor-server-servlet", ktorVersion))
             put("ktor.server.sessions", library("io.ktor:ktor-server-sessions", ktorVersion))
             put("ktor.server.sse", library("io.ktor:ktor-server-sse", ktorVersion))
             put("ktor.server.statusPages", library("io.ktor:ktor-server-status-pages", ktorVersion))
             put("ktor.server.swagger", library("io.ktor:ktor-server-swagger", ktorVersion))
             put("ktor.server.testHost", library("io.ktor:ktor-server-test-host", ktorVersion))
             put("ktor.server.thymeleaf", library("io.ktor:ktor-server-thymeleaf", ktorVersion))
-            put("ktor.server.tomcat", library("io.ktor:ktor-server-tomcat", ktorVersion))
-            put("ktor.server.tomcat.jakarta", library("io.ktor:ktor-server-tomcat-jakarta", ktorVersion))
+            put("ktor.server.tomcat", library("io.ktor:ktor-server-tomcat-jakarta", ktorVersion))
+            put("ktor.server.tomcat.legacy", library("io.ktor:ktor-server-tomcat", ktorVersion))
             put("ktor.server.velocity", library("io.ktor:ktor-server-velocity", ktorVersion))
             put("ktor.server.webjars", library("io.ktor:ktor-server-webjars", ktorVersion))
             put("ktor.server.websockets", library("io.ktor:ktor-server-websockets", ktorVersion))
@@ -233,8 +233,8 @@ private class BuiltInCatalog(
             put("ktor.client.gson", library("io.ktor:ktor-client-gson", ktorVersion))
             put("ktor.client.jackson", library("io.ktor:ktor-client-jackson", ktorVersion))
             put("ktor.client.java", library("io.ktor:ktor-client-java", ktorVersion))
-            put("ktor.client.jetty", library("io.ktor:ktor-client-jetty", ktorVersion))
-            put("ktor.client.jetty.jakarta", library("io.ktor:ktor-client-jetty-jakarta", ktorVersion))
+            put("ktor.client.jetty", library("io.ktor:ktor-client-jetty-jakarta", ktorVersion))
+            put("ktor.client.jetty.legacy", library("io.ktor:ktor-client-jetty", ktorVersion))
             put("ktor.client.json", library("io.ktor:ktor-client-json", ktorVersion))
             put("ktor.client.logging", library("io.ktor:ktor-client-logging", ktorVersion))
             put("ktor.client.mock", library("io.ktor:ktor-client-mock", ktorVersion))
@@ -269,7 +269,7 @@ private class BuiltInCatalog(
             put("ktor.serialization.kotlinx.xml", library("io.ktor:ktor-serialization-kotlinx-xml", ktorVersion))
             put("ktor.sse", library("io.ktor:ktor-sse", ktorVersion))
             put("ktor.utils", library("io.ktor:ktor-utils", ktorVersion))
-            put("ktor.websocket.serialization", library("io.ktor:ktor-websocket-serialization", ktorVersion))
+            put("ktor.websockets.serialization", library("io.ktor:ktor-websocket-serialization", ktorVersion))
         }
 
         // Spring Boot dependencies
@@ -364,6 +364,7 @@ private fun library(groupAndModule: String, version: TraceableVersion): Traceabl
         trace = BuiltinCatalogTrace(catalog, version = version),
     )
 
+internal const val UNKNOWN_COMPOSE_MATERIAL3_VERSION_DESCRIPTION_PREFIX = "latest version, because the correct material3 version was unknown"
 
 /**
  * Gets the Compose Material3 version corresponding to a given Compose version.
@@ -371,7 +372,7 @@ private fun library(groupAndModule: String, version: TraceableVersion): Traceabl
  * This is defined the same way the Compose Gradle plugin defines the `compose.material3` alias.
  */
 private fun composeMaterial3VersionForCMPVersion(composeVersion: TraceableVersion): TraceableVersion {
-    // Before Compose Multiplatform 1.9.0, the material3 version was aligned with the Compose version
+    // Before Compose Multiplatform 1.9.0, the material3 version was aligned with the Compose version.
     // Starting from 1.9.0, the material3 version was decoupled, and only stable versions (at the time of
     // publication) were used.
     // See https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.9.0
@@ -393,8 +394,11 @@ private fun composeMaterial3VersionForCMPVersion(composeVersion: TraceableVersio
         "1.10.0-rc02" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.0-rc02
         "1.10.0" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.0
         "1.10.1" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.1
+        "1.10.2" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.2
+        "1.10.3" -> "1.10.0-alpha05" // https://github.com/JetBrains/compose-multiplatform/releases/tag/v1.10.3
         else -> null // not known yet, or regular alphas/betas/rcs
     }
+    val latestMaterial3Version = "1.10.0-alpha05"
     if (material3Version != null) {
         return TraceableVersion(
             value = material3Version,
@@ -408,9 +412,9 @@ private fun composeMaterial3VersionForCMPVersion(composeVersion: TraceableVersio
         )
     }
     return TraceableVersion(
-        value = composeVersion.value,
+        value = latestMaterial3Version,
         trace = TransformedValueTrace(
-            description = "aligned with the Compose version because the correct material3 version was unknown " +
+            description = "$UNKNOWN_COMPOSE_MATERIAL3_VERSION_DESCRIPTION_PREFIX " +
                     "for Compose ${composeVersion.value} at the time Amper ${AmperBuild.mavenVersion} was released",
             sourceValue = composeVersion,
         ),

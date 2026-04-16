@@ -8,7 +8,7 @@ settings:
 dependencies:
   - $ktor.server.core
   - $ktor.server.netty
-  - $ktor.server.configYaml
+  - $ktor.server.config.yaml
   - ch.qos.logback:logback-classic:1.5.18
 
 test-dependencies:

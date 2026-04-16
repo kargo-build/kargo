@@ -1,0 +1,3 @@
+apply:
+  - ./spring-web.module-template.yaml
+  - ./spring-cloud.module-template.yaml

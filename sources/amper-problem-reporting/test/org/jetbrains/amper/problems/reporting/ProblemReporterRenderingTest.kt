@@ -14,7 +14,6 @@ class ProblemReporterRenderingTest {
     @Test
     fun `reporting problem without file`() {
         val problem = BuildProblemImpl(
-            buildProblemId = "test.message",
             diagnosticId = TestDiagnosticId,
             source = GlobalBuildProblemSource,
             message = "Test message",
@@ -27,7 +26,6 @@ class ProblemReporterRenderingTest {
     @Test
     fun `reporting problem with file but no line`() {
         val problem = BuildProblemImpl(
-            buildProblemId = "test.message",
             diagnosticId = TestDiagnosticId,
             source = TestFileProblemSource(Path("test.txt")),
             message = "Test message",
@@ -40,7 +38,6 @@ class ProblemReporterRenderingTest {
     @Test
     fun `reporting problem with file and line`() {
         val problem = BuildProblemImpl(
-            buildProblemId = "test.message",
             diagnosticId = TestDiagnosticId,
             source = TestFileWithRangesProblemSource(
                 Path("test.txt"), range = LineAndColumnRange(
@@ -72,7 +69,6 @@ class ProblemReporterRenderingTest {
             )
         )
         val problem = BuildProblemImpl(
-            buildProblemId = "test.message",
             diagnosticId = TestDiagnosticId,
             source = MultipleLocationsBuildProblemSource(
                 location1, location2, location3,

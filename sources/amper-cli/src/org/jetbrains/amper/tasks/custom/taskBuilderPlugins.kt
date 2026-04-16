@@ -8,6 +8,7 @@ import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.fragmentsTargeting
+import org.jetbrains.amper.frontend.plugins.generated.ShadowCompilationArtifactKind
 import org.jetbrains.amper.frontend.plugins.generated.ShadowResolutionScope
 import org.jetbrains.amper.frontend.plugins.generated.ShadowSourcesKind
 import org.jetbrains.amper.tasks.CommonTaskType
@@ -41,7 +42,11 @@ fun ProjectTasksBuilder.setupTasksFromPlugins() {
                 }
             }
             for (request in taskDescription.requestedCompilationArtifacts) {
-                 taskDependencies += CommonTaskType.Jar.getTaskName(request.from, Platform.JVM)
+                val taskType = when (request.node.kind) {
+                    ShadowCompilationArtifactKind.Jar -> CommonTaskType.Jar
+                    ShadowCompilationArtifactKind.Classes -> CommonTaskType.MergedClasses
+                }
+                taskDependencies += taskType.getTaskName(request.from, Platform.JVM)
             }
             taskDependencies += taskDescription.requestedClasspaths.map { classpathRequest ->
                 val resolutionScope = when(classpathRequest.node.scope) {

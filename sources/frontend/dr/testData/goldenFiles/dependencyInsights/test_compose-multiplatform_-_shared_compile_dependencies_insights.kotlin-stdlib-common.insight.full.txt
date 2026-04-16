@@ -1,0 +1,16 @@
+root
+╰─── Module shared
+│ - main
+│ - scope = COMPILE
+│ - platforms = [iosArm64]
+     ├─── shared:iosArm64:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+     │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
+     │         ╰─── org.jetbrains.kotlin:kotlin-stdlib-common:#kotlinVersion (c)
+     ├─── shared:apple:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+     │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion (*)
+     ├─── shared:common:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+     │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion (*)
+     ├─── shared:ios:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+     │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion (*)
+     ╰─── shared:native:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+          ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion (*)

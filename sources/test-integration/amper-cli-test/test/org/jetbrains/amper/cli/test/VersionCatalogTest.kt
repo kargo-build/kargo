@@ -30,6 +30,13 @@ class VersionCatalogTest : AmperCliTestBase() {
     }
 
     @Test
+    fun `ktor server jetty resolves to jakarta artifact`() = runSlowTest {
+        runCli(testProject("ktor-jetty-jakarta"), "build")
+        val result = runCli(testProject("ktor-jetty-jakarta"), "show", "dependencies")
+        result.assertStdoutContains("io.ktor:ktor-server-jetty-jakarta")
+    }
+
+    @Test
     fun testBothCatalogs_gradleIsIgnored() = runSlowTest {
         val result = runCli(
             projectDir = testProject(name = "version-catalog-root-and-gradle"),

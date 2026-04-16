@@ -54,7 +54,7 @@ internal class ParserKtTest : FrontendTestCaseBase(Path("testResources") / "pars
     fun `empty key`() {
         aomTest(
             "6-empty-list-key",
-            expectedError = "Expected a value"
+            expectedError = "Expected a value: `sequence [Dependency] | null`"
         )
     }
 

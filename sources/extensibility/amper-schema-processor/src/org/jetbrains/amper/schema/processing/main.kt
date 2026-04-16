@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.schema.processing
@@ -12,6 +12,7 @@ import kotlinx.serialization.json.decodeFromStream
 import kotlinx.serialization.json.encodeToStream
 import org.jetbrains.amper.plugins.schema.model.PluginDataResponse
 import org.jetbrains.amper.plugins.schema.model.PluginDeclarationsRequest
+import org.jetbrains.amper.telemetry.ChildProcessTelemetry.withChildProcessTelemetrySpan
 import org.jetbrains.kotlin.analysis.api.analyze
 import org.jetbrains.kotlin.analysis.api.projectStructure.KaSourceModule
 import org.jetbrains.kotlin.analysis.api.standalone.buildStandaloneAnalysisAPISession
@@ -25,21 +26,23 @@ import kotlin.io.path.nameWithoutExtension
 import kotlin.system.exitProcess
 
 @OptIn(ExperimentalSerializationApi::class)
-fun main() {
-    val request = Json.decodeFromStream<PluginDeclarationsRequest>(System.`in`)
+suspend fun main() {
+    withChildProcessTelemetrySpan("plugin-schema-processor") {
+        val request = Json.decodeFromStream<PluginDeclarationsRequest>(System.`in`)
 
-    val disposable = Disposer.newDisposable()
-    try {
-        val results = runSchemaProcessor(disposable, request)
-        Json.encodeToStream(PluginDataResponse(results = results), System.out)
-    } catch (e: Throwable) {
-        e.printStackTrace()
-        exitProcess(1)
-    } finally {
-        Disposer.dispose(disposable)
+        val disposable = Disposer.newDisposable()
+        try {
+            val results = runSchemaProcessor(disposable, request)
+            Json.encodeToStream(PluginDataResponse(results = results), System.out)
+        } catch (e: Throwable) {
+            e.printStackTrace()
+            exitProcess(1)
+        } finally {
+            Disposer.dispose(disposable)
 
-        // exitProcess is necessary because of lingering IDEA-related non-daemon threads.
-        exitProcess(0)
+            // exitProcess is necessary because of lingering IDEA-related non-daemon threads.
+            exitProcess(0)
+        }
     }
 }
 

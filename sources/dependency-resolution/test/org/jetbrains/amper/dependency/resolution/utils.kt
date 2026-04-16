@@ -14,8 +14,3 @@ fun TestInfo.nameToGoldenFile(): String = testMethod.get().name.replace("_", "."
 @OptIn(ExperimentalStdlibApi::class)
 fun computeHash(algorithm: String, bytes: ByteArray): String =
     MessageDigest.getInstance(algorithm).digest(bytes).toHexString()
-
-internal fun String.toMavenNode(context: Context): MavenDependencyNodeWithContext {
-    val (group, module, version) = split(":")
-    return context.toMavenDependencyNode(MavenCoordinates(group, module, version), isBom = false)
-}

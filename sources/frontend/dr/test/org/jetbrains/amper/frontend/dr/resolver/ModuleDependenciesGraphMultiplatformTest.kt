@@ -5,17 +5,15 @@
 package org.jetbrains.amper.frontend.dr.resolver
 
 import org.jetbrains.amper.dependency.resolution.DependencyNode
-import org.jetbrains.amper.dependency.resolution.IncrementalCacheUsage
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
-import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.frontend.schema.DefaultVersions
+import org.jetbrains.amper.test.dr.toMavenCoordinates
 import org.junit.jupiter.api.TestInfo
 import java.nio.file.Path
 import kotlin.io.path.div
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertIs
 import kotlin.test.assertNotNull
 
 /**
@@ -36,7 +34,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
     override val testGoldenFilesRoot: Path = super.testGoldenFilesRoot / "moduleDependenciesGraphMultiplatform"
 
     @Test
-    fun `test sync empty jvm module`() = runSlowModuleDependenciesTest {
+    fun `test sync empty jvm module`(testInfo: TestInfo) = runSlowModuleDependenciesTest {
         val aom = getTestProjectModel("jvm-empty", testDataRoot)
 
         assertEquals(
@@ -45,46 +43,16 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             ""
         )
 
-
-        val testFragmentDeps = doTest(
+        val testFragmentDeps = doTestByFile(
+            testInfo,
             aom,
-            resolutionInput = ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            resolutionInput = ideSyncTestResolutionInput,
             module = "jvm-empty",
-            expected = """
-                module:jvm-empty
-                ├─── jvm-empty:main:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}
-                │         ╰─── org.jetbrains:annotations:13.0
-                ├─── jvm-empty:test:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin} (*)
-                ╰─── jvm-empty:test:org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}, implicit (because the test engine is junit-5)
-                     ╰─── org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}
-                          ├─── org.jetbrains.kotlin:kotlin-test:${DefaultVersions.kotlin}
-                          │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin} (*)
-                          ╰─── org.junit.jupiter:junit-jupiter-api:5.10.1
-                               ├─── org.junit:junit-bom:5.10.1
-                               ├─── org.opentest4j:opentest4j:1.3.0
-                               ├─── org.junit.platform:junit-platform-commons:1.10.1
-                               │    ├─── org.junit:junit-bom:5.10.1
-                               │    ╰─── org.apiguardian:apiguardian-api:1.1.2
-                               ╰─── org.apiguardian:apiguardian-api:1.1.2
-                """.trimIndent()
+            filter = ideSyncModuleResolutionFilter
         )
 
         assertFiles(
-            listOf(
-                "annotations-13.0.jar",
-                "apiguardian-api-1.1.2.jar",
-                "junit-jupiter-api-5.10.1.jar",
-                "junit-platform-commons-1.10.1.jar",
-                "kotlin-stdlib-${DefaultVersions.kotlin}.jar",
-                "kotlin-test-${DefaultVersions.kotlin}.jar",
-                "kotlin-test-junit5-${DefaultVersions.kotlin}.jar",
-                "opentest4j-1.3.0.jar",
-            ),
+            testInfo,
             testFragmentDeps
         )
     }
@@ -96,12 +64,10 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
         val sharedIosFragmentDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            ideSyncTestResolutionInput,
             module = "shared",
             fragment = "ios",
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
         )
         assertFiles(testInfo, sharedIosFragmentDeps)
     }
@@ -112,12 +78,10 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
         val iosAppIosX64FragmentDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            ideSyncTestResolutionInput,
             module = "shared",
             fragment = "iosX64",
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
         )
 
         assertFiles(testInfo, iosAppIosX64FragmentDeps)
@@ -129,12 +93,10 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
         val iosAppIosX64FragmentDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            ideSyncTestResolutionInput,
             module = "shared",
             fragment = "iosX64Test",
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
         )
 
         assertFiles(testInfo, iosAppIosX64FragmentDeps)
@@ -150,12 +112,10 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
         val iosAppIosX64FragmentDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            ideSyncTestResolutionInput,
             module = "ios-app",
             fragment = "iosX64Test",
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
         )
 
         assertFiles(testInfo, iosAppIosX64FragmentDeps)
@@ -168,12 +128,10 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
         val iosAppIosFragmentDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            ideSyncTestResolutionInput,
             module = "ios-app",
             fragment = "ios",
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
         )
         assertFiles(testInfo, iosAppIosFragmentDeps)
     }
@@ -184,18 +142,18 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
         val iosAppIosX64FragmentDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            ideSyncTestResolutionInput,
             module = "ios-app",
             fragment = "iosX64",
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
         )
         assertFiles(testInfo, iosAppIosX64FragmentDeps)
     }
 
     // todo (AB) : 'android-app.android' differs from what Gradle produce (versions).
     // todo (AB) : It seems it is caused by resolving RUNTIME version of library instead of COMPILE one being resolved by IdeSync.
+    //  Update: Versions in graph were slightly changed after ide sync started aligning versions across RUNTIME/COMPILE classpaths
+    //          The issue might have been resolved.
     @Test
     fun `test android-app@android dependencies graph`(testInfo: TestInfo) = runSlowModuleDependenciesTest {
         val aom = getTestProjectModel("compose-multiplatform", testDataRoot)
@@ -203,13 +161,10 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
         val androidAppAndroidFragmentDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom),
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            ideSyncTestResolutionInput,
             module = "android-app",
             fragment = "main",
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
         )
         // todo (AB) : Some versions are incorrect (?) - check difference with Gradle
         assertFiles(testInfo, androidAppAndroidFragmentDeps)
@@ -222,12 +177,10 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
         val sharedAndroidFragmentDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            ideSyncTestResolutionInput,
             module = "shared",
             fragment = "android",
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
         )
         // todo (AB) : Some versions are incorrect (?) - check difference with Gradle
         assertFiles(testInfo, sharedAndroidFragmentDeps)
@@ -248,34 +201,25 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
 
         val sharedModuleDeps = doTest(
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    ResolutionScope.COMPILE,
-                    setOf(ResolutionPlatform.JVM),
-                    isTest = false,
-                    includeNonExportedNative = false
-                ),
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-                incrementalCacheUsage = IncrementalCacheUsage.SKIP
-            ),
-            module = "shared"
+            defaultTestResolutionInput.copy(
+                resolutionSettings = defaultTestResolutionInput.resolutionSettings.copy(includeNonExportedNative = false)),
+            module = "shared",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE) // todo (AB) : ResolutionPlatform.JVM???
         )
-        assertIs<ModuleDependencyNode>(sharedModuleDeps)
 
         sharedModuleDeps.assertMapping(
             mapOf(
                 "org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}" to "org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}",
                 "org.jetbrains.compose.runtime:runtime:${DefaultVersions.compose}" to "org.jetbrains.compose.runtime:runtime-desktop:${DefaultVersions.compose}",
                 "org.jetbrains.compose.foundation:foundation:${DefaultVersions.compose}" to "org.jetbrains.compose.foundation:foundation-desktop:${DefaultVersions.compose}",
-                // Note: this has to be updated when changing the compose version. See composeMaterial3VersionForCMPVersion() in catalog.kt
+                // Note: this has to be updated when changing the 'compose' version. See composeMaterial3VersionForCMPVersion() in catalog.kt
                 "org.jetbrains.compose.material3:material3:1.10.0-alpha05" to "org.jetbrains.compose.material3:material3-desktop:1.10.0-alpha05",
             )
         )
     }
 
     /**
-     * For platform-specific artifacts that were introduced into the resolution by KMP libraries
+     * For platform-specific artifacts introduced into the resolution by KMP libraries
      * (as one of their `available-at`), DR provides API [MavenDependencyNode.getParentKmpLibraryCoordinates]
      * for getting coordinates of the original KMP libraries.
      * These coordinates are used in the IDE to deduplicate dependencies when searching for symbols that appear
@@ -290,14 +234,10 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
 
         val moduleDeps = doTest(
             aom,
-            ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom),
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            ideSyncTestResolutionInput,
             module = "kmp-library",
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
         )
-        assertIs<ModuleDependencyNode>(moduleDeps)
 
         moduleDeps.assertParentKmpLibraries(
             mapOf(
@@ -307,7 +247,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
         )
     }
 
-    private fun ModuleDependencyNode.assertMapping(
+    private fun DependencyNode.assertMapping(
         expectedMapping: Map<String, String>
     ) {
         val expectedCoordinatesMapping =
@@ -333,7 +273,7 @@ class ModuleDependenciesGraphMultiplatformTest : BaseModuleDrTest() {
             }
     }
 
-    private fun ModuleDependencyNode.assertParentKmpLibraries(
+    private fun DependencyNode.assertParentKmpLibraries(
         expectedMapping: Map<String, String>
     ) {
         val expectedCoordinatesMapping =

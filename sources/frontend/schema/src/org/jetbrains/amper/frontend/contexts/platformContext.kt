@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.contexts
@@ -29,7 +29,7 @@ class PlatformsInheritance(
     private val PlatformCtx.leaves get() = Platform[value]?.leaves ?: aliases[value]?.leaves
     private val Collection<PlatformCtx>.ctxLeaves get() = mapNotNull { it.leaves }.flatten().toSet()
 
-    override fun Collection<PlatformCtx>.isMoreSpecificThan(other: Collection<PlatformCtx>): ContextsInheritance.Result {
+    override fun Collection<PlatformCtx>.compareContexts(other: Collection<PlatformCtx>): ContextsInheritance.Result {
         val thisLeaves = ctxLeaves
         val otherLeaves = other.ctxLeaves
         return when {

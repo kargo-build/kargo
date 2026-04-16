@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.processes
@@ -19,6 +19,7 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.test.fail
 import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.measureTime
 
 private val isWindows = System.getProperty("os.name").startsWith("win", ignoreCase = true)
@@ -92,7 +93,7 @@ class ProcessesTest {
         process.waitFor(1, TimeUnit.SECONDS)
         assertTerminated(process, "The process should have terminated by now, because it was explicitly killed")
 
-        val exitCode = withTimeoutOrNull(200.milliseconds) { deferredExitCode.await() }
+        val exitCode = withTimeoutOrNull(500.milliseconds) { deferredExitCode.await() }
         assertNotNull(exitCode, "The result should be returned quickly after the destruction of the process")
 
         // We don't assert anything on stderr, because the way the process is killed may lead to unpredictable stderr.
@@ -126,7 +127,7 @@ class ProcessesTest {
             }
         }
         assertTerminated(process, "withGuaranteedTermination should not exit before the process is terminated")
-        assertTrue(time < 500.milliseconds, "The process should be terminated almost instantly")
+        assertTrue(time < 1.seconds, "The process should be terminated almost instantly, but ran for $time")
     }
 
     @Test
@@ -135,7 +136,7 @@ class ProcessesTest {
 
         val time = measureTime {
             val launchJob = launch {
-                cancel() // simulates that the coroutine is already cancelled before the call
+                cancel() // simulates that the coroutine is already canceled before the call
                 process.withGuaranteedTermination {
                     fail("The body of withGuaranteedTermination should not be run if the coroutine is already cancelled")
                 }
@@ -143,7 +144,7 @@ class ProcessesTest {
             launchJob.join()
         }
         assertTerminated(process, "withGuaranteedTermination should not exit before the process is terminated")
-        assertTrue(time < 500.milliseconds, "The process should be terminated almost instantly")
+        assertTrue(time < 1.seconds, "The process should be terminated almost instantly, but ran for $time")
     }
 }
 

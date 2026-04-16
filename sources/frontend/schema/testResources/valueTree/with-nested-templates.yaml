@@ -1,0 +1,11 @@
+product:
+  type: lib
+  platforms:
+    - jvm
+
+apply:
+  - ./nested-templates/spring.yaml
+
+settings:
+  kotlin:
+    debug: true

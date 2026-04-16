@@ -4,8 +4,9 @@
 
 package org.jetbrains.amper.maven
 
-import org.jetbrains.amper.frontend.contexts.DefaultContext
 import org.jetbrains.amper.frontend.contexts.TestCtx
+import org.jetbrains.amper.frontend.contexts.defaultContextsInheritance
+import org.jetbrains.amper.frontend.contexts.plus
 import org.jetbrains.amper.frontend.schema.BomDependency
 import org.jetbrains.amper.frontend.tree.BooleanNode
 import org.jetbrains.amper.frontend.tree.EnumNode
@@ -18,38 +19,45 @@ import org.jetbrains.amper.frontend.tree.StringNode
 import org.jetbrains.amper.frontend.tree.TreeNode
 import org.jetbrains.amper.frontend.tree.TreeRefiner
 import org.jetbrains.amper.frontend.tree.copy
-import org.jetbrains.amper.frontend.tree.declaration
 import org.jetbrains.amper.frontend.tree.schemaValue
 import org.jetbrains.amper.frontend.types.SchemaType
-import org.jetbrains.amper.problems.reporting.NoopProblemReporter
+import org.jetbrains.amper.problems.reporting.CollectingProblemReporter
 import kotlin.io.path.invariantSeparatorsPathString
 import kotlin.io.path.pathString
 
 typealias Key = String
 
-val treeRefiner = TreeRefiner()
+val treeRefiner = TreeRefiner(contextComparator = defaultContextsInheritance + MavenContributorContextInheritance)
 
 internal fun MappingNode.serializeToYaml(comments: YamlComments = emptyMap()): String = buildString {
-    val refinedMain = context(NoopProblemReporter) {
+    val problemReporter = CollectingProblemReporter()
+    val refinedMain = context(problemReporter) {
         treeRefiner.refineTree(
             this@serializeToYaml,
-            listOf(),
+            listOf(MavenContributorContext.WithAllContributors),
             withDefaults = false,
         )
     }
-    val refinedTest = context(NoopProblemReporter) {
+    val refinedTest = context(problemReporter) {
         treeRefiner.refineTree(
             this@serializeToYaml,
-            listOf(TestCtx),
+            listOf(MavenContributorContext.WithAllContributors, TestCtx),
             withDefaults = false,
         )
+    }
+    check(problemReporter.problems.isEmpty()) {
+        // This indicates a problem in the converter code, so it's fine to just fail here
+        buildString {
+            appendLine("Failed to refine converted tree:")
+            problemReporter.problems.forEach { appendLine(" - ${it.message}") }
+        }
     }
     val test = refinedTest.filterByContext(TestCtx, refinedMain)
 
     val mainComments = comments.filterValues { !it.test }
     val testComments = comments.filterValues { it.test }
 
-    append(refinedMain.serializeToYaml(0, emptyList(), mainComments) ?: "")
+    append(refinedMain.serializeToYaml(0, emptyList(), mainComments))
     if (test != null) {
         appendLine()
         append(test.serializeToYaml(0, emptyList(), testComments))
@@ -60,7 +68,7 @@ private fun TreeNode.serializeToYaml(indent: Int, currentPath: List<String>, com
     when (this@serializeToYaml) {
         is ListNode -> append(this@serializeToYaml.serializeToYaml(indent))
         is MappingNode -> append(this@serializeToYaml.serializeToYaml(indent, currentPath, comments))
-        is ScalarNode -> append(this@serializeToYaml.serializeToYaml())
+        is ScalarNode -> append(this@serializeToYaml.serializeToYaml(indent))
         else -> {}
     }
 }
@@ -95,7 +103,7 @@ private fun MappingNode.serializeToYaml(indent: Int, currentPath: List<String>, 
             return@buildString
         } else {
             append(":")
-            append(this@serializeToYaml.copy(theRest, type, trace, contexts).serializeToYaml(indent + 1, currentPath, comments))
+            append(this@serializeToYaml.copy(theRest, declaration, trace, contexts).serializeToYaml(indent + 1, currentPath, comments))
             return@buildString
         }
     }
@@ -163,7 +171,16 @@ private fun ListNode.serializeToYaml(indent: Int): String = buildString {
     }
 }
 
-private fun ScalarNode.serializeToYaml(): String = buildString {
+private fun ScalarNode.serializeToYaml(indent: Int): String = buildString {
+    if (this@serializeToYaml is StringNode && value.contains('\n')) {
+        appendLine(" |-")
+        val indentStr = "  ".repeat(indent)
+        for (line in value.lines()) {
+            append(indentStr)
+            appendLine(line)
+        }
+        return@buildString
+    }
     append(" ")
     when (this@serializeToYaml) {
         is BooleanNode -> append(value)

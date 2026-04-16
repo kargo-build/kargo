@@ -35,7 +35,7 @@ internal fun Default.toTreeValue(type: SchemaType, trace: Trace): RefinedTreeNod
     is Default.Static -> toTreeValue(type, trace)
     is Default.NestedObject -> {
         check(type is SchemaType.ObjectType)
-        RefinedMappingNode(createDefaultProperties(type.declaration), type, trace, TypeLevelDefaultContexts)
+        RefinedMappingNode(createDefaultProperties(type.declaration), type.declaration, trace, TypeLevelDefaultContexts)
     }
     is Default.Reference -> ReferenceNode(referencedPath, type, transform, trace, TypeLevelDefaultContexts)
 }
@@ -48,7 +48,7 @@ fun Default.Static.toTreeValue(type: SchemaType, trace: Trace): RefinedTreeNode 
         check(type.isMarkedNullable) { "Null default is specified for non-nullable $type" }
         NullLiteralNode(trace, TypeLevelDefaultContexts)
     } else when (type) {
-        is SchemaType.BooleanType -> BooleanNode(value as Boolean, type, trace, TypeLevelDefaultContexts)
+        is SchemaType.BooleanType -> BooleanNode(value as Boolean, trace, TypeLevelDefaultContexts)
         is SchemaType.EnumType -> EnumNode(
             when (value) {
                 // TODO: Remove this `TraceableEnum` check when defaults are reworked
@@ -57,21 +57,21 @@ fun Default.Static.toTreeValue(type: SchemaType, trace: Trace): RefinedTreeNode 
                 is String -> value
                 else -> error("Invalid enum default: $value")
             },
-            type, trace, TypeLevelDefaultContexts,
+            type.declaration, trace, TypeLevelDefaultContexts,
         )
-        is SchemaType.IntType -> IntNode(value as Int, type, trace, TypeLevelDefaultContexts)
+        is SchemaType.IntType -> IntNode(value as Int, trace, TypeLevelDefaultContexts)
         is SchemaType.PathType -> PathNode(
             when (value) {
                 is Path -> value
                 // TODO: These `File` values come from the Maven compat layer. Try to move the conversion up a level
                 is File -> value.toPath()
                 else -> error("Invalid path default: $value")
-            }, type, trace, TypeLevelDefaultContexts,
+            }, trace, TypeLevelDefaultContexts,
         )
         is SchemaType.StringType -> StringNode(
             // TODO: Remove this `TraceableString` check when defaults are reworked
             if (value is TraceableString) value.value else value as String,
-            type, trace, TypeLevelDefaultContexts,
+            type.semantics, trace, TypeLevelDefaultContexts,
         )
         is SchemaType.ListType -> {
             check(value is List<*>)
@@ -79,14 +79,14 @@ fun Default.Static.toTreeValue(type: SchemaType, trace: Trace): RefinedTreeNode 
                 "Non-empty lists as defaults are allowed only for lists with scalar element types"
             }
             val children = value.map { Default.Static(it).toTreeValue(type.elementType, trace) }
-            RefinedListNode(children, type, trace, TypeLevelDefaultContexts)
+            RefinedListNode(children, trace, TypeLevelDefaultContexts)
         }
         is SchemaType.MapType -> {
             check(value == emptyMap<Nothing, Nothing>()) {
                 "Only an empty map is permitted as a default for a map property. " +
                         "If there are cases, you'll need to extend the implementation here"
             }
-            RefinedMappingNode(emptyMap(), type, trace, TypeLevelDefaultContexts)
+            RefinedMappingNode(emptyMap(), declaration = null, trace, TypeLevelDefaultContexts)
         }
         is SchemaType.ObjectType, is SchemaType.VariantType -> {
             error("Static defaults for object types are not supported")

@@ -1,0 +1,7 @@
+modules:
+  - android-app
+  - ios-app
+  - jvm-app
+  - shared
+  - ./core/*
+  - ./feature/*

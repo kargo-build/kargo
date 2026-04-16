@@ -1,0 +1,9 @@
+product: jvm/app
+
+dependencies:
+  - $compose.material3
+
+settings:
+  compose:
+    enabled: true
+    version: "1.10.3"

@@ -10,10 +10,13 @@ import org.junit.jupiter.api.extension.BeforeEachCallback
 import org.junit.jupiter.api.extension.Extension
 import org.junit.jupiter.api.extension.ExtensionContext
 import java.io.IOException
+import java.nio.file.Files
 import java.nio.file.Path
+import java.nio.file.attribute.DosFileAttributeView
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.io.path.createTempDirectory
 import kotlin.io.path.deleteRecursively
+import kotlin.io.path.isRegularFile
 import kotlin.io.path.pathString
 import kotlin.io.path.walk
 
@@ -48,6 +51,9 @@ class TempDirExtension : Extension, BeforeEachCallback, AfterEachCallback {
                     // This is an exceptional case. In other cases, we want to know about leaked processes and fix
                     // those. Unlocking all files would hide some real issues.
                     killProcessesLockingAndroidBuildFiles(path)
+                    // Some tools (e.g., Git) create read-only files (like .git/objects/*) that cannot be deleted
+                    // without first clearing the read-only attribute. Retrying won't help for these files.
+                    makeAllFilesWritable(path)
                     path.deleteRecursivelyWithRetries()
                     return
                 }
@@ -77,6 +83,17 @@ class TempDirExtension : Extension, BeforeEachCallback, AfterEachCallback {
         }
 
         private val androidGradleBuildPathRegex = Regex(""".*\\build\\tasks\\[^\\]+\\gradle-project\\build\\.*""")
+
+        /**
+         * Clears the read-only attribute on all regular files under [path].
+         * Some tools (e.g., Git) create read-only files that cannot be deleted without this step.
+         */
+        private fun makeAllFilesWritable(path: Path) {
+            path.walk().filter { it.isRegularFile() }.forEach { file ->
+                val dosView = Files.getFileAttributeView(file, DosFileAttributeView::class.java)
+                dosView?.setReadOnly(false)
+            }
+        }
 
         private fun killProcessesLockingAndroidBuildFiles(path: Path) {
             path.walk()

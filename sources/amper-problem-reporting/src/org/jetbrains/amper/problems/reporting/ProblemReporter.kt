@@ -1,9 +1,10 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.problems.reporting
 
+import org.jetbrains.amper.stdlib.collections.forEachEndAware
 import org.jetbrains.annotations.Nls
 
 interface ProblemReporter {
@@ -41,32 +42,16 @@ fun CollectingProblemReporter.replayProblemsTo(other: ProblemReporter) =
 
 @OptIn(NonIdealDiagnostic::class)
 fun renderMessage(problem: BuildProblem): @Nls String = buildString {
-    fun appendSource(source: FileBuildProblemSource, appendMessage: Boolean = true) {
-        append(source.file.normalize())
-        if (source is FileWithRangesBuildProblemSource) {
-            val start = source.range.start
-            append(':').append(start.line).append(':').append(start.column)
-        }
-        if (appendMessage) {
-            append(": ").append(problem.message)
-        }
-    }
-
     fun appendSource(source: BuildProblemSource) {
         when (source) {
-            is FileBuildProblemSource -> appendSource(source)
+            is FileBuildProblemSource -> {
+                appendFileSource(source)
+                append(": ").append(problem.message)
+            }
             is MultipleLocationsBuildProblemSource -> {
                 appendLine(problem.message)
                 appendLine("╰─ ${source.groupingMessage}")
-                source.sources.forEachEndAware { isLast, it ->
-                    if (isLast) {
-                        append("   ╰─ ")
-                    } else {
-                        append("   ├─ ")
-                    }
-                    appendSource(it, appendMessage = false)
-                    if (!isLast) appendLine()
-                }
+                appendMultipleSources(source.sources, indent = 3)
             }
             GlobalBuildProblemSource -> append(problem.message)
         }
@@ -75,5 +60,23 @@ fun renderMessage(problem: BuildProblem): @Nls String = buildString {
     appendSource(problem.source)
 }
 
-private inline fun <T> Collection<T>.forEachEndAware(block: (Boolean, T) -> Unit) =
-    forEachIndexed { index, it -> if (index == size - 1) block(true, it) else block(false, it) }
+fun StringBuilder.appendMultipleSources(sources: List<FileBuildProblemSource>, indent: Int = 0) {
+    sources.forEachEndAware { isLast, source ->
+        repeat(indent) { append(' ') }
+        if (isLast) {
+            append("╰─ ")
+        } else {
+            append("├─ ")
+        }
+        appendFileSource(source)
+        if (!isLast) appendLine()
+    }
+}
+
+fun StringBuilder.appendFileSource(source: FileBuildProblemSource) {
+    append(source.file.normalize())
+    if (source is FileWithRangesBuildProblemSource) {
+        val start = source.range.start
+        append(':').append(start.line).append(':').append(start.column)
+    }
+}

@@ -16,3 +16,11 @@ tasks:
     action: !org.jetbrains.amper.plugins.bcv.kotlinApiDumpTask
       builtApiFile: ${tasks.apiBuild.action.outputApiFile}
       projectApiFile: ${tasks.apiCheck.action.projectApiFile}
+
+checks:
+  - performedBy: apiCheck
+    name: binaryCompatibility
+
+commands:
+  - name: updateBinaryCompatibilityBaseline
+    performedBy: apiDump

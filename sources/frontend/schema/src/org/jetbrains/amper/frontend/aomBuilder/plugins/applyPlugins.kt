@@ -11,6 +11,8 @@ import org.jetbrains.amper.frontend.api.TraceablePath
 import org.jetbrains.amper.frontend.api.asTraceableValue
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.diagnostics.FrontendDiagnosticId
+import org.jetbrains.amper.frontend.plugins.CheckFromPlugin
+import org.jetbrains.amper.frontend.plugins.CustomCommandFromPlugin
 import org.jetbrains.amper.frontend.plugins.PluginYamlRoot
 import org.jetbrains.amper.frontend.plugins.TaskFromPluginDescription
 import org.jetbrains.amper.frontend.plugins.generated.ShadowDependencyLocal
@@ -30,7 +32,7 @@ import kotlin.io.path.pathString
  */
 context(problemReporter: ProblemReporter)
 internal fun applyPlugins(
-    plugins: List<PluginTreeReader>,
+    plugins: List<AmperPluginImpl>,
     moduleBuildCtx: ModuleBuildCtx,
     allModules: List<ModuleBuildCtx>,
 ) {
@@ -83,7 +85,7 @@ internal fun applyPlugins(
             }
             val taskDescription = TaskFromPluginDescription(
                 name = name,
-                pluginId = plugin.pluginData.id,
+                pluginId = plugin.id,
                 appliedTo = moduleBuildCtx.module,
                 backendTaskName = plugin.taskNameFor(moduleBuildCtx.module, name),
                 actionFunctionJvmName = taskInfo.jvmFunctionName,
@@ -124,6 +126,31 @@ internal fun applyPlugins(
             )
 
             moduleBuildCtx.module.tasksFromPlugins += taskDescription
+        }
+
+        val taskNames = appliedPlugin.tasks.keys
+        for (checker in appliedPlugin.checks) {
+            if (checker.performedBy !in taskNames) {
+                continue
+            }
+            val checkerDescription = CheckFromPlugin(
+                name = checker.name,
+                performedBy = plugin.taskNameFor(moduleBuildCtx.module, checker.performedBy),
+                pluginId = plugin.id,
+            )
+            moduleBuildCtx.module.checksFromPlugins += checkerDescription
+        }
+
+        for (command in appliedPlugin.commands) {
+            if (command.performedBy !in taskNames) {
+                continue
+            }
+            val commandDescription = CustomCommandFromPlugin(
+                name = command.name,
+                performedBy = plugin.taskNameFor(moduleBuildCtx.module, command.performedBy),
+                pluginId = plugin.id,
+            )
+            moduleBuildCtx.module.customCommandsFromPlugins += commandDescription
         }
     }
 }

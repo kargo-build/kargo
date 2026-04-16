@@ -10,8 +10,12 @@ import org.jetbrains.amper.problems.reporting.DiagnosticId
  * Diagnostics reported about plugin-related functionality.
  */
 enum class PluginDiagnosticId : DiagnosticId {
+    ConflictingCheckNames,
+    ConflictingCommandNames,
     ConflictingMarkedPluginPaths,
     ConflictingPluginTaskPaths,
+    ConstInitPropertyIsNotFullyResolved,
+    InvalidCheckerTaskName,
     PluginDescriptionShouldBeTopLevel,
     PluginDoesntRegisterAnyTasks,
     PluginDuplicateId,

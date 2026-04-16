@@ -1,10 +1,10 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.dependency.resolution
 
-import kotlinx.coroutines.test.runTest
+import org.jetbrains.amper.test.runTestWithMdc
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import java.util.*
@@ -25,7 +25,7 @@ class MavenLocalRepositoryTest {
     }
 
     @Test
-    fun `guess path`() = runTest {
+    fun `guess path`() = runTestWithMdc {
         val node = kotlinTest()
         val path = mavenLocalRepository.guessPath(node, "${getNameWithoutExtension(node)}.jar")
         assertEquals(

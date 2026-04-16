@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.dependency.resolution
@@ -14,6 +14,7 @@ import org.jetbrains.amper.dependency.resolution.diagnostics.SimpleMessage
 import org.jetbrains.amper.dependency.resolution.diagnostics.detailedMessage
 import org.jetbrains.amper.test.Dirs
 import org.jetbrains.amper.test.assertEqualsWithDiff
+import org.jetbrains.amper.test.dr.toMavenNode
 import org.jetbrains.amper.test.golden.goldenFileOsAware
 import org.jetbrains.amper.test.runTestRespectingDelays
 import org.junit.jupiter.api.TestInfo
@@ -93,7 +94,7 @@ abstract class BaseDRTest {
         filterMessages: List<Message>.() -> List<Message> = { defaultFilterMessages() }
     ): DependencyNodeHolderWithContext =
         context(scope, platform, repositories, cacheBuilder, openTelemetry, jdkVersion)
-            .use { context ->
+            .let { context ->
                 val root = dependency.toRootNode(context)
                 doTest(root, verifyMessages, expected, filterMessages, transitive)
             }
@@ -245,28 +246,6 @@ abstract class BaseDRTest {
     protected fun List<String>.toRootNode(context: Context) =
         RootDependencyNodeWithContext(children = map { it.toMavenNode(context) }, templateContext = context)
 
-    protected fun MavenCoordinates.toMavenNode(context: Context): MavenDependencyNodeWithContext {
-        return MavenDependencyNodeWithContext(context, this, isBom = false)
-    }
-
-    protected fun String.toMavenCoordinates(): MavenCoordinates {
-        val parts = split(":")
-        val group = parts[0]
-        val module = parts[1]
-        val version = if (parts.size > 2) parts[2] else null
-        return MavenCoordinates(group, module, version)
-    }
-
-    private fun String.toMavenNode(context: Context): MavenDependencyNodeWithContext {
-        val isBom = startsWith("bom:")
-        val parts = removePrefix("bom:").trim().split(":")
-        val group = parts[0]
-        val module = parts[1]
-        val version = if (parts.size > 2) parts[2] else null
-        val coordinates = MavenCoordinates(group, module, version)
-        return MavenDependencyNodeWithContext(context, coordinates, isBom = isBom)
-    }
-
     protected fun assertFiles(
         files: List<String>, root: DependencyNode,
         withSources: Boolean = false,
@@ -276,7 +255,6 @@ abstract class BaseDRTest {
         root.distinctBfsSequence()
             .filterIsInstance<MavenDependencyNode>()
             .flatMap { it.dependency.files(withSources) }
-            .filterNot { !checkAutoAddedDocumentation && it.isAutoAddedDocumentation }
             .mapNotNull { file -> file.path?.let { file to it } }
             .sortedBy { it.second.name }
             .distinctBy { it.second }
@@ -287,7 +265,8 @@ abstract class BaseDRTest {
                     it.forEach {
                         val file = it.first
                         val filePath = it.second
-                        check(filePath.exists()) {
+                        check(filePath.exists()
+                                || !checkAutoAddedDocumentation && file.isAutoAddedDocumentation) {
                             SimpleMessage(
                                 text = "File '$filePath' was returned from dependency resolution, but is missing on disk",
                                 id = "File is missing on disk",
@@ -379,22 +358,20 @@ abstract class BaseDRTest {
         /**
          * Run DR test respecting delays inside DR code.
          */
-        fun BaseDRTest.runDrTest(
+        fun runDrTest(
             context: CoroutineContext = EmptyCoroutineContext,
             timeout: Duration = 1.minutes,
             testBody: suspend TestScope.() -> Unit
-        ) =
-            runTestRespectingDelays(context = context, timeout = timeout, testBody = testBody)
+        ) = runTestRespectingDelays(context = context, timeout = timeout, testBody = testBody)
 
         /**
          * Run DR test respecting delays inside DR code.
          */
-        fun BaseDRTest.runSlowDrTest(
+        fun runSlowDrTest(
             context: CoroutineContext = EmptyCoroutineContext,
             timeout: Duration = 5.minutes,
             testBody: suspend TestScope.() -> Unit
-        ) =
-            runDrTest(context = context, testBody = testBody, timeout = timeout)
+        ) = runDrTest(context = context, testBody = testBody, timeout = timeout)
 
         fun List<Message>.defaultFilterMessages(): List<Message> =
             filter { it.severity > Severity.INFO }

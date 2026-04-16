@@ -12,19 +12,17 @@ import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
 import org.jetbrains.annotations.Nls
 
+@Deprecated("Classifiers are now supported in coordinates since AMPER-774. " +
+        "The reporting for incorrect classifier matching shorthand (missing space problem) will be moved to after-DR phase.")
+@UsedInIdePlugin
 class MavenClassifiersAreNotSupported(
     override val element: PsiElement,
     override val coordinates: String,
     val classifier: String,
 ) : MavenCoordinatesParsingProblem(level = Level.Warning) {
-    companion object {
-        const val ID = "maven.classifiers.are.not.supported"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.MavenClassifiersAreNotSupported
-    override val message: @Nls String = SchemaBundle.message(ID, coordinates, classifier)
+    override val message: @Nls String = SchemaBundle.message("maven.classifiers.are.not.supported", coordinates, classifier)
 
     @UsedInIdePlugin
     val classifierCanBeShorthand: Boolean = when (classifier) {

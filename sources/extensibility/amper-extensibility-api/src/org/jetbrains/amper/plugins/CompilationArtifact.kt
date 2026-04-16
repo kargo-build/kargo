@@ -19,9 +19,32 @@ interface CompilationArtifact {
     val from: Dependency.Local
 
     /**
+     * The kind of the compilation artifact.
+     */
+    val kind: Kind
+
+    /**
      * Path to the compilation artifact.
-     * It's a JAR for JVM.
+     * The contents are dependent on the [kind].
      */
     @Provided
     val artifact: Path
+
+    /**
+     * Kind of the [CompilationArtifact].
+     */
+    enum class Kind {
+        /**
+         * A single JAR compiled from module sources.
+         * If there is a need to request unpacked classes, use [Classes] instead.
+         */
+        @EnumValue("jar")
+        Jar,
+
+        /**
+         * A directory containing all the module's compiled classes.
+         */
+        @EnumValue("classes")
+        Classes,
+    }
 }

@@ -7,7 +7,7 @@ root
      │    ╰─── commons-io:commons-io:2.11.0
      ├─── org.apache.maven.reporting:maven-reporting-api:3.0
      │    ╰─── org.apache.maven.doxia:doxia-sink-api:1.0
-     ├─── org.jacoco:org.jacoco.agent:0.8.13
+     ├─── org.jacoco:org.jacoco.agent:0.8.13:runtime
      ├─── org.jacoco:org.jacoco.core:0.8.13
      │    ├─── org.ow2.asm:asm:9.8
      │    ├─── org.ow2.asm:asm-commons:9.8

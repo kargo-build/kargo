@@ -4,12 +4,17 @@
 
 package org.jetbrains.amper.plugins
 
+import com.github.ajalt.mordant.terminal.Terminal
+import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import org.jetbrains.amper.ProcessRunner
 import org.jetbrains.amper.cli.AmperProjectRoot
 import org.jetbrains.amper.cli.CliProblemReporter
+import org.jetbrains.amper.cli.lazyload.ExtraClasspath
+import org.jetbrains.amper.cli.logging.withoutConsoleLogging
 import org.jetbrains.amper.cli.userReadableError
+import org.jetbrains.amper.cli.widgets.simpleSpinnerProgressIndicator
 import org.jetbrains.amper.frontend.messages.FileWithRangesBuildProblemSource
 import org.jetbrains.amper.frontend.plugins.PluginManifest
 import org.jetbrains.amper.incrementalcache.IncrementalCache
@@ -34,22 +39,19 @@ import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.div
-import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.relativeTo
 
 internal suspend fun doPreparePlugins(
+    terminal: Terminal,
     projectRoot: AmperProjectRoot,
     jdkProvider: JdkProvider,
     incrementalCache: IncrementalCache,
     plugins: Map<Path, PluginManifest>,
     processRunner: ProcessRunner,
-): List<PluginData> {
+): List<PluginData> = coroutineScope {
     require(plugins.isNotEmpty())
-    val distributionRoot = Path(checkNotNull(System.getProperty("amper.dist.path")) {
-        "Missing `amper.dist.path` system property. Ensure your wrapper script integrity."
-    })
 
-    return incrementalCache.executeForSerializable(
+    incrementalCache.executeForSerializable(
         key = "prepare-plugins",
         inputValues = mapOf(
             "plugins" to plugins.values.joinToString()
@@ -58,8 +60,8 @@ internal suspend fun doPreparePlugins(
     ) {
         // TODO maybe force plugin modules to use a JDK aligned with Amper's runtime instead, and use it here
         val jdk = jdkProvider.getDefaultJdk()
-        val toolClasspath = distributionRoot.resolve("plugins-processor").listDirectoryEntries("*.jar")
-        val apiClasspath = distributionRoot.resolve("extensibility-api").listDirectoryEntries("*.jar")
+        val toolClasspath = ExtraClasspath.PLUGINS_PROCESSOR.findJarsInDistribution()
+        val apiClasspath = ExtraClasspath.EXTENSIBILITY_API.findJarsInDistribution()
         val outputCaptor = ProcessOutputListener.InMemoryCapture()
         val request = PluginDeclarationsRequest(
             jdkPath = jdk.homeDir,
@@ -72,18 +74,27 @@ internal suspend fun doPreparePlugins(
                 )
             }
         )
-        logger.info("Processing local plugin schema for [${plugins.values.joinToString { it.id }}]...")
-        val result = processRunner.runJava(
-            jdk = jdk,
-            workingDir = Path("."),
-            mainClass = "org.jetbrains.amper.schema.processing.MainKt",
-            programArgs = emptyList(),
-            argsMode = ArgsMode.CommandLine,
-            classpath = toolClasspath,
-            outputListener = outputCaptor,
-            // Input request is passed via STDIN
-            input = ProcessInput.Text(Json.encodeToString(request))
-        )
+
+        withoutConsoleLogging {
+            logger.info("Processing local plugin schema for [${plugins.values.joinToString { it.id }}]...")
+        }
+        val widgetJob = simpleSpinnerProgressIndicator(terminal, "Pre-processing local plugins (will be cached)")
+
+        val result = try {
+            processRunner.runJava(
+                jdk = jdk,
+                workingDir = Path("."),
+                mainClass = "org.jetbrains.amper.schema.processing.MainKt",
+                programArgs = emptyList(),
+                argsMode = ArgsMode.CommandLine,
+                classpath = toolClasspath,
+                outputListener = outputCaptor,
+                // Input request is passed via STDIN
+                input = ProcessInput.Text(Json.encodeToString(request))
+            )
+        } finally {
+            widgetJob.cancel()
+        }
         if (result.exitCode != 0) {
             logger.error(outputCaptor.stderr)
             error("Failed to process local plugin schema")
@@ -104,7 +115,8 @@ internal suspend fun doPreparePlugins(
         }
 
         val allPluginData = results.map { result ->
-            val plugin = checkNotNull(plugins[result.sourcePath.parent]) {
+            val pluginRootDir = result.sourcePath.parent
+            val plugin = checkNotNull(plugins[pluginRootDir]) {
                 "Processing of ${result.sourcePath} requested, but no corresponding result is found"
             }
             PluginData(
@@ -113,6 +125,7 @@ internal suspend fun doPreparePlugins(
                     it.qualifiedName == plugin.settingsClass
                 },
                 description = plugin.description,
+                source = PluginData.Source.Local(pluginRootDir),
                 declarations = result.declarations,
             )
         }
@@ -129,8 +142,6 @@ internal suspend fun doPreparePlugins(
 private class SchemaDiagnostic(
     diagnostic: PluginDataResponse.Diagnostic,
 ) : BuildProblem, DiagnosticId {
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId = diagnostic.diagnosticId
     override val diagnosticId: DiagnosticId = this
     override val source = FileWithRangesBuildProblemSource(diagnostic.location.path, diagnostic.location.textRange)
     override val message = diagnostic.message

@@ -26,7 +26,7 @@ internal class ComposeOsSpecificSubstitutor(systemInfo: SystemInfo) : TreeTransf
         .replace("org.jetbrains.compose.desktop:desktop-jvm:", replacement)
 
     override fun visitScalar(node: ScalarNode) = when (node) {
-        is StringNode if node.type.semantics == SchemaType.StringType.Semantics.MavenCoordinates ->
+        is StringNode if node.semantics == SchemaType.StringType.Semantics.MavenCoordinates ->
             Changed(node.copyWithValue(value = node.value.doReplace()))
         else -> NotChanged
     }

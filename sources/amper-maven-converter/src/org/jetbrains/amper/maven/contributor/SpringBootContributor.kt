@@ -10,12 +10,12 @@ import org.codehaus.plexus.util.xml.Xpp3Dom
 import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.frontend.tree.invoke
 import org.jetbrains.amper.frontend.types.generated.*
+import org.jetbrains.amper.maven.MavenContributorContext
 import org.jetbrains.amper.maven.ProjectTreeBuilder
-import kotlin.io.path.div
 
-internal fun ProjectTreeBuilder.contributeSpringBootPlugin(reactorProjects: Set<MavenProject>) {
-    for (project in reactorProjects.filterJarProjects()) {
-        module(project.basedir.toPath() / "module.yaml") {
+internal fun ProjectTreeBuilder.contributeSpringBootPlugin(jarProjects: Set<MavenProject>) {
+    for (project in jarProjects) {
+        module(project) {
             project.model.build.plugins
                 .filter { it.groupId == "org.springframework.boot" && it.artifactId == "spring-boot-maven-plugin" }
                 .forEach { plugin -> contributeSpringBootPlugin(project, plugin) }
@@ -27,7 +27,7 @@ private fun ProjectTreeBuilder.ModuleTreeBuilder.contributeSpringBootPlugin(
     reactorProject: MavenProject,
     plugin: Plugin,
 ) {
-    withDefaultContext {
+    withDefaultContext(extraContexts = listOf(MavenContributorContext.SpringBoot)) {
         product {
             type(ProductType.JVM_APP)
         }

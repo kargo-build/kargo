@@ -215,6 +215,23 @@ annotation class CanBeReferenced
 annotation class ReadOnly
 
 /**
+ * *Applicable for plugin contexts.*
+ * Property is forced to have a fully resolved value, not depending on any external references.
+ * Example (assuming `foo`, `baz`, `quu`, `quu` are "constinit"):
+ * ```yaml
+ * foo: bar   # okay - literal
+ * baz: ${foo}  # okay - resolves to "bar"
+ * quu: ${module.name} # error - references external parameter
+ * quuu: # error - subtree references external parameter
+ *   one: two
+ *   three: ${project.rootDir}
+ * ```
+ */
+@Target(AnnotationTarget.PROPERTY)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class ConstInit
+
+/**
  * If present on the [SchemaNode] inheritor, means that it has a custom, manually-provided
  * [org.jetbrains.amper.frontend.types.SchemaTypeDeclaration], and no auto-generated one will be present.
  */

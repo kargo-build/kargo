@@ -3,27 +3,27 @@
 agp = "8.10.1"
 android-tools = "31.13.0"
 apache-commons = "1.27.1"
-bouncycastle = "1.78.1"
+bouncycastle = "1.79"
 clikt = "5.0.3"
-compose-hot-reload-version = "1.0.0-rc01" # AUTO-UPDATED by syncVersions.main.kts - DO NOT RENAME NOR UPDATE HERE
+compose-hot-reload-version = "1.0.0" # AUTO-UPDATED by syncVersions.main.kts - DO NOT RENAME NOR UPDATE HERE
 eclipse-jgit = "7.2.1.202505142326-r"
 google-services = "4.4.3"
 gradle-toolingApi = "8.14.3"
 gradleplugins-gradle-api = "8.11.1" # Limited by https://mvnrepository.com/artifact/dev.gradleplugins/gradle-api
 intellij-async-profiler = "4.1-0"
+intellij-fastutil = "8.5.16-jb1" # aligned with IntelliJ platform - UPDATE WITH CARE
 intellij-parsing = "0.3.154"
 intellij-platform = "253.29346.138"
 intellij-xcodemodel = "241.14980"
 jetbrains-annotations = "26.0.2"
 jna = "5.18.0"
-junit-jupiter = "5.13.4"
-junit-platform = "6.0.1" # AUTO-UPDATED by syncVersions.main.kts - DO NOT RENAME NOR UPDATE HERE
+junit-jupiter = "5.14.3"
+junit5-platform = "1.14.3" # AUTO-UPDATED by syncVersions.main.kts - DO NOT RENAME NOR UPDATE HERE
 kaml = "0.76.0"
-kotlin = "2.3.10" # AUTO-UPDATED by syncVersions.main.kts - DO NOT RENAME NOR UPDATE HERE
+kotlin = "2.3.20" # AUTO-UPDATED by syncVersions.main.kts - DO NOT RENAME NOR UPDATE HERE
 kotlinpoet = "2.2.0"
 kotlinx-coroutines = "1.10.1" # aligned with IntelliJ platform - UPDATE WITH CARE
 kotlinx-datetime = "0.7.1"
-ksp = "2.3.6" # AUTO-UPDATED by syncVersions.main.kts - DO NOT RENAME NOR UPDATE HERE
 ktor = "3.1.3" # aligned with IntelliJ platform - UPDATE WITH CARE
 maven = "3.9.9"
 maven-plugin-annotations = "3.15.2"
@@ -31,10 +31,9 @@ maven-reporting = "4.0.0"
 maven-resolver = "1.9.22"
 maven-site-plugin = "3.21.0"
 mordant = "3.0.1"
-opentelemetry = "1.50.0"
+opentelemetry = "1.60.1"
 opentelemetry-ktor = "2.18.1-alpha"
 slf4j = "2.0.16"
-stacktrace-decoroutinator = "2.4.8"
 systemstubs = "2.1.8"
 teamcity-servicemessages = "2024.12"
 tinylog = "2.7.0"
@@ -68,6 +67,7 @@ gradle-api =  { module = "dev.gradleplugins:gradle-api", version.ref = "gradlepl
 gradle-toolingApi = { module = "org.gradle:gradle-tooling-api", version.ref = "gradle-toolingApi" }
 intellij-amper-xcodemodel = { module = "com.jetbrains.intellij.amper:amper-deps-proprietary-xcode-model-squashed", version.ref = "intellij-xcodemodel" }
 intellij-deps-asyncProfiler = { module = "org.jetbrains.intellij.deps:async-profiler", version.ref = "intellij-async-profiler" }
+intellij-deps-fastutil = { module = "org.jetbrains.intellij.deps.fastutil:intellij-deps-fastutil", version.ref = "intellij-fastutil" }
 intellij-jps-build-dependency-graph = { module = "com.jetbrains.intellij.platform:jps-build-dependency-graph", version.ref = "intellij-platform" }
 intellij-jps-build-javac-rt = { module = "com.jetbrains.intellij.platform:jps-build-javac-rt", version.ref = "intellij-platform" }
 intellij-parsing-core = { module = "org.jetbrains:ij-parsing-core", version.ref = "intellij-parsing" }
@@ -92,12 +92,10 @@ intellij-platform-langImpl = { module = "com.jetbrains.intellij.platform:lang-im
 intellij-platform-coreUi = { module = "com.jetbrains.intellij.platform:core-ui", version.ref = "intellij-platform" }
 jna = { module = "net.java.dev.jna:jna", version.ref = "jna" }
 jna-platform = { module = "net.java.dev.jna:jna-platform", version.ref = "jna" }
-junit-engine-jupiter = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit-jupiter" }
-junit-engine-vintage = { module = "org.junit.vintage:junit-vintage-engine", version.ref = "junit-jupiter" }
 junit-jupiter-api = { module = "org.junit.jupiter:junit-jupiter-api", version.ref = "junit-jupiter" }
 junit-jupiter-params = { module = "org.junit.jupiter:junit-jupiter-params", version.ref = "junit-jupiter" }
-junit-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit-platform" }
-junit-platform-reporting = { module = "org.junit.platform:junit-platform-reporting", version.ref = "junit-platform" }
+junit5-platform-engine = { module = "org.junit.platform:junit-platform-engine", version.ref = "junit5-platform" }
+junit5-platform-launcher = { module = "org.junit.platform:junit-platform-launcher", version.ref = "junit5-platform" }
 kotlin-analysis-api-fir-for-ide = { module = "org.jetbrains.kotlin:low-level-api-fir-for-ide", version.ref = "kotlin" }
 kotlin-analysis-api-for-ide = { module = "org.jetbrains.kotlin:analysis-api-for-ide", version.ref = "kotlin" }
 kotlin-analysis-api-impl-base-for-ide = { module = "org.jetbrains.kotlin:analysis-api-impl-base-for-ide", version.ref = "kotlin" }
@@ -105,6 +103,7 @@ kotlin-analysis-api-k2-for-ide = { module = "org.jetbrains.kotlin:analysis-api-k
 kotlin-analysis-api-platform-interface-for-ide = { module = "org.jetbrains.kotlin:analysis-api-platform-interface-for-ide", version.ref = "kotlin" }
 kotlin-analysis-api-standalone-for-ide = { module = "org.jetbrains.kotlin:analysis-api-standalone-for-ide", version.ref = "kotlin" }
 kotlin-buildToolsApi = { module = "org.jetbrains.kotlin:kotlin-build-tools-api", version.ref = "kotlin" }
+kotlin-buildToolsCompat = { module = "org.jetbrains.kotlin:kotlin-build-tools-compat", version.ref = "kotlin" }
 kotlin-compiler = { module = "org.jetbrains.kotlin:kotlin-compiler", version.ref = "kotlin" }
 kotlin-compose-compiler-gradle-plugin = { module = "org.jetbrains.kotlin:compose-compiler-gradle-plugin", version.ref = "kotlin" }
 kotlin-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -118,7 +117,6 @@ kotlinx-coroutines-debug = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-
 kotlinx-coroutines-slf4j = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-slf4j", version.ref = "kotlinx-coroutines" }
 kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 kotlinx-datetime = { module="org.jetbrains.kotlinx:kotlinx-datetime", version.ref="kotlinx-datetime" }
-ksp-symbolProcessingApi = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 ktor-client = { module = "io.ktor:ktor-client", version.ref = "ktor" }
 ktor-client-auth = { module = "io.ktor:ktor-client-auth", version.ref = "ktor" }
 ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktor" }
@@ -140,6 +138,7 @@ maven-resolver-connectorBasic = { module = "org.apache.maven.resolver:maven-reso
 maven-resolver-transportHttp = { module = "org.apache.maven.resolver:maven-resolver-transport-http", version.ref = "maven-resolver" }
 maven-site-plugin = { module = "org.apache.maven.plugins:maven-site-plugin", version.ref = "maven-site-plugin" }
 mordant = { module = "com.github.ajalt.mordant:mordant", version.ref = "mordant" }
+mordantCoroutines = { module = "com.github.ajalt.mordant:mordant-coroutines", version.ref = "mordant" }
 opentelemetry-api = { module = "io.opentelemetry:opentelemetry-api", version.ref = "opentelemetry" }
 opentelemetry-exporterLoggingOtlp = { module = "io.opentelemetry:opentelemetry-exporter-logging-otlp", version.ref = "opentelemetry" }
 opentelemetry-kotlin = { module = "io.opentelemetry:opentelemetry-extension-kotlin", version.ref = "opentelemetry" }
@@ -151,7 +150,6 @@ opentelemetry-sdkTrace = { module = "io.opentelemetry:opentelemetry-sdk-trace", 
 org-eclipse-jgit = { module = "org.eclipse.jgit:org.eclipse.jgit", version.ref = "eclipse-jgit" }
 slf4j-api = { module = "org.slf4j:slf4j-api", version.ref = "slf4j" }
 slf4j-simple = { module = "org.slf4j:slf4j-simple", version.ref = "slf4j" }
-stacktrace-decoroutinator = { module = "dev.reformator.stacktracedecoroutinator:stacktrace-decoroutinator-jvm", version.ref = "stacktrace-decoroutinator" }
 system-stubs-jupiter = { module = "uk.org.webcompere:system-stubs-jupiter", version.ref = "systemstubs" }
 teamcity-serviceMessages = { module = "org.jetbrains.teamcity:serviceMessages", version.ref = "teamcity-servicemessages" }
 tinylog-api = { module = "org.tinylog:tinylog-api-kotlin", version.ref = "tinylog" }

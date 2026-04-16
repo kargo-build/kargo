@@ -1,9 +1,6 @@
 /*
  * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
-
-@file:Suppress("CONTEXT_RECEIVERS_DEPRECATED")
-
 package org.jetbrains.amper.frontend.project
 
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -18,7 +15,6 @@ import org.jetbrains.amper.frontend.api.TraceableString
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.catalogs.parseGradleVersionCatalog
 import org.jetbrains.amper.frontend.diagnostics.UnresolvedModuleDeclaration
-import org.jetbrains.amper.frontend.project.StandaloneAmperProjectContext.Companion.find
 import org.jetbrains.amper.frontend.reportBundleError
 import org.jetbrains.amper.frontend.schema.MavenPlugin
 import org.jetbrains.amper.frontend.schema.Project
@@ -73,8 +69,19 @@ class StandaloneAmperProjectContext(
          * * If neither a project nor a module file are found, we don't have an Amper project and null is returned. The
          * caller is responsible for handling this situation as desired.
          *
-         * The given IntelliJ [project] is used to access the VFS. If null, a mock project will be created.
+         * The given IntelliJ [project] is used to resolve virtual files and PSI files. If null, a mock project is
+         * created to satisfy the virtual file system's machinery.
          */
+        @Deprecated(
+            message = "StandaloneAmperProjectContext will be made internal in a future version, and this function " +
+                    "will be removed. Use the corresponding factory function from the AmperProjectContext interface " +
+                    "instead.",
+            replaceWith = ReplaceWith(
+                "AmperProjectContext.find(start, ijProject = project)",
+                "org.jetbrains.amper.frontend.project.AmperProjectContext"
+            ),
+            level = DeprecationLevel.ERROR,
+        )
         context(_: ProblemReporter)
         @UsedInIdePlugin
         fun find(start: VirtualFile, project: IJProject? = null): AmperProjectContext? {
@@ -83,8 +90,31 @@ class StandaloneAmperProjectContext(
         }
 
         /**
-         * Does the same as [find] above, but accepts [Path] that it resolves to [VirtualFile] beforehand.
+         * Finds an Amper project, starting at the given [start] directory or file, or returns null if no Amper project
+         * is found.
+         *
+         * Conceptually, we first find the closest ancestor directory of [start] that contains a project file or a
+         * module file. Then:
+         * * If a project file is found, that's our root.
+         * * If a module file is found, that's part of our project. In that case we check if a project file higher up
+         * contains this module. If that's the case, then the project file defines the root. If not, then our module
+         * file defines the root.
+         * * If neither a project nor a module file are found, we don't have an Amper project and null is returned. The
+         * caller is responsible for handling this situation as desired.
+         *
+         * The given IntelliJ [project] is used to resolve virtual files and PSI files. If null, a mock project is
+         * created to satisfy the virtual file system's machinery.
          */
+        @Deprecated(
+            message = "StandaloneAmperProjectContext will be made internal in a future version, and this function " +
+                    "will be removed. Use the corresponding factory function from the AmperProjectContext interface " +
+                    "instead.",
+            replaceWith = ReplaceWith(
+                "AmperProjectContext.find(start = start, buildDir = buildDir, ijProject = project)",
+                "org.jetbrains.amper.frontend.project.AmperProjectContext"
+            ),
+            level = DeprecationLevel.ERROR,
+        )
         context(_: ProblemReporter)
         fun find(
             start: Path,
@@ -97,12 +127,12 @@ class StandaloneAmperProjectContext(
         }
 
         context(_: ProblemReporter)
-        private fun find(
-            virtualFile: VirtualFile,
+        internal fun find(
+            start: VirtualFile,
             buildDir: Path?,
             frontendPathResolver: FrontendPathResolver,
         ): AmperProjectContext? {
-            val result = preSearchProjectRoot(start = virtualFile) ?: return null
+            val result = preSearchProjectRoot(start = start) ?: return null
 
             val potentialContext = spanBuilder("Create candidate project context")
                 .setAttribute("potential-root", result.potentialRoot.presentableUrl)
@@ -138,8 +168,18 @@ class StandaloneAmperProjectContext(
          * responsible for handling the situation (only the caller knows whether this is a valid situation).
          *
          * The given IntelliJ [project] is used to resolve virtual files and PSI files. If null, a mock project is
-         * created.
+         * created to satisfy the virtual file system's machinery.
          */
+        @Deprecated(
+            message = "StandaloneAmperProjectContext will be made internal in a future version, and this function " +
+                    "will be removed. Use the corresponding factory function from the AmperProjectContext interface " +
+                    "instead.",
+            replaceWith = ReplaceWith(
+                "AmperProjectContext.create(rootDir = rootDir, buildDir = buildDir, ijProject = project)",
+                "org.jetbrains.amper.frontend.project.AmperProjectContext"
+            ),
+            level = DeprecationLevel.ERROR,
+        )
         context(_: ProblemReporter)
         fun create(
             rootDir: Path,

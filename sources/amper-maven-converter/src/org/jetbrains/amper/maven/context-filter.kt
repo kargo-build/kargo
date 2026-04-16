@@ -28,7 +28,7 @@ fun TreeNode.filterByContext(
             } else if (mainList != null && listsAreEqual(reducedChildren, mainList.children)) {
                 null
             } else {
-                ListNode(reducedChildren, type, trace, listOf(context))
+                ListNode(reducedChildren, trace, listOf(context))
             }
         }
         is MappingNode -> {
@@ -43,7 +43,7 @@ fun TreeNode.filterByContext(
             if (reducedChildren.isEmpty()) {
                 null
             } else {
-                MappingNode(reducedChildren, type, trace, listOf(context))
+                MappingNode(reducedChildren, declaration, trace, listOf(context))
             }
         }
         is ScalarNode -> {

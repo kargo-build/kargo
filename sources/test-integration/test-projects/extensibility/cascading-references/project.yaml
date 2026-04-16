@@ -1,0 +1,6 @@
+modules:
+  - app
+  - my-plugin
+
+plugins:
+  - ./my-plugin

@@ -45,6 +45,7 @@ suspend fun preparePlugins(
         spanBuilder("Generate local plugins schema")
             .use {
                 doPreparePlugins(
+                    terminal = context.terminal,
                     projectRoot = context.projectRoot,
                     jdkProvider = context.jdkProvider,
                     incrementalCache = context.incrementalCache,

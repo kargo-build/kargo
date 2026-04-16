@@ -14,9 +14,20 @@ sealed interface SchemaOrigin {
      * Entity comes from the local plugin sources.
      */
     data class LocalPlugin(
-        val sourceFile: Path,
-        val textRange: IntRange,
-    ) : SchemaOrigin
+        /**
+         * The folder the plugin originates from.
+         */
+        val pluginFolder: Path,
+        /**
+         * Possible location inside the plugin sources that points to the exact place where the schema part is defined.
+         */
+        val sourceCodeLocation: SourceCodeLocation?,
+    ) : SchemaOrigin {
+        data class SourceCodeLocation(
+            val path: Path,
+            val textRange: IntRange?,
+        )
+    }
 
     /**
      * Entity comes from the maven plugin.

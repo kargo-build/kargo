@@ -1,0 +1,6 @@
+product:
+  type: jvm/app
+
+plugins:
+  alpha: enabled
+  beta: enabled

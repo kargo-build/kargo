@@ -1,13 +1,15 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
-package org.jetbrains.amper.frontend.dr.resolver
+package org.jetbrains.amper
 
 import io.opentelemetry.api.trace.Span
-import org.jetbrains.amper.cli.logging.DoNotLogToTerminalCookie
+import org.jetbrains.amper.cli.logging.withoutConsoleLogging
 import org.jetbrains.amper.cli.userReadableError
 import org.jetbrains.amper.core.AmperUserCacheRoot
+import org.jetbrains.amper.frontend.dr.resolver.MavenResolver
+import org.jetbrains.amper.frontend.dr.resolver.MavenResolverException
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.problems.reporting.BuildProblem
 import org.jetbrains.amper.problems.reporting.Level
@@ -15,7 +17,7 @@ import org.jetbrains.amper.problems.reporting.renderMessage
 import org.slf4j.LoggerFactory
 
 /**
- * [MavenResolver] inheritor that logs encountered problems to the CLI.
+ * [org.jetbrains.amper.frontend.dr.resolver.MavenResolver] inheritor that logs encountered problems to the CLI.
  */
 class CliReportingMavenResolver(
     userCacheRoot: AmperUserCacheRoot,
@@ -28,13 +30,14 @@ class CliReportingMavenResolver(
         val span = Span.current()
         
         for (buildProblem in buildProblems) {
+            val message = renderMessage(buildProblem)
             when (buildProblem.level) {
-                Level.WeakWarning -> logger.info(buildProblem.message)
-                Level.Warning -> logger.warn(buildProblem.message)
+                Level.WeakWarning -> logger.info(message)
+                Level.Warning -> logger.warn(message)
                 Level.Error -> {
-                    span.recordException(MavenResolverException(buildProblem.message))
-                    DoNotLogToTerminalCookie.use {
-                        logger.error(buildProblem.message)
+                    span.recordException(MavenResolverException(message))
+                    withoutConsoleLogging {
+                        logger.error(message)
                     }
                 }
             }

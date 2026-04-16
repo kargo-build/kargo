@@ -1,15 +1,15 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.engine
 
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.withTimeout
 import org.jetbrains.amper.cli.UserReadableError
 import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.tasks.TaskResult
+import org.jetbrains.amper.test.runTestWithMdc
 import org.junit.jupiter.api.assertThrows
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.max
@@ -23,7 +23,7 @@ import kotlin.time.Duration.Companion.seconds
 class TaskExecutorTest {
 
     @Test
-    fun simpleTaskDependencies() = runTest {
+    fun simpleTaskDependencies() = runTestWithMdc {
         val builder = TaskGraphBuilder()
         builder.registerTask(TestTask("A"), listOf(TaskName("B")))
         builder.registerTask(TestTask("B"), listOf(TaskName("C")))
@@ -47,7 +47,7 @@ class TaskExecutorTest {
     }
 
     @Test
-    fun diamondTaskDependencies() = runTest {
+    fun diamondTaskDependencies() = runTestWithMdc {
         val builder = TaskGraphBuilder()
         builder.registerTask(TestTask("A"), listOf(TaskName("B"), TaskName("C")))
         builder.registerTask(TestTask("B"), listOf(TaskName("D")))
@@ -64,7 +64,7 @@ class TaskExecutorTest {
     }
 
     @Test
-    fun complexTaskDependencies() = runTest {
+    fun complexTaskDependencies() = runTestWithMdc {
         executed.clear()
 
         val builder = TaskGraphBuilder()
@@ -85,7 +85,7 @@ class TaskExecutorTest {
     }
 
     @Test
-    fun failedTaskCancelsDependentChain() = runTest {
+    fun failedTaskCancelsDependentChain() = runTestWithMdc {
         val builder = TaskGraphBuilder()
         builder.registerTask(TestTask("A"), listOf(TaskName("B")))
         builder.registerTask(TestTask("B"), listOf(TaskName("C")))
@@ -114,7 +114,7 @@ class TaskExecutorTest {
     }
 
     @Test
-    fun executesAllPossibleTasksOnTaskFailureInGreedyMode() = runTest {
+    fun executesAllPossibleTasksOnTaskFailureInGreedyMode() = runTestWithMdc {
         // Given the task graph dependencies:
         // A -> B
         // A -> C
@@ -149,7 +149,7 @@ class TaskExecutorTest {
     }
 
     @Test
-    fun stopsOnFirstTaskFailureInFailFastMode() = runTest {
+    fun stopsOnFirstTaskFailureInFailFastMode() = runTestWithMdc {
         // Given the task graph dependencies:
         // A -> B
         // A -> C
@@ -170,7 +170,7 @@ class TaskExecutorTest {
     }
 
     @Test
-    fun failsOnTaskDependencyCycle() = runTest {
+    fun failsOnTaskDependencyCycle() = runTestWithMdc {
         // Given the task graph dependencies:
         // D -> C
         // C -> B
@@ -199,7 +199,7 @@ class TaskExecutorTest {
     }
 
     @Test
-    fun rootTasksExecuteInParallel() = runTest {
+    fun rootTasksExecuteInParallel() = runTestWithMdc {
         val builder = TaskGraphBuilder()
         val parallelTasks = setOf("A", "B", "C")
         parallelTasks.forEach { name ->

@@ -7,6 +7,7 @@ package org.jetbrains.amper.frontend.tree
 import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.api.TraceablePath
 import org.jetbrains.amper.frontend.contexts.Contexts
+import org.jetbrains.amper.frontend.types.SchemaEnumDeclaration
 import org.jetbrains.amper.frontend.types.SchemaType
 import java.nio.file.Path
 
@@ -15,7 +16,6 @@ import java.nio.file.Path
  */
 class BooleanNode(
     val value: Boolean,
-    override val type: SchemaType.BooleanType,
     override val trace: Trace,
     override val contexts: Contexts,
 ) : ScalarNode
@@ -25,19 +25,18 @@ class BooleanNode(
  */
 class StringNode(
     val value: String,
-    override val type: SchemaType.StringType,
+    val semantics: SchemaType.StringType.Semantics?,
     override val trace: Trace,
     override val contexts: Contexts,
 ) : ScalarNode
 
-fun StringNode.copyWithValue(value: String) = StringNode(value, type, trace, contexts)
+fun StringNode.copyWithValue(value: String) = StringNode(value, semantics, trace, contexts)
 
 /**
  * A [ScalarNode] with integer [value].
  */
 class IntNode(
     val value: Int,
-    override val type: SchemaType.IntType,
     override val trace: Trace,
     override val contexts: Contexts,
 ) : ScalarNode
@@ -47,7 +46,6 @@ class IntNode(
  */
 class PathNode(
     val value: Path,
-    override val type: SchemaType.PathType,
     override val trace: Trace,
     override val contexts: Contexts,
 ) : ScalarNode
@@ -67,7 +65,7 @@ class EnumNode(
      * For that, use the [schemaValue] extension property.
      */
     val entryName: String,
-    override val type: SchemaType.EnumType,
+    val declaration: SchemaEnumDeclaration,
     override val trace: Trace,
     override val contexts: Contexts,
 ) : ScalarNode
@@ -78,15 +76,15 @@ class EnumNode(
  * @see org.jetbrains.amper.frontend.types.SchemaEnumDeclaration.toEnumConstant
  */
 val EnumNode.enumConstantIfAvailable: Enum<*>?
-    get() = type.declaration.toEnumConstant(entryName)
+    get() = declaration.toEnumConstant(entryName)
 
 /**
  * Returns the [schema value][org.jetbrains.amper.frontend.types.SchemaEnumDeclaration.EnumEntry.schemaValue]
  * of the underlying enum entry.
  */
 val EnumNode.schemaValue: String
-    get() = checkNotNull(type.declaration.getEntryByName(entryName)) {
-        "Unknown enum entry name: $entryName in $type"
+    get() = checkNotNull(declaration.getEntryByName(entryName)) {
+        "Unknown enum entry name: $entryName in ${declaration.displayName}"
     }.schemaValue
 
 /**
@@ -103,9 +101,9 @@ infix fun ScalarNode?.valueEqualsTo(another: ScalarNode?): Boolean = when (this)
 }
 
 fun ScalarNode.copyWithContexts(contexts: Contexts): ScalarNode = when (this) {
-    is BooleanNode -> BooleanNode(value, type, trace, contexts)
-    is EnumNode -> EnumNode(entryName, type, trace, contexts)
-    is IntNode -> IntNode(value, type, trace, contexts)
-    is PathNode -> PathNode(value, type, trace, contexts)
-    is StringNode -> StringNode(value, type, trace, contexts)
+    is BooleanNode -> BooleanNode(value, trace, contexts)
+    is EnumNode -> EnumNode(entryName, declaration, trace, contexts)
+    is IntNode -> IntNode(value, trace, contexts)
+    is PathNode -> PathNode(value, trace, contexts)
+    is StringNode -> StringNode(value, semantics, trace, contexts)
 }

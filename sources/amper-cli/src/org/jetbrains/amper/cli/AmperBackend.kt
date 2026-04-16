@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.cli
@@ -7,7 +7,6 @@ package org.jetbrains.amper.cli
 import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.amper.cli.options.UserJvmArgsOption
 import org.jetbrains.amper.cli.widgets.TaskProgressRenderer
-import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.engine.BuildTask
 import org.jetbrains.amper.engine.MaybeBuildTypeAware
 import org.jetbrains.amper.engine.PackageTask
@@ -23,6 +22,7 @@ import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.isDescendantOf
 import org.jetbrains.amper.frontend.mavenRepositories
+import org.jetbrains.amper.frontend.plugins.CustomCommandFromPlugin
 import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.system.info.OsFamily
 import org.jetbrains.amper.tasks.AllRunSettings
@@ -33,6 +33,7 @@ import org.jetbrains.amper.tasks.compose.isComposeEnabledFor
 import org.jetbrains.amper.tasks.ios.IosPreBuildTask
 import org.jetbrains.amper.tasks.ios.IosTaskType
 import org.jetbrains.amper.tasks.jvm.JvmHotRunTask
+import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.useWithoutCoroutines
 import org.jetbrains.amper.util.BuildType
 import org.jetbrains.amper.util.PlatformUtil
@@ -206,6 +207,15 @@ class AmperBackend(
     suspend fun runTask(task: TaskName): TaskResult = taskExecutor.runTasksAndReportOnFailure(setOf(task))[task]
         ?: error("Task '$task' was successfully executed but is not in the results map")
 
+    /**
+     * Runs the given set of [tasks] and their dependencies, and throws an exception if any task fails.
+     * If all tasks are successful, the results of all tasks that were executed are returned as a map, including results
+     * of the task dependencies.
+     *
+     * @see runTasksAndReportOnFailure
+     */
+    suspend fun runTasks(tasks: Set<TaskName>): Map<TaskName, TaskResult> = taskExecutor.runTasksAndReportOnFailure(tasks)
+
     suspend fun publish(modules: Set<String>?, repositoryId: String) {
         require(modules == null || modules.isNotEmpty())
 
@@ -299,6 +309,85 @@ class AmperBackend(
         }
 
         taskExecutor.runTasksAndReportOnFailure(testTasks)
+    }
+
+    /**
+     * Called by the 'check' command.
+     * Runs checks in the project.
+     *
+     * The builtin check is "tests", which runs all tests (equivalent to `amper test`).
+     * Custom checks are contributed by plugins via [org.jetbrains.amper.frontend.plugins.CheckFromPlugin].
+     *
+     * If [modules] is specified, only checks for those modules are run.
+     * If [checkNames] is specified, only those specific checks are run.
+     * If [skip] is specified, those checks are skipped (incompatible with [checkNames]).
+     */
+    suspend fun check(
+        modules: Set<String>? = null,
+        checkNames: Set<String>? = null,
+        skip: Set<String> = emptySet(),
+        // TODO: arguments for tests, like buildType, filter, etc.
+    ) {
+        val selectedModules = modules?.map { resolveModule(it) }?.toSet() ?: model.modules.toSet()
+
+        val allChecks = listOf(CheckEntry.Tests) + selectedModules.flatMap { it.checksFromPlugins }
+            .map(CheckEntry::Custom)
+
+        // Resolve all user-provided names to qualified names
+        val selectedChecks = checkNames?.flatMapTo(mutableSetOf()) {
+            resolveMatchingEntities(it, allChecks, "check")
+        }
+        val skippedChecks = skip.flatMapTo(mutableSetOf()) {
+            resolveMatchingEntities(it, allChecks, "check", " in --skip")
+        }
+
+        val effectiveChecks = selectedChecks ?: (allChecks - skippedChecks)
+
+        val taskNamesToRun = effectiveChecks.flatMap { check ->
+            when (check) {
+                is CheckEntry.Custom -> listOf(check.custom.performedBy)
+                CheckEntry.Tests ->
+                    taskGraph.tasks.filterIsInstance<TestTask>().filter {
+                        it.module in selectedModules && it.platform in PlatformUtil.platformsMayRunOnCurrentSystem
+                    }.map { it.taskName }
+            }
+        }.toSet()
+
+        if (taskNamesToRun.isEmpty()) {
+            userReadableError("No checks were found for the specified filters")
+        }
+
+        taskExecutor.runTasksAndReportOnFailure(taskNamesToRun)
+    }
+
+    /**
+     * Called by the 'do' command.
+     * Runs custom commands in the project.
+     *
+     * @param modules If specified, only run commands in these modules.
+     * @param commandName The name of the command to run.
+     */
+    suspend fun doCustomCommand(
+        modules: Set<String>? = null,
+        commandName: String,
+    ) {
+        data class CustomCommandEntry(
+            val custom: CustomCommandFromPlugin,
+        ) : QualifiedEntity {
+            override val name = QualifiedName(custom.name, custom.pluginId.value)
+        }
+
+        val selectedModules = modules?.map { resolveModule(it) }?.toSet() ?: model.modules.toSet()
+
+        val allCustomCommands = selectedModules.flatMap { it.customCommandsFromPlugins }.map(::CustomCommandEntry)
+
+        val resolvedCommands = resolveMatchingEntities(
+            userProvidedName = commandName,
+            entities = allCustomCommands,
+            entityDisplayName = "command",
+        ).mapTo(mutableSetOf()) { it.custom.performedBy }
+
+        taskExecutor.runTasksAndReportOnFailure(resolvedCommands)
     }
 
     suspend fun runApplication(moduleName: String?, platform: Platform?, buildType: BuildType?) {

@@ -4,20 +4,20 @@
 
 package org.jetbrains.amper.cli.test
 
-import kotlinx.coroutines.test.runTest
 import org.jetbrains.amper.test.Dirs
+import org.jetbrains.amper.test.runTestWithMdc
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.minutes
 
 class AmperBootstrapTest : AmperCliTestBase() {
 
     @Test
-    fun `amper can build itself`() = runTest(timeout = 30.minutes) {
+    fun `amper can build itself`() = runTestWithMdc(timeout = 30.minutes) {
         runCli(projectDir = Dirs.amperCheckoutRoot, "build")
     }
 
     @Test
-    fun `amper can launch some regular tests`() = runTest(timeout = 30.minutes) {
+    fun `amper can launch some regular tests`() = runTestWithMdc(timeout = 30.minutes) {
         // We want to run some tests because it can discover problems with the test mechanism/classpath etc.
         // We cannot run all tests because that would amount to running the whole test suite twice.
         // All other tests will be covered anyway in the build of the MR that bumps Amper in Amper.

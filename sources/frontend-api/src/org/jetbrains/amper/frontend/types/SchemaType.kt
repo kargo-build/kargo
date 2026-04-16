@@ -68,6 +68,11 @@ sealed interface SchemaType {
              * and doesn't have a type safe description.
              */
             MavenPlexusConfigXml,
+
+            /**
+             * String that references a task name registered in the plugin.
+             */
+            TaskName,
         }
     }
 

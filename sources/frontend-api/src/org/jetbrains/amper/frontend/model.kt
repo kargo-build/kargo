@@ -32,6 +32,12 @@ interface Model {
      * [ProblemReporter][org.jetbrains.amper.problems.reporting.ProblemReporter] passed when creating this [Model].
      */
     val unreadableModuleFiles: Set<VirtualFile>
+
+    /**
+     * All amper plugins *registered* in this project.
+     * May contain invalid plugins.
+     */
+    val amperPlugins: List<AmperPlugin>
 }
 
 /**

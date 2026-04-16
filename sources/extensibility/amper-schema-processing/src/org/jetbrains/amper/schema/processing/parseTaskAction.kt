@@ -134,16 +134,27 @@ private fun parseTaskParameter(
 }
 
 context(resolver: DeclarationsProvider)
-private fun PluginData.Type.mustBeInputOutputMarked(): Boolean = when(this) {
-    is PluginData.Type.ListType -> elementType.mustBeInputOutputMarked()
-    is PluginData.Type.MapType -> valueType.mustBeInputOutputMarked()
-    is PluginData.Type.ObjectType -> declaration.properties.any {
-        if (it.inputOutputMark == InputOutputMark.ValueOnly) {
-            return@any false
+private fun PluginData.Type.mustBeInputOutputMarked(
+    // The names we have already seen (gray in DFS terms) - needed to break out of self-referencing/cyclic types
+    seen: Set<PluginData.SchemaName> = emptySet()
+): Boolean = when(this) {
+    is PluginData.Type.ListType -> elementType.mustBeInputOutputMarked(seen)
+    is PluginData.Type.MapType -> valueType.mustBeInputOutputMarked(seen)
+    is PluginData.Type.ObjectType -> {
+        if (declaration.name in seen) return false
+        val seen = seen + declaration.name
+        declaration.properties.any {
+            if (it.inputOutputMark == InputOutputMark.ValueOnly) {
+                return@any false
+            }
+            it.type.mustBeInputOutputMarked(seen)
         }
-        it.type.mustBeInputOutputMarked()
     }
-    is PluginData.Type.VariantType -> declaration.variants.any { it.mustBeInputOutputMarked() }
+    is PluginData.Type.VariantType -> {
+        if (declaration.name in seen) return false
+        val seen = seen + declaration.name
+        declaration.variants.any { it.mustBeInputOutputMarked(seen) }
+    }
     is PluginData.Type.PathType -> true
     else -> false
 }

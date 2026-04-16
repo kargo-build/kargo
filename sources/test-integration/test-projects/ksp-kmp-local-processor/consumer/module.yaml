@@ -1,6 +1,16 @@
 product:
   type: lib
-  platforms: [ jvm, android, mingwX64, linuxX64, macosArm64, iosArm64, iosSimulatorArm64 ]
+  platforms:
+    - jvm
+    - android
+    - mingwX64
+    - linuxX64
+    - macosArm64
+    - iosArm64
+    - iosSimulatorArm64
+    - js
+    - wasmJs
+    - wasmWasi
 
 dependencies:
   - ../my-processor-annotation

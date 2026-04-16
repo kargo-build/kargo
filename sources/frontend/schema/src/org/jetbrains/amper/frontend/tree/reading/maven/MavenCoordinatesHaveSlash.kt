@@ -17,15 +17,9 @@ class MavenCoordinatesHaveSlash(
     override val element: PsiElement,
     override val coordinates: String,
 ) : MavenCoordinatesParsingProblem() {
-    companion object {
-        const val ID = "maven.coordinates.have.slash"
-    }
-
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
 
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.MavenCoordinatesHaveSlash
-    override val message: @Nls String = SchemaBundle.message(ID)
+    override val message: @Nls String = SchemaBundle.message("maven.coordinates.have.slash")
 
     val slashIndices = coordinates.indices.filter { coordinates[it] == '\\' || coordinates[it] == '/' }
 

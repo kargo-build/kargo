@@ -34,7 +34,10 @@ fun mergeTrees(trees: List<MappingNode>): MappingNode {
     return MappingNode(
         children = allChildren,
         // TODO Maybe check that we are merging (or within same hierarchy) types?
-        type = trees.first().type,
+        //  Currently it's not possible, because some declarations have common supertypes,
+        //  but our schema doesn't retain this info. E.g., `Template` and `Module`.
+        //  We need to teach our schema inheritance to make such type-checks possible.
+        declaration = trees.first().declaration,
         trace = trace,
         // Note: all the children already have the necessary contexts
         contexts = EmptyContexts,

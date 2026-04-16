@@ -7,3 +7,8 @@ tasks:
       distributionDir: ${taskOutputDir}
       baseJar:
         from: ${module.self}
+        kind: jar
+      baseClasses: ${module.classes}
+      localProperties: ${project.rootDir}/local.properties
+      someInt: ${settings.someInt} # to test cascade ref resolution with holes
+      someInt2: ${build.action.someInt} # to test cascade ref resolution with holes even more

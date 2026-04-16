@@ -7,7 +7,9 @@ package org.jetbrains.amper.cli.test
 import org.jetbrains.amper.cli.test.utils.assertStderrContains
 import org.jetbrains.amper.cli.test.utils.assertStdoutContains
 import org.jetbrains.amper.cli.test.utils.runSlowTest
+import org.jetbrains.amper.processes.runProcessAndCaptureOutput
 import org.jetbrains.amper.test.assertEqualsIgnoreLineSeparator
+import org.jetbrains.amper.test.processes.checkExitCodeIsZero
 import org.junit.jupiter.api.parallel.Execution
 import org.junit.jupiter.api.parallel.ExecutionMode
 import kotlin.io.path.absolutePathString
@@ -17,8 +19,10 @@ import kotlin.io.path.notExists
 import kotlin.io.path.pathString
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
+import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFalse
 import kotlin.test.assertNotEquals
 import kotlin.test.assertTrue
 
@@ -52,6 +56,7 @@ class MavenConvertTest : AmperCliTestBase() {
                 version: 4.0.0
 
             dependencies:
+              - bom: org.springframework.boot:spring-boot-dependencies:4.0.0
               - bom: org.springframework.boot:spring-boot-starter-parent:4.0.0
               - org.springframework.boot:spring-boot-starter:4.0.0: exported
 
@@ -137,6 +142,7 @@ class MavenConvertTest : AmperCliTestBase() {
                 version: 4.0.0
 
             dependencies:
+              - bom: org.springframework.boot:spring-boot-dependencies:4.0.0
               - bom: org.springframework.boot:spring-boot-starter-parent:4.0.0
               - org.springframework.boot:spring-boot-starter:4.0.0: exported
               - org.jetbrains.kotlin:kotlin-reflect:2.2.21: exported
@@ -182,16 +188,14 @@ class MavenConvertTest : AmperCliTestBase() {
             actualContent = actualModuleFile.readText(),
             originalFile = expectedModuleFile,
         )
+        val converted = testProject(buildResult.projectDir.pathString)
 
-        // TODO: until we fix AMPER-5023 PlexusConfiguration type isn't supported
-//        val converted = testProject(buildResult.projectRoot.pathString)
-//
-//        runCli(
-//            converted,
-//            "test",
-//            // warning about mockito loaded dynamically
-//            assertEmptyStdErr = false,
-//        )
+        runCli(
+            converted,
+            "test",
+            // warning about mockito loaded dynamically
+            assertEmptyStdErr = false,
+        )
     }
 
     @Test
@@ -226,6 +230,7 @@ class MavenConvertTest : AmperCliTestBase() {
                 version: 4.0.0
             
             dependencies:
+              - bom: org.springframework.boot:spring-boot-dependencies:4.0.0
               - bom: org.springframework.boot:spring-boot-starter-parent:4.0.0
               - org.springframework.boot:spring-boot-starter:4.0.0: exported
               - org.projectlombok:lombok:1.18.42: exported
@@ -281,9 +286,10 @@ class MavenConvertTest : AmperCliTestBase() {
                 storeParameterNames: true
             
             dependencies:
+              - bom: org.springframework.boot:spring-boot-dependencies:3.5.6
               - bom: org.springframework.boot:spring-boot-starter-parent:3.5.6
               - ../lib: exported
-            
+
             test-dependencies:
               - org.junit.jupiter:junit-jupiter:5.12.2
 
@@ -307,6 +313,7 @@ class MavenConvertTest : AmperCliTestBase() {
                 storeParameterNames: true
 
             dependencies:
+              - bom: org.springframework.boot:spring-boot-dependencies:3.5.6
               - bom: org.springframework.boot:spring-boot-starter-parent:3.5.6
 
         """.trimIndent(), (buildResult.projectDir / "lib" / "module.yaml").readText()
@@ -317,6 +324,25 @@ class MavenConvertTest : AmperCliTestBase() {
         val converted = testProject(buildResult.projectDir.pathString)
 
         runCli(converted, "test")
+    }
+
+    @Test
+    fun `multi-module-nested`() = runSlowTest {
+        val projectRoot = testProject("maven-convert/multi-module-nested")
+
+        val buildResult = runCli(projectRoot, "tool", "convert-project", copyToTempDir = true)
+
+        assertTrue((buildResult.projectDir / "project.yaml").exists())
+        assertEquals(
+            """
+            modules:
+              - parent-only/nested-module
+
+            """.trimIndent(), (buildResult.projectDir / "project.yaml").readText()
+        )
+        assertTrue((buildResult.projectDir / "parent-only" / "nested-module" / "module.yaml").exists())
+        assertTrue((buildResult.projectDir / "module.yaml").notExists())
+        assertTrue((buildResult.projectDir / "parent-only" / "module.yaml").notExists())
     }
 
     @Test
@@ -333,6 +359,105 @@ class MavenConvertTest : AmperCliTestBase() {
 
         buildResult.assertStderrContains("ERROR: pom.xml file not found")
     }
+
+    @Test
+    fun `pom-dependency-type-local`() = runSlowTest {
+        val projectRoot = testProject("maven-convert/pom-dependency-type")
+
+        val buildResult = runCli(projectRoot, "tool", "convert-project", copyToTempDir = true)
+
+        assertTrue((buildResult.projectDir / "project.yaml").exists())
+        assertEquals(
+            """
+            modules:
+              - app
+              - deps-pom
+
+            """.trimIndent(), (buildResult.projectDir / "project.yaml").readText()
+        )
+
+        assertTrue((buildResult.projectDir / "app" / "module.yaml").exists())
+        assertEquals(
+            """
+            product: jvm/lib
+
+            layout: maven-like
+
+            settings:
+              publishing:
+                enabled: true
+                name: app
+                group: com.example
+                version: 1.0.0
+
+            dependencies:
+              - ../deps-pom: exported
+
+            """.trimIndent(), (buildResult.projectDir / "app" / "module.yaml").readText()
+        )
+
+        assertTrue((buildResult.projectDir / "deps-pom" / "module.yaml").exists())
+        assertEquals(
+            """
+            product: jvm/lib
+            
+            layout: maven-like
+
+            settings:
+              publishing:
+                enabled: true
+                name: deps-pom
+                group: com.example
+                version: 1.0.0
+
+            dependencies:
+              - org.slf4j:slf4j-api:2.0.9: exported
+              - com.google.guava:guava:32.1.3-jre: runtime-only
+
+            """.trimIndent(), (buildResult.projectDir / "deps-pom" / "module.yaml").readText()
+        )
+    }
+
+    @Test
+    fun `pom-dependency-type-external`() = runSlowTest {
+        val projectRoot = testProject("maven-convert/pom-dependency-type-external")
+
+        val buildResult = runCli(projectRoot, "tool", "convert-project", copyToTempDir = true)
+
+        assertTrue((buildResult.projectDir / "project.yaml").exists())
+        assertTrue((buildResult.projectDir / "module.yaml").exists())
+
+        val pomPath = buildResult.projectDir / "pom.xml"
+
+        assertEquals(
+            """
+            product: jvm/lib
+
+            layout: maven-like
+
+            settings:
+              publishing:
+                enabled: true
+                name: pom-dependency-type-external-test
+                group: com.example
+                version: 1.0.0
+
+            dependencies:
+              - org.apache.commons:commons-lang3:3.20.0: exported
+              # WARNING: Amper does not support external POM dependencies with scopes different than import, manual configuration may be required.
+              # Reference: $pomPath:18:21
+              # <dependency>
+              #   <groupId>org.apache.hadoop</groupId>
+              #   <artifactId>hadoop-client-check-invariants</artifactId>
+              #   <version>3.3.6</version>
+              #   <type>pom</type>
+              #   <scope>compile</scope>
+              # </dependency>
+
+            """.trimIndent(), (buildResult.projectDir / "module.yaml").readText()
+        )
+    }
+
 
     @Test
     fun `surefire-plugin`() = runSlowTest {
@@ -362,6 +487,7 @@ class MavenConvertTest : AmperCliTestBase() {
                 version: 4.0.0
 
             dependencies:
+              - bom: org.springframework.boot:spring-boot-dependencies:4.0.0
               - bom: org.springframework.boot:spring-boot-starter-parent:4.0.0
               - org.springframework.boot:spring-boot-starter:4.0.0: exported
 
@@ -393,6 +519,36 @@ class MavenConvertTest : AmperCliTestBase() {
         runCli(converted, "test")
     }
 
+
+    @Test
+    fun `parent with repository`() = runSlowTest {
+        val projectRoot = testProject("maven-convert/parent-with-repository")
+
+        val buildResult = runCli(projectRoot, "tool", "convert-project", copyToTempDir = true)
+
+        assertTrue((buildResult.projectDir / "project.yaml").exists())
+        assertEquals(
+            """
+            product: jvm/lib
+
+            layout: maven-like
+
+            settings:
+              publishing:
+                enabled: true
+                name: app
+                group: com.example
+                version: 1.0.0
+
+            repositories:
+              -
+                id: test-custom-repo
+                url: https://custom.example.com/maven
+
+        """.trimIndent(), (buildResult.projectDir / "app" / "module.yaml").readText()
+        )
+    }
+
     @Test
     fun `duplicate-executions`() = runSlowTest {
         val projectRoot = testProject("maven-convert/duplicate-executions")
@@ -411,4 +567,186 @@ class MavenConvertTest : AmperCliTestBase() {
             originalFile = expectedModuleFile,
         )
     }
+
+    @Test
+    fun `transitive compile classpath visibility`() = runSlowTest {
+        val projectRoot = testProject("maven-convert/transitive-compile-classpath-visibility")
+
+        val buildResult = runCli(projectRoot, "tool", "convert-project", copyToTempDir = true)
+
+        assertTrue((buildResult.projectDir / "project.yaml").exists())
+        assertEquals(
+            """
+            modules:
+              - core
+              - app
+
+            """.trimIndent(), (buildResult.projectDir / "project.yaml").readText()
+        )
+        assertTrue((buildResult.projectDir / "core" / "module.yaml").exists())
+        assertEquals(
+            """
+            product: jvm/lib
+
+            layout: maven-like
+
+            settings:
+              publishing:
+                enabled: true
+                name: core
+                group: com.example
+                version: 1.0-SNAPSHOT
+
+            dependencies:
+              - com.fasterxml.jackson.core:jackson-databind:2.17.2: exported
+
+            """.trimIndent(), (buildResult.projectDir / "core" / "module.yaml").readText()
+        )
+        assertTrue((buildResult.projectDir / "app" / "module.yaml").exists())
+        assertEquals(
+            """
+            product: jvm/lib
+
+            layout: maven-like
+
+            settings:
+              publishing:
+                enabled: true
+                name: app
+                group: com.example
+                version: 1.0-SNAPSHOT
+
+            dependencies:
+              - ../core: exported
+
+            """.trimIndent(), (buildResult.projectDir / "app" / "module.yaml").readText()
+        )
+        assertTrue((buildResult.projectDir / "module.yaml").notExists())
+
+        val converted = testProject(buildResult.projectDir.pathString)
+
+        runCli(converted, "build")
+    }
+
+    @Test
+    fun `blank plugin config value`() = runSlowTest {
+        val projectRoot = testProject("maven-convert/blank-plugin-config-value")
+
+        val buildResult = runCli(
+            projectRoot,
+            "tool",
+            "convert-project",
+            copyToTempDir = true,
+        )
+
+        assertTrue((buildResult.projectDir / "project.yaml").exists())
+        assertTrue((buildResult.projectDir / "module.yaml").exists())
+
+        val moduleYaml = (buildResult.projectDir / "module.yaml").readText()
+        assertTrue(moduleYaml.contains("product: jvm/lib"))
+    }
+
+    @Test
+    fun `commons-lang`() = runSlowTest {
+        val projectRoot = testProject("maven-convert/commons-lang")
+        val buildResult = runCli(
+            projectRoot, "tool", "convert-project",
+            copyToTempDir = true,
+        )
+        assertTrue((buildResult.projectDir / "project.yaml").exists())
+        assertTrue((buildResult.projectDir / "module.yaml").exists())
+        val moduleYaml = (buildResult.projectDir / "module.yaml").readText()
+        assertTrue(moduleYaml.contains("layout: maven-like"))
+        assertTrue(moduleYaml.contains("name: commons-lang3"))
+        assertTrue(moduleYaml.contains("group: org.apache.commons"))
+    }
+
+    @Test
+    fun `spring-petclinic with enable-compatibility-plugins`() = runSlowTest {
+        val projectRoot = testProject("maven-convert/spring-petclinic")
+
+        val buildResult = runCli(
+            projectRoot,
+            "tool", "convert-project", "--enable-compatibility-plugins",
+            copyToTempDir = true,
+        )
+
+        val moduleContent = (buildResult.projectDir / "module.yaml").readText()
+        assertFalse(moduleContent.contains("enabled: false"), "All compatibility plugins should be enabled")
+        // Plugins with configuration keep full form
+        assertTrue(moduleContent.contains("enabled: true"), "Plugins with configuration should have enabled: true")
+        // Plugins without configuration use shorthand form
+        assertTrue(
+            moduleContent.contains("maven-enforcer-plugin.display-info: enabled"),
+            "Plugins without configuration should use shorthand 'enabled' form"
+        )
+        assertFalse(
+            moduleContent.contains("Maven compatibility plugins are disabled by default"),
+            "Disabled plugins hint comment should not be present"
+        )
+    }
+
+    @Test
+    fun `duplicate-executions with enable-compatibility-plugins`() = runSlowTest {
+        val projectRoot = testProject("maven-convert/duplicate-executions")
+
+        val buildResult = runCli(
+            projectRoot,
+            "tool", "convert-project", "--enable-compatibility-plugins",
+            copyToTempDir = true,
+        )
+
+        val moduleContent = (buildResult.projectDir / "module.yaml").readText()
+        assertFalse(moduleContent.contains("enabled: false"), "All compatibility plugins should be enabled")
+        // Plugins without configuration use shorthand form
+        assertTrue(
+            moduleContent.contains(": enabled"),
+            "Plugins without configuration should use shorthand 'enabled' form"
+        )
+        assertFalse(
+            moduleContent.contains("Maven compatibility plugins are disabled by default"),
+            "Disabled plugins hint comment should not be present"
+        )
+        // Duplicate execution warning comments should still be present
+        assertTrue(
+            moduleContent.contains("configured in multiple executions"),
+            "Duplicate execution warnings should still be present"
+        )
+    }
+
+    @Test
+    fun `git-commit-id with enable-compatibility-plugins`() = runSlowTest {
+        val projectRoot = testProject("maven-convert/git-commit-id")
+
+        val buildResult = runCli(
+            projectRoot,
+            "tool", "convert-project", "--enable-compatibility-plugins",
+            copyToTempDir = true,
+        )
+
+        val moduleContent = (buildResult.projectDir / "module.yaml").readText()
+        // Plugin without configuration uses shorthand form
+        assertTrue(
+            moduleContent.contains("git-commit-id-maven-plugin.revision: enabled"),
+            "git-commit-id-maven-plugin.revision should use shorthand 'enabled' form"
+        )
+
+        // Initialize a git repo so the git-commit-id plugin can run
+        val dir = buildResult.projectDir
+        runProcessAndCaptureOutput(workingDir = dir, command = listOf("git", "init")).checkExitCodeIsZero()
+        runProcessAndCaptureOutput(workingDir = dir, command = listOf("git", "add", ".")).checkExitCodeIsZero()
+        runProcessAndCaptureOutput(
+            workingDir = dir,
+            command = listOf("git", "-c", "user.name=test", "-c", "user.email=test@test.com", "commit", "-m", "initial"),
+        ).checkExitCodeIsZero()
+
+        val converted = testProject(buildResult.projectDir.pathString)
+        runCli(
+            converted,
+            "test",
+            // jgit cleanup message on JVM shutdown
+            assertEmptyStdErr = false,
+        )
+    }
+
 }

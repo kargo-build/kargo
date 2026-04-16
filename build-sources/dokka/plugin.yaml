@@ -13,3 +13,8 @@ tasks:
         - org.freemarker:freemarker:2.3.31
       sources: ${module.kotlinJavaSources}
       outputDir: ${taskOutputDir}
+
+commands:
+  # We'd probably want some kind of `build` extension here?
+  - name: buildDocs
+    performedBy: run

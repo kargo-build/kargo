@@ -4,19 +4,17 @@
 
 package org.jetbrains.amper.frontend.dr.resolver
 
-import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.dependency.resolution.MavenCoordinates
 import org.jetbrains.amper.dependency.resolution.MavenDependencyConstraintNode
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
+import org.jetbrains.amper.dependency.resolution.filterGraph
 import org.jetbrains.amper.dependency.resolution.group
 import org.jetbrains.amper.dependency.resolution.module
 import org.jetbrains.amper.dependency.resolution.originalVersion
 import org.jetbrains.amper.dependency.resolution.resolvedVersion
-import org.jetbrains.amper.frontend.schema.DefaultVersions
-import org.jetbrains.amper.test.Dirs
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import java.nio.file.Path
@@ -30,7 +28,7 @@ class DependencyInsightsTest : BaseModuleDrTest() {
     override val testGoldenFilesRoot: Path = super.testGoldenFilesRoot / "dependencyInsights"
 
     @Test
-    fun `test sync empty jvm module`() = runModuleDependenciesTest {
+    fun `test sync empty jvm module`(testInfo: TestInfo) = runModuleDependenciesTest {
         val aom = getTestProjectModel("jvm-empty", testDataRoot)
 
         assertEquals(
@@ -39,79 +37,39 @@ class DependencyInsightsTest : BaseModuleDrTest() {
             "",
         )
 
-        val jvmEmptyModuleGraph = doTest(
+        val jvmEmptyModuleGraph = doTestByFile(
+            testInfo,
             aom,
-            resolutionInput = ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
-            ),
+            resolutionInput = ideSyncTestResolutionInput,
             module = "jvm-empty",
-            expected = """
-                module:jvm-empty
-                ├─── jvm-empty:main:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}
-                │         ╰─── org.jetbrains:annotations:13.0
-                ├─── jvm-empty:test:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin} (*)
-                ╰─── jvm-empty:test:org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}, implicit (because the test engine is junit-5)
-                     ╰─── org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}
-                          ├─── org.jetbrains.kotlin:kotlin-test:${DefaultVersions.kotlin}
-                          │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin} (*)
-                          ╰─── org.junit.jupiter:junit-jupiter-api:5.10.1
-                               ├─── org.junit:junit-bom:5.10.1
-                               ├─── org.opentest4j:opentest4j:1.3.0
-                               ├─── org.junit.platform:junit-platform-commons:1.10.1
-                               │    ├─── org.junit:junit-bom:5.10.1
-                               │    ╰─── org.apiguardian:apiguardian-api:1.1.2
-                               ╰─── org.apiguardian:apiguardian-api:1.1.2
-                """.trimIndent()
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE),
         )
 
-        assertInsight(
+        assertInsightByFile(
             group = "org.jetbrains.kotlin",
             module = "kotlin-stdlib",
             graph = jvmEmptyModuleGraph,
-            expected = """
-                module:jvm-empty
-                ├─── jvm-empty:main:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}
-                ├─── jvm-empty:test:org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}, implicit
-                │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}
-                ╰─── jvm-empty:test:org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}, implicit (because the test engine is junit-5)
-                     ╰─── org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}
-                          ╰─── org.jetbrains.kotlin:kotlin-test:${DefaultVersions.kotlin}
-                               ╰─── org.jetbrains.kotlin:kotlin-stdlib:${DefaultVersions.kotlin}
-            """.trimIndent()
+            testInfo = testInfo,
         )
-        assertInsight(
+        assertInsightByFile(
             group = "org.opentest4j",
             module = "opentest4j",
             graph = jvmEmptyModuleGraph,
-            expected = """
-                module:jvm-empty
-                ╰─── jvm-empty:test:org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}, implicit (because the test engine is junit-5)
-                     ╰─── org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}
-                          ╰─── org.junit.jupiter:junit-jupiter-api:5.10.1
-                               ╰─── org.opentest4j:opentest4j:1.3.0
-            """.trimIndent()
+            testInfo = testInfo,
         )
-        assertInsight(
+        assertInsightByFile(
             group = "org.jetbrains.kotlin",
             module = "kotlin-test-junit5",
             graph = jvmEmptyModuleGraph,
-            expected = """
-                module:jvm-empty
-                ╰─── jvm-empty:test:org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}, implicit (because the test engine is junit-5)
-                     ╰─── org.jetbrains.kotlin:kotlin-test-junit5:${DefaultVersions.kotlin}
-            """.trimIndent()
+            testInfo = testInfo,
         )
         assertInsight(
             group = "org.jetbrains.kotlin", module = "XXX", graph = jvmEmptyModuleGraph,
-            expected = "module:jvm-empty"
+            expected = "root"
         )
         assertInsight(
             group = "XXX", module = "kotlin-test-junit", graph = jvmEmptyModuleGraph,
-            expected = "module:jvm-empty"
+            expected = "root"
         )
     }
 
@@ -122,16 +80,11 @@ class DependencyInsightsTest : BaseModuleDrTest() {
         val sharedModuleIosArm64Graph = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    scope = ResolutionScope.COMPILE,
-                    platforms = setOf(ResolutionPlatform.IOS_ARM64),
-                    isTest = false,
-                ),
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
-            ),
             module = "shared",
+            filter = ModuleResolutionFilter(
+                scope = ResolutionScope.COMPILE,
+                platforms = setOf(ResolutionPlatform.IOS_ARM64),
+            ),
         )
 
         // Subgraph for "org.jetbrains.kotlin:kotlin-stdlib" shows places referencing the dependency
@@ -141,7 +94,7 @@ class DependencyInsightsTest : BaseModuleDrTest() {
             group = "org.jetbrains.compose.ui",
             module = "ui-graphics",
             graph = sharedModuleIosArm64Graph,
-            insightFile = "ui-graphics"
+            testInfo = testInfo,
         )
 
         // Subgraph for "org.jetbrains.kotlin:kotlin-stdlib-common" shows all places referencing the dependency
@@ -151,7 +104,7 @@ class DependencyInsightsTest : BaseModuleDrTest() {
             group = "org.jetbrains.kotlin",
             module = "kotlin-stdlib-common",
             graph = sharedModuleIosArm64Graph,
-            insightFile = "kotlin-stdlib-common"
+            testInfo = testInfo,
         )
 
         // Assert that all dependencies "org.jetbrains.kotlin:kotlin-stdlib-common" have correct overriddenBy
@@ -167,16 +120,17 @@ class DependencyInsightsTest : BaseModuleDrTest() {
                         it.overriddenBy,
                         "Expected non-null 'overriddenBy' since ${it.resolvedVersion()} doesn't match ${it.originalVersion()}"
                     )
-                    val constraintNode = it.overriddenBy.singleOrNull() as? MavenDependencyConstraintNode
+                    val constraintNodes = it.overriddenBy.filterIsInstance<MavenDependencyConstraintNode>().takeIf { it.isNotEmpty() }
                     assertNotNull(
-                        constraintNode,
-                        "Expected exactly one dependency constraint node in 'overriddenBy', but found ${
+                        constraintNodes,
+                        "Expected at least one dependency constraint node in 'overriddenBy', but found ${
                             it.overriddenBy.map { it.key }.toSet()
                         }"
                     )
+                    val key = constraintNodes.first().key
                     assertEquals(
-                        constraintNode.key.name, "org.jetbrains.kotlin:kotlin-stdlib-common",
-                        "Unexpected constraint ${constraintNode.key}"
+                        key.name, "org.jetbrains.kotlin:kotlin-stdlib-common",
+                        "Unexpected constraint ${key}"
                     )
                 }
             }
@@ -185,12 +139,43 @@ class DependencyInsightsTest : BaseModuleDrTest() {
             group = "org.jetbrains.kotlinx",
             module = "kotlinx-coroutines-core",
             graph = sharedModuleIosArm64Graph,
-            insightFile = "kotlinx-coroutines-core"
+            testInfo = testInfo,
         )
     }
 
     /**
-     * Test checks that if node has child that caused version overriding,
+     * This test checks that a large number of overridden dependencies don't
+     * cause performance degradation.
+     * // todo (AB) : [AMPER-4905] This test is added temporary and should be removed (it doesn't check anything that other tests checks
+     * // todo (AB) : [AMPER-4905] It is added for debug purposes.
+     */
+    @Test
+    fun `test large number of overridden dependencies`(testInfo: TestInfo) = runSlowModuleDependenciesTest {
+        val aom = getTestProjectModel("multiplatfrorm-large-with-overridden-versions", testDataRoot)
+
+        val iosAppMainGraph = timed("doTestByFile") {
+            doTestByFile(
+                testInfo,
+                aom,
+                module = "ios-app",
+                filter = ModuleResolutionFilter(
+                    scope = ResolutionScope.COMPILE,
+                    platforms = setOf(ResolutionPlatform.IOS_ARM64),
+                ),
+                verifyMessages = false,
+            )
+        }
+
+        assertInsightByFile(
+            group = "org.jetbrains.compose.runtime",
+            module = "runtime",
+            graph = iosAppMainGraph,
+            testInfo = testInfo,
+        )
+    }
+
+    /**
+     * Test checks that if a node has a child that caused version overriding,
      * then other children of this node are not included in the insight graph
      * built for a resolved version diagnostic.
      */
@@ -201,16 +186,11 @@ class DependencyInsightsTest : BaseModuleDrTest() {
         val aGraph = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    scope = ResolutionScope.COMPILE,
-                    platforms = setOf(ResolutionPlatform.JVM),
-                    isTest = false,
-                ),
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
-            ),
             module = "A",
+            filter = ModuleResolutionFilter(
+                scope = ResolutionScope.COMPILE,
+                platforms = setOf(ResolutionPlatform.JVM),
+            ),
         )
 
         // Subgraph for "org.jetbrains.kotlinx:kotlin-coroutine-core" shows places referencing the dependency
@@ -220,7 +200,7 @@ class DependencyInsightsTest : BaseModuleDrTest() {
             group = "org.jetbrains.kotlinx",
             module = "kotlinx-coroutines-core",
             graph = aGraph,
-            insightFile = "jvm-dependency-insights-A-kotlinx-coroutines-core"
+            testInfo = testInfo,
         )
 
         // Assert that all dependencies "org.jetbrains.kotlin:kotlinx-coroutines-core" have a correct overriddenBy
@@ -240,16 +220,18 @@ class DependencyInsightsTest : BaseModuleDrTest() {
                         it.overriddenBy,
                         "Expected non-null 'overriddenBy' since ${it.resolvedVersion()} doesn't match ${it.originalVersion()}"
                     )
-                    val dependencyNode = it.overriddenBy.filterIsInstance<MavenDependencyNode>().singleOrNull()
-                    assertNotNull(
-                        dependencyNode,
-                        "Expected exactly one MavenDependencyNode in 'overriddenBy', but found ${
+                    val dependencyNodes = it.overriddenBy.filterIsInstance<MavenDependencyNode>()
+                    assertEquals(
+                        dependencyNodes.size,
+                        2,
+                        "Expected exactly 2 MavenDependencyNode in 'overriddenBy', but found ${
                             it.overriddenBy.map { it.key }.toSet()
                         }"
                     )
+                    val key = dependencyNodes.first().key
                     assertEquals(
-                        dependencyNode.key.name, "org.jetbrains.kotlinx:kotlinx-coroutines-core",
-                        "Unexpected dependency node ${dependencyNode.key}"
+                        key.name, "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+                        "Unexpected dependency node $key"
                     )
                     val constraintNode = it.overriddenBy.filterIsInstance<MavenDependencyConstraintNode>().singleOrNull()
                     if (constraintNode != null) {
@@ -269,16 +251,11 @@ class DependencyInsightsTest : BaseModuleDrTest() {
         val bGraph = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    scope = ResolutionScope.COMPILE,
-                    platforms = setOf(ResolutionPlatform.JVM),
-                    isTest = false,
-                ),
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
-            ),
             module = "B",
+            filter = ModuleResolutionFilter(
+                scope = ResolutionScope.COMPILE,
+                platforms = setOf(ResolutionPlatform.JVM),
+            ),
         )
 
         // Subgraph for "org.jetbrains.kotlinx:kotlin-coroutine-core" shows places referencing the dependency
@@ -288,7 +265,7 @@ class DependencyInsightsTest : BaseModuleDrTest() {
             group = "org.jetbrains.compose.runtime",
             module = "runtime",
             graph = bGraph,
-            insightFile = "jvm-dependency-insights-B-compose-runtime"
+            testInfo = testInfo,
         )
     }
 
@@ -299,23 +276,18 @@ class DependencyInsightsTest : BaseModuleDrTest() {
         val cGraph = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    scope = ResolutionScope.COMPILE,
-                    platforms = setOf(ResolutionPlatform.JVM),
-                    isTest = false,
-                ),
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
-            ),
             module = "C",
+            filter = ModuleResolutionFilter(
+                scope = ResolutionScope.COMPILE,
+                platforms = setOf(ResolutionPlatform.JVM),
+            ),
         )
 
         assertInsightByFile(
             group = "org.jetbrains.kotlinx",
             module = "kotlinx-coroutines-test",
             graph = cGraph,
-            insightFile = "jvm-dependency-insights-C-kotlinx-coroutines-test"
+            testInfo = testInfo,
         )
     }
 
@@ -326,23 +298,18 @@ class DependencyInsightsTest : BaseModuleDrTest() {
         val dGraph = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    scope = ResolutionScope.COMPILE,
-                    platforms = setOf(ResolutionPlatform.JVM),
-                    isTest = false,
-                ),
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
-            ),
             module = "D",
+            filter = ModuleResolutionFilter(
+                scope = ResolutionScope.COMPILE,
+                platforms = setOf(ResolutionPlatform.JVM),
+            ),
         )
 
         assertInsightByFile(
             group = "org.jetbrains.kotlinx",
             module = "kotlinx-coroutines-test",
             graph = dGraph,
-            insightFile = "jvm-dependency-insights-D-kotlinx-coroutines-test"
+            testInfo = testInfo,
         )
     }
 
@@ -353,40 +320,59 @@ class DependencyInsightsTest : BaseModuleDrTest() {
         val eGraph = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    scope = ResolutionScope.COMPILE,
-                    platforms = setOf(ResolutionPlatform.JVM),
-                    isTest = false,
-                ),
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
-            ),
             module = "E",
+            filter = ModuleResolutionFilter(
+                scope = ResolutionScope.COMPILE,
+                platforms = setOf(ResolutionPlatform.JVM),
+            ),
         )
 
         assertInsightByFile(
             group = "org.junit.jupiter",
             module = "junit-jupiter-api",
             graph = eGraph,
-            insightFile = "jvm-dependency-insights-E-junit-jupiter-api"
+            testInfo = testInfo,
         )
     }
 
-    private fun assertInsightByFile(group: String, module: String, graph: DependencyNode, insightFile: String) {
-        val goldenFileResolvedInsights = goldenFileOsAware("$insightFile.insight.resolved.txt")
+    /**
+     * This test checks that in full mode, all pathes to the required dependency are shown.
+     */
+    @Test
+    fun `test jvm-dependency-insights - F`(testInfo: TestInfo) = runModuleDependenciesTest {
+        val aom = getTestProjectModel("jvm-dependency-insights", testDataRoot)
+
+        val eGraph = doTestByFile(
+            testInfo,
+            aom,
+            module = "F",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
+        )
+
+        assertInsightByFile(
+            group = "org.jetbrains.kotlin",
+            module = "kotlin-stdlib",
+            graph = eGraph,
+            testInfo = testInfo,
+        )
+    }
+
+    private fun assertInsightByFile(group: String, module: String, graph: DependencyNode, testInfo: TestInfo) {
+        val insightFilePrefix = "${testInfo.testMethod.get().name}.$module".replace(" ", "_")
+
+        val goldenFileResolvedInsights = goldenFileOsAware("$insightFilePrefix.insight.resolved.txt")
         val expectedResolved = getGoldenFileText(goldenFileResolvedInsights, fileDescription = "Golden file with insight for resolved version only")
         withActualDump(expectedResultPath = goldenFileResolvedInsights) {
             assertInsight(group, module, graph, expectedResolved, resolvedVersionOnly = true)
         }
 
-        val goldenFileFull = goldenFileOsAware("$insightFile.insight.full.txt")
+        val goldenFileFull = goldenFileOsAware("$insightFilePrefix.insight.full.txt")
         val expectedFull = getGoldenFileText(goldenFileFull, fileDescription = "Golden file with full insight")
         withActualDump(expectedResultPath = goldenFileFull) {
             assertInsight(group, module, graph, expectedFull, resolvedVersionOnly = false)
         }
 
-        val goldenFileOriginalGraph = goldenFileOsAware("$insightFile.insight.originalGraph.txt")
+        val goldenFileOriginalGraph = goldenFileOsAware("$insightFilePrefix.insight.originalGraph.txt")
         val expectedGraph = getGoldenFileText(goldenFileOriginalGraph, fileDescription = "Golden file with full dependency graph")
         withActualDump(expectedResultPath = goldenFileOriginalGraph) {
             assertEquals(expectedGraph, graph, null)
@@ -394,9 +380,11 @@ class DependencyInsightsTest : BaseModuleDrTest() {
     }
 
     private fun assertInsight(group: String, module: String, graph: DependencyNode, expected: String, resolvedVersionOnly: Boolean = false) {
-        with(moduleDependenciesResolver) {
-            val subGraph = dependencyInsight(group, module, graph, resolvedVersionOnly)
-            assertEquals(expected, subGraph, MavenCoordinates(group, module, null))
+        val subGraph = timedBlocking(
+            "dependencyInsight [$group:$module, ${if(resolvedVersionOnly) "resolvedVersionOnly" else "full"}]"
+        ) {
+            graph.filterGraph(group, module, resolvedVersionOnly)
         }
+        assertEquals(expected, subGraph, MavenCoordinates(group, module, null))
     }
 }

@@ -1,7 +1,10 @@
 product: jvm/lib
 
+description: Utilities to run delegated Android Gradle builds from Amper.
+
 apply:
   - ../../common.module-template.yaml
+  - ../../used-in-gradle.module-template.yaml
 
 dependencies:
   - ../../amper-build-info
@@ -11,5 +14,8 @@ dependencies:
   - $libs.android.tools.builder.model
 
 settings:
+  jvm:
+    # Used in Android Gradle builds (max 17), but common template sets it to 21, so we take the lowest version 17
+    release: 17
   kotlin:
     serialization: json

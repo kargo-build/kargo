@@ -1,0 +1,4 @@
+product: jvm/app
+plugins:
+  my-plugin: enabled
+  other-plugin: enabled

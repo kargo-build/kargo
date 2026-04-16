@@ -22,23 +22,21 @@ import org.jetbrains.amper.cli.options.platformGroupOption
 import org.jetbrains.amper.cli.options.selectModules
 import org.jetbrains.amper.cli.options.validLeavesIn
 import org.jetbrains.amper.cli.userReadableError
-import org.jetbrains.amper.dependency.resolution.CacheEntryKey
 import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.dependency.resolution.MavenCoordinates
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
-import org.jetbrains.amper.dependency.resolution.RootDependencyNodeWithContext
-import org.jetbrains.amper.dependency.resolution.asRootCacheEntryKey
+import org.jetbrains.amper.dependency.resolution.ResolvedGraph
 import org.jetbrains.amper.dependency.resolution.filterGraph
 import org.jetbrains.amper.dependency.resolution.mavenCoordinatesTrimmed
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.Platform
-import org.jetbrains.amper.frontend.dr.resolver.CliReportingMavenResolver
-import org.jetbrains.amper.frontend.dr.resolver.emptyContext
-import org.jetbrains.amper.frontend.dr.resolver.uniqueModuleKey
-import org.jetbrains.amper.frontend.isDescendantOf
-import org.jetbrains.amper.tasks.ModuleDependencies
-import org.jetbrains.amper.tasks.buildDependenciesGraph
+import org.jetbrains.amper.frontend.dr.resolver.AmperResolutionSettings
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencyNode
+import org.jetbrains.amper.frontend.dr.resolver.ModuleResolutionFilter
+import org.jetbrains.amper.frontend.dr.resolver.ResolutionType
+import org.jetbrains.amper.frontend.dr.resolver.flow.toResolutionPlatform
 
 internal class ShowDependenciesCommand: AmperModelAwareCommand(name = "dependencies") {
 
@@ -130,84 +128,35 @@ internal class ShowDependenciesCommand: AmperModelAwareCommand(name = "dependenc
         platformSetsToResolveFor: List<Set<Platform>>,
         cliContext: CliContext
     ): List<DependencyNode> {
-        val moduleDependencies = ModuleDependencies(this, commonOptions.sharedCachesRoot, cliContext.incrementalCache)
+        val resolutionPlatformSetsToResolveFor = platformSetsToResolveFor.map { it.mapNotNull { it.toResolutionPlatform() }.toSet() }
 
-        val mainDependenciesMap = moduleDependencies.resolveDependencies(platformSetsToResolveFor, false, cliContext)
-        val testDependenciesMap = if (includeTests) moduleDependencies.resolveDependencies(platformSetsToResolveFor, true, cliContext) else emptyMap()
-
-        return buildList {
-            mainDependenciesMap.forEach { (platforms, nodes) ->
-                addAll(nodes)
-                testDependenciesMap[platforms]?.let { addAll(it) }
-            }
-        }
-    }
-
-    private suspend fun ModuleDependencies.resolveDependencies(
-        platformSetsToResolveFor: List<Set<Platform>>,
-        isTests: Boolean,
-        cliContext: CliContext
-    ): Map<Set<Platform>, List<DependencyNode>> {
-        val variantsToResolveWithPlatforms = buildList {
-            platformSetsToResolveFor.forEach { platforms ->
-                scopes.forEach { scope ->
-                    // todo (AB) : Maybe it is a good idea to show java-like COMPILE graph for native as well
-                    // todo (AB) : (since it is used in Idea for symbol resolution)
-                    if (platforms.size == 1 && platforms.single().isDescendantOf(Platform.NATIVE) && scope == ResolutionScope.RUNTIME)
-                        return@forEach // compile and runtime dependencies are the same for native single-platform contexts
-                    add(
-                        platforms to module.buildDependenciesGraph(
-                            isTest = isTests,
-                            platforms = platforms,
-                            dependencyReason = scope,
-                            userCacheRoot = commonOptions.sharedCachesRoot,
-                            incrementalCache = cliContext.incrementalCache
-                        )
+        val resolvedGraph: ResolvedGraph =
+            // todo (AB) : [AMPER-4905] Pass all modules at once (though prettyPrint works for a single resolved graph,
+            //  but not for many combined graphs, see [isConstraintAffectingTheGraph])
+            ModuleDependencies
+                .resolveModuleDependencies(
+                    modules = listOf(this@resolveDependencies),
+                    resolutionSettings = AmperResolutionSettings(
+                        userCacheRoot = commonOptions.sharedCachesRoot,
+                        incrementalCache = cliContext.incrementalCache,
+                        openTelemetry = GlobalOpenTelemetry.get(),
+                    ),
+                    // Filtering by scope and platforms is done later
+                    filter = ModuleResolutionFilter(
+                        resolutionType = if (includeTests) ResolutionType.ALL else ResolutionType.MAIN,
+                        // Filtering by scope and platforms is done later below
+                        scope = null, platforms = null,
                     )
+                )
+
+        return resolutionPlatformSetsToResolveFor
+            .flatMap { platforms ->
+                resolvedGraph.root.children.filter {
+                    it is ModuleDependencyNode
+                            && platforms == it.resolutionConfig.platforms
+                            && scopes.contains(it.resolutionConfig.scope)
                 }
-            }
-        }
-
-        val variantsToResolve = variantsToResolveWithPlatforms.map { it.second }
-
-        // Resolution should be done across all module platforms to align dependencies' versions.
-        val otherModuleDependencies = this.forResolution(isTests)
-            .filterNot { perPlatformNode ->
-                variantsToResolve.any {
-                    it.context.settings.platforms == perPlatformNode.context.settings.platforms
-                            &&  it.context.settings.scope == perPlatformNode.context.settings.scope
-                }
-            }
-
-        val resolver = CliReportingMavenResolver(commonOptions.sharedCachesRoot, cliContext.incrementalCache)
-
-        val root = RootDependencyNodeWithContext(
-            // If the incremental cache is on, a separate cache entry is calculated and maintained for every unique combination of parameters:
-            //  - module
-            //  - set of platforms
-            //  - includeTests flag
-            rootCacheEntryKey = CacheEntryKey.CompositeCacheEntryKey(listOfNotNull(
-                module.uniqueModuleKey(),
-                platformGroups.takeIf { it.isNotEmpty() }?.distinct(),
-                isTests
-            )).asRootCacheEntryKey(),
-            children = variantsToResolve + otherModuleDependencies,
-            templateContext = emptyContext(
-                userCacheRoot = commonOptions.sharedCachesRoot,
-                openTelemetry = GlobalOpenTelemetry.get(),
-                incrementalCache = cliContext.incrementalCache
-            )
-        )
-
-        val resolvedGraph = resolver.resolve(
-            root = root,
-            resolveSourceMoniker = "module ${module.userReadableName}${if(isTests) "(tests)" else ""}",
-        )
-
-        return resolvedGraph.root.children.subList(0, variantsToResolve.size)
-            .mapIndexed { index, node ->
-                variantsToResolveWithPlatforms[index].first to node
-            }.groupBy(keySelector = { it.first }, valueTransform = { it.second })
+            }.distinctBy { it.graphEntryName }
     }
 
     private fun printDependencies(
@@ -223,7 +172,7 @@ internal class ShowDependenciesCommand: AmperModelAwareCommand(name = "dependenc
             }
         } else {
             val rootsToPrint = rootNodesToPrint.mapNotNull { rootNode ->
-                filterGraph(mavenCoordinates.groupId, mavenCoordinates.artifactId, rootNode)
+                rootNode.filterGraph(mavenCoordinates.groupId, mavenCoordinates.artifactId)
                     .takeIf { it.children.isNotEmpty() }
             }
             if (rootsToPrint.isEmpty()) {

@@ -6,14 +6,11 @@ package org.jetbrains.amper.maven.download
 
 import org.jetbrains.amper.dependency.resolution.MavenCoordinates
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
-import org.jetbrains.amper.dependency.resolution.MavenDependencyNodeWithContext
 import org.jetbrains.amper.dependency.resolution.MavenRepository.Companion.MavenCentral
 import org.jetbrains.amper.dependency.resolution.Repository
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
-import org.jetbrains.amper.dependency.resolution.RootDependencyNodeWithContext
 import org.jetbrains.amper.frontend.dr.resolver.MavenResolver
-import org.jetbrains.amper.frontend.dr.resolver.ResolutionDepth
 import java.nio.file.Path
 
 /**
@@ -27,17 +24,13 @@ suspend fun MavenResolver.downloadSingleArtifactJar(
     coordinates: MavenCoordinates,
     repositories: List<Repository> = listOf(MavenCentral),
 ): Path? {
-    val resolvedRoot = resolveWithContext(
+    val resolvedRoot = resolve(
+        coordinates = listOf(coordinates),
         repositories = repositories,
         scope = ResolutionScope.RUNTIME,
         platform = ResolutionPlatform.JVM,
         resolveSourceMoniker = coordinates.toString(),
-        resolutionDepth = ResolutionDepth.GRAPH_FULL,
-    ) { context ->
-        val pluginNode = MavenDependencyNodeWithContext(context, coordinates = coordinates, isBom = false)
-        RootDependencyNodeWithContext(templateContext = context, children = listOf(pluginNode))
-    }
-
+    )
     val dependencyNode = resolvedRoot.root.children.first() as MavenDependencyNode
     return dependencyNode.dependency.files()
         .filter { it.extension == "jar" }

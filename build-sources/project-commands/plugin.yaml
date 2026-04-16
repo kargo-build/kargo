@@ -1,0 +1,14 @@
+tasks:
+  updateGoldFiles:
+    action: !updateGoldFiles
+      amperRootDir: ${project.rootDir}
+      versions: ${pluginSettings.versions}
+
+  syncVersions:
+    action: !syncVersions
+      amperRootDir: ${project.rootDir}
+      versions: ${pluginSettings.versions}
+
+commands:
+  - updateGoldFiles
+  - syncVersions

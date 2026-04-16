@@ -8,6 +8,7 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.psi.PsiElement
 import org.jetbrains.amper.core.UsedInIdePlugin
 import org.jetbrains.amper.dependency.resolution.DependencyNode
+import org.jetbrains.amper.dependency.resolution.Key
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.diagnostics.Message
 import org.jetbrains.amper.dependency.resolution.diagnostics.detailedMessage
@@ -29,7 +30,6 @@ import org.jetbrains.amper.frontend.dr.resolver.fragmentDependencies
 import org.jetbrains.amper.frontend.getLineAndColumnRangeInPsiFile
 import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.messages.extractPsiElementOrNull
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemImpl
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
@@ -57,7 +57,7 @@ object BasicDrDiagnosticsReporter : DrDiagnosticsReporter {
         if (node.fragmentDependencies.isEmpty()) {
             reportMessagesAsGlobal(importantMessages, problemReporter)
         } else {
-            reportMessagesOnParentPsiNodes(node, importantMessages, problemReporter)
+            reportMessagesOnParentPsiNodes(node, importantMessages, problemReporter, context)
         }
     }
 
@@ -66,7 +66,6 @@ object BasicDrDiagnosticsReporter : DrDiagnosticsReporter {
         for (message in importantMessages) {
             val msgLevel = message.mapSeverityToLevel()
             val buildProblem = BuildProblemImpl(
-                buildProblemId = "dependency.problem.no.psi",
                 diagnosticId = FrontendDiagnosticId.DependencyResolutionProblem,
                 source = GlobalBuildProblemSource,
                 message = message.detailedMessage,
@@ -80,13 +79,17 @@ object BasicDrDiagnosticsReporter : DrDiagnosticsReporter {
     private fun reportMessagesOnParentPsiNodes(
         node: DependencyNode,
         importantMessages: List<Message>,
-        problemReporter: ProblemReporter
+        problemReporter: ProblemReporter,
+        context: DrReporterContext,
     ) {
         for (directDependency in node.fragmentDependencies) {
             // for every direct module dependency referencing this dependency node
             val psiElement = directDependency.notation.trace.extractPsiElementOrNull()
 
             if (psiElement != null) {
+                val alreadyReported = context.cache.computeIfAbsent(alreadyReportedCacheKey) { mutableSetOf() }
+                if (!alreadyReported.add(AlreadyReportedKey(node, psiElement))) continue
+
                 for (message in importantMessages) {
                     val msgLevel = message.mapSeverityToLevel()
                     if (node.isTransitiveFor(directDependency)) {
@@ -154,7 +157,15 @@ object BasicDrDiagnosticsReporter : DrDiagnosticsReporter {
             is PsiTrace -> null
         }
     }
+
+    private val alreadyReportedCacheKey =
+        Key<MutableSet<AlreadyReportedKey>>("DependencyNode::alreadyReported")
 }
+
+private data class AlreadyReportedKey(
+    val node: DependencyNode,
+    val psiElement: PsiElement,
+)
 
 class DependencyBuildProblem(
     @field:UsedInIdePlugin
@@ -167,8 +178,6 @@ class DependencyBuildProblem(
     @field:UsedInIdePlugin
     val versionDefinition: VersionDefinition?,
 ) : PsiBuildProblem(level, BuildProblemType.Generic) {
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId: BuildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.DependencyResolutionProblem
 
     override val message: @Nls String
@@ -206,10 +215,6 @@ class DependencyBuildProblem(
             node.dependency.version,
             "${versionDefinition.relativePath}:${range.start.line}:${range.start.column}",
         )
-    }
-
-    companion object {
-        const val ID = "dependency.problem"
     }
 }
 

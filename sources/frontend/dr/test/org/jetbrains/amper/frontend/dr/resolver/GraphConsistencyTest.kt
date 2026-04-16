@@ -14,38 +14,44 @@ class GraphConsistencyTest: BaseModuleDrTest() {
 
     @Test
     fun `check parents in a dependencies graph - ide`() = runSlowModuleDependenciesTest {
-        val aom = getTestProjectModel("jvm-transitive-dependencies", testDataRoot)
-        checkParentsInDependenciesGraph(
-            ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot)
-            ),
-            aom
-        )
+        checkParentsInDependenciesGraph(true)
     }
 
     @Test
     fun `check parents in a dependencies graph - classpath`() = runSlowModuleDependenciesTest {
-        checkParentsInDependenciesGraph(
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(ResolutionScope.RUNTIME, setOf(ResolutionPlatform.JVM), isTest = false),
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot)
-            )
-        )
+        checkParentsInDependenciesGraph(false)
     }
 
-    private suspend fun checkParentsInDependenciesGraph(
-        resolutionInput: ResolutionInput,
-        aom: Model = getTestProjectModel("jvm-transitive-dependencies", testDataRoot)
-    ) {
-        val graph = with(moduleDependenciesResolver) {
-            aom.modules.resolveDependencies(resolutionInput.copy(incrementalCacheUsage = getIncrementalCacheUsage()))
+    private suspend fun checkParentsInDependenciesGraph(ideSyncMode: Boolean) {
+        val aom: Model = getTestProjectModel("jvm-transitive-dependencies", testDataRoot)
+
+        val graph = with(ModuleDependencies) {
+            if (ideSyncMode) {
+                aom.resolveProjectDependencies(
+                    defaultTestResolutionSettings,
+                    ResolutionRunSettings(
+                        incrementalCacheUsage = getIncrementalCacheUsage()
+                    )
+                )
+            } else {
+                resolveModuleDependencies(
+                    aom.modules,
+                    defaultTestResolutionSettings,
+                    ResolutionRunSettings(
+                        incrementalCacheUsage = getIncrementalCacheUsage()
+                    ),
+                    filter = ModuleResolutionFilter(ResolutionScope.RUNTIME, platforms = setOf(ResolutionPlatform.JVM)),
+                )
+            }
         }
 
-        graph.distinctBfsSequence().forEach {
+        graph.root.distinctBfsSequence().forEach {
             val parents = it.parents
-            assertTrue("Parents are empty for node ${it.key}") { parents.isNotEmpty() || graph == it }
+            assertTrue("Parents are empty for node ${it.key}") {
+                parents.isNotEmpty()
+                        || graph.root == it
+                        || it is ModuleDependencyNode
+            }
 
             it.parents.forEach { parent ->
                 assertTrue("Node ${parent.key} is registered as parent of node ${it.key}, but doesn't contain it among its children") {

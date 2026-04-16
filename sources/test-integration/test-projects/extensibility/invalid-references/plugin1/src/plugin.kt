@@ -45,4 +45,5 @@ fun someAction(
     nested2: Nested,
     dependencies: List<Dependency.Maven>,
     @Input classpath: Classpath,
+    requiredString2: String,
 ) {}

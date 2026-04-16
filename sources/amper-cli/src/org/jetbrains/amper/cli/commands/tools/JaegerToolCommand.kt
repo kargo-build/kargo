@@ -30,7 +30,6 @@ import org.jetbrains.amper.cli.userReadableError
 import org.jetbrains.amper.core.downloader.Downloader
 import org.jetbrains.amper.core.extract.ExtractOptions
 import org.jetbrains.amper.core.extract.extractFileToCacheLocation
-import org.jetbrains.amper.diagnostics.DeadLockMonitor
 import org.jetbrains.amper.intellij.CommandLineUtils
 import org.jetbrains.amper.processes.PrintToTerminalProcessOutputListener
 import org.jetbrains.amper.processes.runProcess
@@ -96,8 +95,6 @@ internal class JaegerToolCommand : AmperSubcommand(name = "jaeger") {
 
             val executable = root.resolve("jaeger-all-in-one${if (os.family == OsFamily.Windows) ".exe" else ""}")
             val cmd = listOf(executable.pathString) + jaegerArguments
-
-            DeadLockMonitor.disable()
 
             coroutineScope {
                 launch {

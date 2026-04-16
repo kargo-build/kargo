@@ -1,0 +1,7 @@
+modules:
+  - app-with-checks
+  - app-without-checks
+  - checker-plugin
+
+plugins:
+  - ./checker-plugin

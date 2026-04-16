@@ -11,6 +11,7 @@ import org.jetbrains.amper.telemetry.getListAttribute
 import org.jetbrains.amper.test.spans.SpansTestCollector
 import org.jetbrains.amper.test.spans.spansNamed
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Disabled
 import kotlin.test.Test
 import kotlin.test.assertContains
 
@@ -108,13 +109,13 @@ class ComposeHotReloadTest : AmperCliTestBase() {
         result.assertStderrContains("Compose Hot Reload doesn't support running on the 'android' platform")
     }
 
+    @Disabled("Running the app during the test makes it unable to terminate on its own (the window must be closed by hand)")
     @Test
     fun `compose hot reload without module in multi-module picks desktop jvm app`() = runSlowTest {
         val result = runCli(
             projectDir = testProject("compose-resources-demo"),
             "run",
             "--compose-hot-reload-mode",
-            assertEmptyStdErr = false,
         )
 
         result.readTelemetrySpans().assertHotReloadJavaExecSpan("app-jvm")

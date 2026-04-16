@@ -14,6 +14,7 @@ import org.jetbrains.amper.dependency.resolution.diagnostics.Severity
 import org.jetbrains.amper.dependency.resolution.diagnostics.UnableToResolveDependency
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.test.Dirs
+import org.jetbrains.amper.test.dr.toMavenCoordinates
 import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.api.extension.ExtendWith
 import org.junit.jupiter.api.io.TempDir
@@ -43,7 +44,7 @@ class BuildGraphIncrementalCacheTest : BaseDRTest() {
      */
     @Test
     fun `com_jetbrains_intellij_platform core-impl SNAPSHOT`(testInfo: TestInfo) = runSlowDrTest {
-        val coordinates = "com.jetbrains.intellij.platform:core-impl:253.29346.50-EAP-SNAPSHOT".toMavenCoordinates()
+        val coordinates = "com.jetbrains.intellij.platform:core-impl:261.22158.182-EAP-SNAPSHOT".toMavenCoordinates()
         val repositories = listOf(REDIRECTOR_MAVEN_CENTRAL, REDIRECTOR_INTELLIJ_DEPS, REDIRECTOR_INTELLIJ_SNAPSHOTS)
 
         // Incremental cache root is calculated once and reused between all resolution runs.
@@ -174,7 +175,7 @@ class BuildGraphIncrementalCacheTest : BaseDRTest() {
         val resolver = Resolver()
 
         val testExporter = InMemorySpanExporter.create()
-
+        val testTelemetry = createTestTelemetry(testExporter)
         val context = Context {
             this.repositories = repositories
             this.cache = getDefaultFileCacheBuilder(localStorage).let {
@@ -184,10 +185,11 @@ class BuildGraphIncrementalCacheTest : BaseDRTest() {
                 }
             }
             this.incrementalCache = IncrementalCache(
-                incrementalCacheDir,
-                "1"
+                stateRoot = incrementalCacheDir,
+                codeVersion = "1",
+                openTelemetry = testTelemetry,
             )
-            this.openTelemetry = createTestTelemetry(testExporter)
+            this.openTelemetry = testTelemetry
         }
 
         if (httpClient != null) context.resolutionCache[httpClientKey] = httpClient

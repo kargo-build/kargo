@@ -4,9 +4,12 @@
 
 package org.jetbrains.amper.frontend
 
+import com.intellij.openapi.util.NlsSafe
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.amper.core.UsedInIdePlugin
 import org.jetbrains.amper.frontend.plugins.AmperMavenPluginDescription
+import org.jetbrains.amper.frontend.plugins.CheckFromPlugin
+import org.jetbrains.amper.frontend.plugins.CustomCommandFromPlugin
 import org.jetbrains.amper.frontend.plugins.TaskFromPluginDescription
 import org.jetbrains.amper.frontend.schema.JdkSettings
 import org.jetbrains.amper.frontend.schema.MavenPluginSettings
@@ -82,12 +85,19 @@ interface AmperModule {
     /**
      * To reference module somehow in output.
      */
-    val userReadableName: String
+    val userReadableName: @NlsSafe String
 
     /**
      * An optional description for this module.
+     * This description supports Markdown formatting and can span multiple lines.
+     *
+     * When writing multiline descriptions, the first line should act as a short summary that can stand on its own,
+     * like commit messages. Only the first line is displayed by default in `./amper show modules`.
+     *
+     * This description is used by the CLI and by IDEs to show information about the module.
+     * For libraries, it is also used as a description in published metadata by default.
      */
-    val description: String?
+    val description: @NlsSafe String?
 
     val type: ProductType
 
@@ -96,7 +106,7 @@ interface AmperModule {
     /**
      * The platform aliases defined in this module.
      */
-    val aliases: Map<String, Set<Platform>>
+    val aliases: Map<@NlsSafe String, Set<Platform>>
 
     /**
      * List of all the fragments in the module. Can be empty if no platforms were specified.
@@ -118,6 +128,10 @@ interface AmperModule {
     val leafPlatforms: Set<Platform> get() = leafFragments.map { it.platform }.toSet()
 
     val tasksFromPlugins: List<TaskFromPluginDescription>
+
+    val checksFromPlugins: List<CheckFromPlugin>
+
+    val customCommandsFromPlugins: List<CustomCommandFromPlugin>
 
     val layout: Layout
 

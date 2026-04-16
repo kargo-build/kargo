@@ -148,10 +148,10 @@ class AmperBuildTest : AmperCliTestBase() {
         fun errorPrefix(module: String, task: String) = 
             "ERROR: Task ':$module:$task' failed: Unable to resolve dependencies for module $module:"
         val expectedOf = listOf(
-            errorPrefix("app", "resolveDependenciesJvm") + sharedErrorPart.repeat(2),
-            errorPrefix("app", "resolveDependenciesJvmTest") + sharedErrorPart.repeat(2),
-            errorPrefix("shared", "resolveDependenciesJvm") + sharedErrorPart.repeat(4),
-            errorPrefix("shared", "resolveDependenciesJvmTest") + sharedErrorPart.repeat(4),
+            errorPrefix("app", "resolveDependenciesJvm") + sharedErrorPart.repeat(1),
+            errorPrefix("app", "resolveDependenciesJvmTest") + sharedErrorPart.repeat(1),
+            errorPrefix("shared", "resolveDependenciesJvm") + sharedErrorPart.repeat(2),
+            errorPrefix("shared", "resolveDependenciesJvmTest") + sharedErrorPart.repeat(2),
         )
 
         if (actualStderr !in expectedOf) {

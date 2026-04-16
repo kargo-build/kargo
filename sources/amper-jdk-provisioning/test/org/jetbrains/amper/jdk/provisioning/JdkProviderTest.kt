@@ -4,7 +4,6 @@
 
 package org.jetbrains.amper.jdk.provisioning
 
-import kotlinx.coroutines.test.runTest
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.frontend.schema.JvmDistribution
 import org.jetbrains.amper.incrementalcache.IncrementalCache
@@ -12,6 +11,7 @@ import org.jetbrains.amper.system.info.Arch
 import org.jetbrains.amper.system.info.OsFamily
 import org.jetbrains.amper.test.Dirs
 import org.jetbrains.amper.test.TempDirExtension
+import org.jetbrains.amper.test.runTestWithMdc
 import org.junit.jupiter.api.Assumptions.assumeFalse
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.params.ParameterizedTest
@@ -31,18 +31,18 @@ class JdkProviderTest {
     private val tempDirExtension = TempDirExtension()
 
     @Test
-    fun provisionJdk_21() = runTest(timeout = 10.minutes) {
+    fun provisionJdk_21() = runTestWithMdc(timeout = 10.minutes) {
         assertValidJdk(JdkProvisioningCriteria(majorVersion = 21))
     }
 
     @Test
-    fun provisionJdk_25() = runTest(timeout = 10.minutes) {
+    fun provisionJdk_25() = runTestWithMdc(timeout = 10.minutes) {
         assertValidJdk(JdkProvisioningCriteria(majorVersion = 25))
     }
 
     @ParameterizedTest
     @EnumSource
-    fun provisionJdk_distributionsAreCorrectlyDetected(distribution: JvmDistribution) = runTest(timeout = 10.minutes) {
+    fun provisionJdk_distributionsAreCorrectlyDetected(distribution: JvmDistribution) = runTestWithMdc(timeout = 10.minutes) {
         assumeFalse(
             OsFamily.current == OsFamily.MacOs && Arch.current == Arch.Arm64
                     && distribution == JvmDistribution.AlibabaDragonwell,
@@ -54,7 +54,12 @@ class JdkProviderTest {
         assertValidJdk(
             JdkProvisioningCriteria(
                 // there is no Dragonwell JDK 25 yet
-                majorVersion = if (distribution == JvmDistribution.AlibabaDragonwell) 21 else 25,
+                majorVersion = when (distribution) {
+                    JvmDistribution.AlibabaDragonwell -> 21
+                    // TODO: AMPER-5202 Oracle OpenJDK 25 is not provided by the list from JetBrains
+                    JvmDistribution.OracleOpenJdk -> 26
+                    else -> 25
+                },
                 distributions = listOf(distribution),
                 acknowledgedLicenses = buildList {
                     if (distribution.requiresLicense) {
@@ -80,7 +85,7 @@ class JdkProviderTest {
      * ```
      */
     @Test
-    fun provisionJdk_nestedContentHome() = runTest(timeout = 10.minutes) {
+    fun provisionJdk_nestedContentHome() = runTestWithMdc(timeout = 10.minutes) {
         assertValidJdk(
             JdkProvisioningCriteria(
                 majorVersion = 21,
@@ -107,7 +112,7 @@ class JdkProviderTest {
      * ```
      */
     @Test
-    fun provisionJdk_nestedSingleRoot_nestedContentHome() = runTest(timeout = 10.minutes) {
+    fun provisionJdk_nestedSingleRoot_nestedContentHome() = runTestWithMdc(timeout = 10.minutes) {
         assertValidJdk(
             // happens with Zulu 8, Microsoft 11, OpenLogic 11
             JdkProvisioningCriteria(
@@ -141,7 +146,7 @@ class JdkProviderTest {
      *  and aren't present in the extracted directory (created by our extraction utilities).
      */
     @Test
-    fun provisionJdk_nestedDirNextToTopLevelFiles_nestedContentHome() = runTest(timeout = 10.minutes) {
+    fun provisionJdk_nestedDirNextToTopLevelFiles_nestedContentHome() = runTestWithMdc(timeout = 10.minutes) {
         assertValidJdk(
             // happens with Zulu 11/17/21
             JdkProvisioningCriteria(
@@ -155,7 +160,7 @@ class JdkProviderTest {
     // This tests archives with '.' in the zip entry names. This breaks the STRIP_ROOT option of the extractor
     // because it tries to ensure that all entries start with this leading '.' directory.
     @Test
-    fun provisionJdk_entriesWithLeadingDotDir() = runTest(timeout = 10.minutes) {
+    fun provisionJdk_entriesWithLeadingDotDir() = runTestWithMdc(timeout = 10.minutes) {
         assertValidJdk(
             // happens with Semeru 8/11/17/21/25
             JdkProvisioningCriteria(
@@ -167,7 +172,7 @@ class JdkProviderTest {
     }
 
     @Test
-    fun provisionJdk_failsWithNoResults() = runTest(timeout = 3.minutes) {
+    fun provisionJdk_failsWithNoResults() = runTestWithMdc(timeout = 3.minutes) {
         val criteria = JdkProvisioningCriteria(
             majorVersion = 11,
             distributions = listOf(JvmDistribution.AmazonCorretto),

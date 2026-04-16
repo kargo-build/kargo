@@ -1,5 +1,7 @@
 product: jvm/lib
 
+description: Shared test infrastructure.
+
 dependencies:
   - io.github.java-diff-utils:java-diff-utils:4.12: exported
   - $kotlin.serialization.json
@@ -12,10 +14,9 @@ dependencies:
   - $libs.ktor.client.cio: runtime-only # engine for tests that download stuff (e.g. HttpServerExtension)
   - $libs.opentelemetry.sdk: exported
   - $libs.slf4j.api: exported
-  - $libs.tinylog.impl: exported
-  - $libs.mordant: exported
+  - $libs.tinylog.impl
   - $libs.tinylog.slf4j
-  - $libs.tinylog.jul
+  - $libs.mordant: exported
   - $kotlin.test.junit5
   - $libs.jna
   - $libs.jna.platform

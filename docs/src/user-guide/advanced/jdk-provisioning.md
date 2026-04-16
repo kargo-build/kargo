@@ -99,9 +99,8 @@ build will fail).
 
 ## Provisioning mechanism
 
-When Kargo decides to provision a JDK, it uses the [Foojay Discovery API](https://github.com/foojayio/discoapi) to 
-find the latest available JDK for the requested major version on your current OS/architecture, for each of the accepted
-distributions (if specified).
+When Kargo decides to provision a JDK, it fetches metadata about JDKs, and finds the latest available JDK for the 
+requested major version on your current OS/architecture, for each of the accepted distributions (if specified).
 
 Among all JDKs found, Kargo will prefer the distribution that appears first in `settings.jvm.jdk.distributions` or in
 the default list. The default list is ordered this way:
@@ -112,16 +111,12 @@ the default list. The default list is ordered this way:
 - JetBrains Runtime
 - Oracle OpenJDK
 - Microsoft
-- BiSheng
 - Alibaba Dragonwell
-- Tencent Kona
 - BellSoft Liberica
-- Perforce OpenLogic
 - SapMachine
 - IBM Semeru Open Edition
-- Oracle JDK (:warning: requires license)
-- Azul Zulu Prime (:warning: requires license)
-- IBM Semeru Certified (:warning: requires license)
+- GraalVM Community Edition
+- Oracle GraalVM (:warning: requires license)
 
 ## Licensing
 
@@ -131,7 +126,8 @@ Kargo will let you know if you're trying to use such a distribution, and won't l
 If you want to use Kargo with such a distribution, you must make sure you understand the terms of the license, and have
 the appropriate contracts or agreements with the vendor.
 
-If you do, acknowledge the license by adding the distribution name to `settings.jvm.jdk.acknowledgedLicenses`.
+If you do, acknowledge the license by adding the distribution name to `settings.jvm.jdk.acknowledgedLicenses` (see 
+examples below).
 
 ## Examples
 

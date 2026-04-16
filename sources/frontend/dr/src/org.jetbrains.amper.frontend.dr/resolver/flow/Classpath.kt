@@ -4,10 +4,8 @@
 
 package org.jetbrains.amper.frontend.dr.resolver.flow
 
-import io.opentelemetry.api.OpenTelemetry
-import org.jetbrains.amper.dependency.resolution.CacheEntryKey
+import org.jetbrains.amper.dependency.resolution.Cache
 import org.jetbrains.amper.dependency.resolution.Context
-import org.jetbrains.amper.dependency.resolution.FileCacheBuilder
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.frontend.AmperModule
@@ -19,16 +17,15 @@ import org.jetbrains.amper.frontend.MavenDependency
 import org.jetbrains.amper.frontend.MavenDependencyBase
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.allFragmentDependencies
+import org.jetbrains.amper.frontend.dr.resolver.AmperResolutionSettings
 import org.jetbrains.amper.frontend.dr.resolver.DependenciesFlowType
 import org.jetbrains.amper.frontend.dr.resolver.DependencyNodeHolderWithNotationAndContext
 import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencyNodeWithModuleAndContext
-import org.jetbrains.amper.frontend.dr.resolver.uniqueModuleKey
 import org.jetbrains.amper.frontend.fragmentsTargeting
-import org.jetbrains.amper.incrementalcache.IncrementalCache
 
 /**
  * Performs the initial resolution of module classpath dependencies.
- * The resulting graph contains a node for every 'compile' module dependency
+ * The resulting graph contains a node for every module dependency matching the resoution scope
  * as well as direct maven dependencies of that module.
  *
  * It doesn't download anything.
@@ -53,51 +50,29 @@ import org.jetbrains.amper.incrementalcache.IncrementalCache
  *   (let's call the resulted set as ModuleFragmentDependencies)
  * - adding all direct dependencies on the other modules fragments (for every fragment from ModuleFragmentDependencies)
  * - adding all direct dependencies on the other modules fragments either marked with the flag 'exported'
- *   or unconditionally for native modules since native module compilation classpath includes all transitive dependencies
+ *   or unconditionally for native modules (since the native module compilation classpath includes all transitive dependencies)
+ *                  and for the runtime resolution scope
  *   (for every fragment from the previous step)
  * - repeating the last step until newly added fragments have exported dependencies
- *   => resulted set is a complete transitive fragment dependencies.
+ *   => resulting set is a complete list of transitive fragment dependencies.
  *
  * 2. Now, walk through the resulting fragment dependencies graph and resolve actual maven dependencies
  * - adding maven dependencies of all fragments from ModuleFragmentDependencies unconditionally
  * - adding maven dependencies marked with the flag 'exported' for all the rest fragments from the graph
+ *   or unconditionally for native modules (since the native module compilation classpath includes all transitive dependencies)
+ *                  and for the runtime resolution scope
  */
+// todo (AB) : [AMPER-4905] Get rid of inheritance and move closer to the ModuleDependencies location.
 internal class Classpath(
     dependenciesFlowType: DependenciesFlowType.ClassPathType
 ): AbstractDependenciesFlow<DependenciesFlowType.ClassPathType>(dependenciesFlowType) {
 
     override fun directDependenciesGraph(
         module: AmperModule,
-        fileCacheBuilder: FileCacheBuilder.() -> Unit,
-        openTelemetry: OpenTelemetry?,
-        incrementalCache: IncrementalCache?,
+        resolutionSettings: AmperResolutionSettings,
+        sharedResolutionCache: Cache,
     ): ModuleDependencyNodeWithModuleAndContext {
-        return module.fragmentsModuleDependencies(flowType, fileCacheBuilder = fileCacheBuilder,
-            openTelemetry = openTelemetry, incrementalCache = incrementalCache)
-    }
-
-    internal fun directDependenciesGraph(
-        fragment: Fragment,
-        fileCacheBuilder: FileCacheBuilder.() -> Unit,
-        openTelemetry: OpenTelemetry?,
-        incrementalCache: IncrementalCache?
-    ): ModuleDependencyNodeWithModuleAndContext {
-        return fragment.module.fragmentsModuleDependencies(flowType, initialFragment = fragment,
-            fileCacheBuilder = fileCacheBuilder, openTelemetry = openTelemetry, incrementalCache = incrementalCache)
-    }
-
-    override fun resolutionCacheEntryKey(modules: List<AmperModule>): CacheEntryKey {
-        return CacheEntryKey.CompositeCacheEntryKey(
-            components = buildList {
-                modules.sortedBy { it.userReadableName }.map { it.userReadableName + it.uniqueModuleKey() }.let {
-                    addAll(it)
-                }
-                add(flowType.platforms)
-                add(flowType.scope)
-                add(flowType.isTest)
-                add(flowType.includeNonExportedNative)
-            }
-        )
+        return module.fragmentsModuleDependencies(flowType, resolutionSettings = resolutionSettings, sharedResolutionCache = sharedResolutionCache)
     }
 
     private fun AmperModule.fragmentsModuleDependencies(
@@ -106,14 +81,14 @@ internal class Classpath(
         notation: LocalModuleDependency? = null,
         visitedModules: MutableSet<AmperModule> = mutableSetOf(),
         initialFragment: Fragment? = null,
-        fileCacheBuilder: FileCacheBuilder.() -> Unit,
-        openTelemetry: OpenTelemetry?,
-        incrementalCache: IncrementalCache?,
+        resolutionSettings: AmperResolutionSettings,
+        sharedResolutionCache: Cache,
     ): ModuleDependencyNodeWithModuleAndContext {
 
         visitedModules.add(this)
 
-        val moduleContext = resolveModuleContext(flowType.platforms, flowType.scope, fileCacheBuilder, openTelemetry, incrementalCache)
+        val moduleContext = resolveModuleContext(flowType.platforms, flowType.scope, flowType.isTest, resolutionSettings, sharedResolutionCache)
+
         val resolutionPlatforms = moduleContext.settings.platforms
 
         // test fragments couldn't reference test fragments of transitive (non-direct) module dependencies
@@ -134,38 +109,19 @@ internal class Classpath(
 
         val dependencies = fragments
             .sortedForClasspath(platforms)
-            .flatMap { it.toDependencyNode(resolutionPlatforms, directDependencies, moduleContext, visitedModules, flowType, fileCacheBuilder, openTelemetry, incrementalCache) }
+            .flatMap { it.toDependencyNode(resolutionPlatforms, directDependencies, moduleContext, visitedModules, flowType, resolutionSettings, sharedResolutionCache) }
             .sortedByDescending { (it.notation as? DefaultScopedNotation)?.exported == true }
-
-        val moduleName = getModuleName(addContextInfo = directDependencies, flowType, resolutionPlatforms)
 
         val node = ModuleDependencyNodeWithModuleAndContext(
             module = this,
-            graphEntryName = moduleName.toString(),
-            notation = notation,
+            isForTests = flowType.isTest,
             children = dependencies,
-            templateContext = moduleContext
+            templateContext = moduleContext,
+            notation = notation,
+            topLevel = directDependencies,
         )
 
         return node
-    }
-
-    private fun AmperModule.getModuleName(
-        addContextInfo: Boolean,
-        flowType: DependenciesFlowType.ClassPathType,
-        resolutionPlatforms: Set<ResolutionPlatform>
-    ): StringBuilder {
-        val moduleName = StringBuilder("Module ${this.userReadableName}")
-        if (addContextInfo) {
-            moduleName.append("\n")
-            moduleName.append(
-                """│ - ${if (flowType.isTest) "test" else "main"}
-                  |│ - scope = ${flowType.scope.name}
-                  |│ - platforms = [${resolutionPlatforms.joinToString { it.toPlatform().pretty }}]
-                  """.trimMargin()
-            )
-        }
-        return moduleName
     }
 
     private fun Fragment.toDependencyNode(
@@ -174,9 +130,8 @@ internal class Classpath(
         moduleContext: Context,
         visitedModules: MutableSet<AmperModule>,
         flowType: DependenciesFlowType.ClassPathType,
-        fileCacheBuilder: FileCacheBuilder.() -> Unit,
-        openTelemetry: OpenTelemetry?,
-        incrementalCache: IncrementalCache?,
+        resolutionSettings: AmperResolutionSettings,
+        sharedResolutionCache: Cache,
     ): List<DependencyNodeHolderWithNotationAndContext> {
         val fragmentDependencies = externalDependencies
             .distinct()
@@ -196,7 +151,8 @@ internal class Classpath(
                             if (includeDependency) {
                                 resolvedDependencyModule.fragmentsModuleDependencies(
                                     flowType, directDependencies = false, notation = dependency, visitedModules = visitedModules,
-                                    fileCacheBuilder = fileCacheBuilder, openTelemetry = openTelemetry, incrementalCache = incrementalCache
+                                    resolutionSettings = resolutionSettings,
+                                    sharedResolutionCache = sharedResolutionCache
                                 )
                             } else null
                         } else null

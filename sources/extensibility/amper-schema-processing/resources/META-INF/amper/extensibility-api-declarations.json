@@ -1,6 +1,21 @@
 {
     "enums": [
         {
+            "schemaName": "org.jetbrains.amper.plugins/CompilationArtifact/Kind",
+            "entries": [
+                {
+                    "name": "Jar",
+                    "schemaName": "jar",
+                    "doc": "A single JAR compiled from module sources.\nIf there is a need to request unpacked classes, use [Classes] instead."
+                },
+                {
+                    "name": "Classes",
+                    "schemaName": "classes",
+                    "doc": "A directory containing all the module's compiled classes."
+                }
+            ]
+        },
+        {
             "schemaName": "org.jetbrains.amper.plugins/ResolutionScope",
             "entries": [
                 {
@@ -91,11 +106,20 @@
                     "internalAttributes": {}
                 },
                 {
+                    "name": "kind",
+                    "type": {
+                        "type": "enum",
+                        "schemaName": "org.jetbrains.amper.plugins/CompilationArtifact/Kind"
+                    },
+                    "doc": "The kind of the compilation artifact.",
+                    "internalAttributes": {}
+                },
+                {
                     "name": "artifact",
                     "type": {
                         "type": "path"
                     },
-                    "doc": "Path to the compilation artifact.\nIt's a JAR for JVM.",
+                    "doc": "Path to the compilation artifact.\nThe contents are dependent on the [kind].",
                     "internalAttributes": {
                         "isProvided": true
                     }

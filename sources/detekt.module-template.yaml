@@ -3,7 +3,3 @@ plugins:
     enabled: true
     configFile: detekt-rules.yaml
     buildUponDefaultConfig: true
-
-tasks:
-  testJvm:
-    dependsOn: [ analyze@detekt ]

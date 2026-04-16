@@ -18,6 +18,8 @@ import org.jetbrains.amper.frontend.types.SchemaTypingContext
 import org.jetbrains.amper.frontend.types.generated.*
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFails
+import kotlin.test.assertTrue
 
 class RenderToYamlTest {
 
@@ -368,6 +370,38 @@ class RenderToYamlTest {
         """.trimIndent(), yaml)
     }
 
+    @Test
+    fun `maven plugins disabled`() = withTypeContext(SchemaTypingContext(emptyList(), listOf(mavenPluginXmlFixture()))) {
+        val tree = buildTree(moduleDeclaration) {
+            product {
+                type(ProductType.JVM_APP)
+            }
+            plugins(buildRawTree {
+                mapping {
+                    put("maven-surefire-plugin.test", mapping {
+                        put("enabled", scalar("false"))
+                        put("includes", list {
+                            add(scalar("*First*"))
+                        })
+                    })
+                }
+            }, unsafe = true)
+        }
+
+        val yaml = tree.serializeToYaml()
+
+        assertEquals("""
+        product: jvm/app
+
+        plugins:
+          maven-surefire-plugin.test:
+            enabled: false
+            includes:
+              - '*First*'
+
+        """.trimIndent(), yaml)
+    }
+
     private fun mavenPluginXmlFixture(): MavenPluginXml {
         val mavenPluginXml = MavenPluginXml(
             "maven-surefire-plugin",
@@ -411,6 +445,30 @@ class RenderToYamlTest {
             Dependencies(emptyList())
         )
         return mavenPluginXml
+    }
+
+    @Test
+    fun `blank string in plugin configuration does not crash`() = withTypeContext(SchemaTypingContext(emptyList(), listOf(mavenPluginXmlFixture()))) {
+        val tree = buildTree(moduleDeclaration) {
+            product {
+                type(ProductType.JVM_APP)
+            }
+            plugins(buildRawTree {
+                mapping {
+                    put("maven-surefire-plugin.test", mapping {
+                        put("enabled", scalar("true"))
+                        put("includes", list {
+                            add(scalar(""))
+                        })
+                    })
+                }
+            }, unsafe = true)
+        }
+
+        val yaml = tree.serializeToYaml()
+
+        assertTrue(yaml.contains("product: jvm/app"))
+        assertTrue(yaml.contains("maven-surefire-plugin.test"))
     }
 
     @Test
@@ -584,6 +642,42 @@ class RenderToYamlTest {
               java:
                 compileIncrementally: false
 
+        """.trimIndent(), yaml)
+    }
+
+    @Test
+    fun `conflicting values fail on merge`() = withTypeContext {
+        val tree = buildTree(moduleDeclaration) {
+            product {
+                type(ProductType.JVM_LIB)
+            }
+        }
+        val otherTree = buildTree(moduleDeclaration) {
+            product {
+                type(ProductType.JVM_APP)
+            }
+        }
+        val mergedTree = mergeTrees(listOf(tree, otherTree))
+        assertFails { mergedTree.serializeToYaml() }
+    }
+
+    @Test
+    fun `conflicting values can be resolved by Maven contributor context`() = withTypeContext {
+        val tree = buildTree(moduleDeclaration, contexts = listOf(MavenContributorContext.Default)) {
+            product {
+                type(ProductType.JVM_LIB)
+            }
+        }
+        val otherTree = buildTree(moduleDeclaration, contexts = listOf(MavenContributorContext.SpringBoot)) {
+            product {
+                type(ProductType.JVM_APP)
+            }
+        }
+        val mergedTree = mergeTrees(listOf(tree, otherTree))
+        val yaml = mergedTree.serializeToYaml()
+        assertEquals("""
+            product: jvm/app
+            
         """.trimIndent(), yaml)
     }
 }

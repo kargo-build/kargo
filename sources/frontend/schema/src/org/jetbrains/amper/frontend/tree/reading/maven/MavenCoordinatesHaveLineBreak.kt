@@ -14,14 +14,9 @@ class MavenCoordinatesHaveLineBreak(
     override val element: PsiElement,
     override val coordinates: String,
 ) : MavenCoordinatesParsingProblem() {
-    companion object {
-        const val ID = "maven.coordinates.have.line.break"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.MavenCoordinatesHaveLineBreak
-    override val message: @Nls String = SchemaBundle.message(ID)
+    override val message: @Nls String = SchemaBundle.message("maven.coordinates.have.line.break")
 
     val lineBreakIndices = coordinates.indices.filter { coordinates[it] == '\n' || coordinates[it] == '\r' }
 

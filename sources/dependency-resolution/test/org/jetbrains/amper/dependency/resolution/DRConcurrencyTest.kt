@@ -9,6 +9,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import org.jetbrains.amper.test.Dirs
+import org.jetbrains.amper.test.dr.toMavenNode
 import org.junit.jupiter.api.TestInfo
 import java.nio.file.NoSuchFileException
 import java.nio.file.Path

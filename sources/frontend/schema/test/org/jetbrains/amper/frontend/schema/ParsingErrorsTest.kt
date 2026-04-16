@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.schema
@@ -78,42 +78,6 @@ class ParsingErrorsTest : FrontendTestCaseBase(Path("testResources") / "parsing-
                     expected = expectedDetailedMessage,
                     actual = problem.detailedMessage,
                 )
-            }
-        }
-    }
-
-    @Test
-    fun `unsupported dependency classifiers`() {
-        diagnosticsTest("unsupported-dependency-classifiers/module") { problems ->
-            problems.filterIsInstance<MavenCoordinatesParsingProblem>().forEach { problem ->
-                val expectedError = when (val coordinates = problem.coordinates) {
-                    "com.fasterxml.jackson.core:jackson-core:2.17.2:abc" ->
-                        """
-                        Maven classifiers are currently not supported
-                        Dependency com.fasterxml.jackson.core:jackson-core:2.17.2:abc has classifier 'abc', which will be ignored.
-                    """.trimIndent()
-
-                    "com.fasterxml.jackson.core:jackson-core:2.17.2:compile-only" ->
-                        """
-                        Maven classifiers are currently not supported
-                        Dependency com.fasterxml.jackson.core:jackson-core:2.17.2:compile-only has classifier 'compile-only', which will be ignored. Perhaps, you have meant 'compile-only' as a scope? Add a space after the last ':' to fix that.
-                    """.trimIndent()
-
-                    "com.fasterxml.jackson.core:jackson-core:2.17.2:exported" ->
-                        """
-                        Maven classifiers are currently not supported
-                        Dependency com.fasterxml.jackson.core:jackson-core:2.17.2:exported has classifier 'exported', which will be ignored. Perhaps, you have meant 'exported' as a scope? Add a space after the last ':' to fix that.
-                    """.trimIndent()
-
-                    "com.fasterxml.jackson.core:jackson-core:2.17.2:runtime-only" ->
-                        """
-                        Maven classifiers are currently not supported
-                        Dependency com.fasterxml.jackson.core:jackson-core:2.17.2:runtime-only has classifier 'runtime-only', which will be ignored. Perhaps, you have meant 'runtime-only' as a scope? Add a space after the last ':' to fix that.
-                    """.trimIndent()
-
-                    else -> fail("Unexpected dependency coordinates: $coordinates")
-                }
-                assertEquals(expected = expectedError, actual = problem.detailedMessage)
             }
         }
     }

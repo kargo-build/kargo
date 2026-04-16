@@ -70,4 +70,14 @@ class SettingsDiagnosticsTest : FrontendTestCaseBase(Path("testResources") / "di
     fun `kotlin compiler version too low`() {
         diagnosticsTest("kotlin-compiler-version-too-low")
     }
+
+    @Test
+    fun `compose material3 with unknown version mapping`() {
+        diagnosticsTest("compose-material3-unknown-version")
+    }
+
+    @Test
+    fun `compose material3 with known version mapping`() {
+        diagnosticsTest("compose-material3-known-version")
+    }
 }

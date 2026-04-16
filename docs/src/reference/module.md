@@ -117,10 +117,13 @@ dependencies@jvm:
 
 ## `description`
 
-The description of the module.
+An optional description of the module. This description supports Markdown formatting and can span multiple lines.
 
-It can be used in CLI introspection commands (`./amper show modules`) or in UIs to show information about modules.
-For libraries, it also used as a description in published metadata by default.
+When writing multiline descriptions, the first line should act as a short summary that can stand on its own, like 
+commit messages. Only the first line is displayed by default in `./amper show modules`.
+
+This description is used by the CLI and by IDEs to show information about the module.
+For libraries, it is also used as a description in published metadata by default.
 
 ## `layout`
 
@@ -355,7 +358,7 @@ framework. Read more about [Compose configuration](../user-guide/builtin-tech/co
 | Attribute              | Default  | Description                                                    |
 |------------------------|----------|----------------------------------------------------------------|
 | `enabled: boolean`     | `false`  | Enable Compose runtime, dependencies and the compiler plugins. |
-| `version: string`      | `1.10.1` | The Compose plugin version to use.                             |
+| `version: string`      | `1.10.3` | The Compose plugin version to use.                             |
 | `resources: object`    |          | Compose Resources settings.                                    |
 | `experimental: object` |          | Experimental Compose settings.                                 |
 
@@ -374,9 +377,9 @@ framework. Read more about [Compose configuration](../user-guide/builtin-tech/co
 
 `settings.compose.experimental.hotReload` configures experimental hot reload (JVM only).
 
-| Attribute         | Default      | Description                                      |
-|-------------------|--------------|--------------------------------------------------|
-| `version: string` | `1.0.0-rc01` | The Compose Hot Reload toolchain version to use. |
+| Attribute         | Default | Description                                      |
+|-------------------|---------|--------------------------------------------------|
+| `version: string` | `1.0.0` | The Compose Hot Reload toolchain version to use. |
 
 Examples:
 
@@ -522,7 +525,7 @@ Read more about [testing support](../user-guide/testing.md).
 
 | Attribute                        | Default                      | Description                                                                                                                                                          |
 |----------------------------------|------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `version: string`                | 2.3.10                       | The version of the Kotlin compiler and stdlib to use.                                                                                                                |
+| `version: string`                | 2.3.20                       | The version of the Kotlin compiler and stdlib to use.                                                                                                                |
 | `allOpen: object`                |                              | Configure the [Kotlin all-open compiler plugin](https://kotlinlang.org/docs/all-open-plugin.html).                                                                   |
 | `allWarningsAsErrors: boolean`   | `false`                      | Turn any warnings into a compilation error.                                                                                                                          |
 | `apiVersion: enum`               | (set from `languageVersion`) | Allow using declarations only from the specified version of Kotlin bundled libraries.                                                                                |
@@ -530,6 +533,7 @@ Read more about [testing support](../user-guide/testing.md).
 | `debug: boolean`                 | `true`                       | (Only for [native targets](https://kotlinlang.org/docs/native-target-support.html)) Enable emitting debug information.                                               |
 | `freeCompilerArgs: string list`  | `[]`                         | Pass any [compiler option](https://kotlinlang.org/docs/compiler-reference.html#compiler-options) directly.                                                           |
 | `jsPlainObjects: object \| enum` |                              | Enable the Kotlin JS-plain-objects compiler plugin.                                                                                                                  |
+| `ksp: object`                    |                              | Configure [Kotlin Symbol Processing](../user-guide/advanced/ksp.md).                                                                                                 |
 | `languageVersion: enum`          | (major.minor from `version`) | Provide source compatibility with the specified version of Kotlin.                                                                                                   |
 | `noArg: object`                  |                              | Configure the [Kotlin no-arg compiler plugin](https://kotlinlang.org/docs/no-arg-plugin.html).                                                                       |
 | `optIns: enum list`              | `[]`                         | Enable usages of API that [requires opt-in](https://kotlinlang.org/docs/opt-in-requirements.html) with a requirement annotation with the given fully qualified name. |
@@ -627,6 +631,33 @@ settings:
       presets: [ spring ]
 ```
 
+#### `settings.kotlin.compilerPlugins`
+
+`settings.kotlin.compilerPlugins` allows adding 
+[third-party compiler plugins](../user-guide/advanced/kotlin-compiler-plugins.md#third-party-compiler-plugins) to your 
+compilation.
+
+| Attribute                      |      | Description                                                                                                                                                                                                                                                                                                                             |
+|:-------------------------------|------|:----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `id: string`                   |      | The ID of this compiler plugin, used to pass options. It is defined by the `pluginId` property in the `CommandLineProcessor` implementation of the plugin. If the plugin is also implemented as a Gradle plugin, its ID can also be found in `getCompilerPluginId()` in the corresponding `KotlinCompilerPluginSupportPlugin` subclass. |
+| `dependency: string`           |      | The compiler plugin dependency, in the form of `groupId:artifactId:version` Maven coordinates, or a catalog reference.                                                                                                                                                                                                                  |
+| `options: map<string, string>` | `{}` | The options to pass to this compiler plugin, as a key-value map.                                                                                                                                                                                                                                                                        |
+
+Check the [third-party compiler plugins](../user-guide/advanced/kotlin-compiler-plugins.md#third-party-compiler-plugins)
+section for more information and examples.
+
+#### `settings.kotlin.jsPlainObjects`
+
+`settings.kotlin.jsPlainObjects` configures the [JS plain objects compiler plugin](https://kotlinlang.org/docs/js-plain-objects.html),
+which lets you create and copy plain JS objects in a type-safe way.
+
+| Attribute                     | Default | Description                                        |
+|-------------------------------|---------|----------------------------------------------------|
+| `enabled: boolean`            | `false` | Enable the Kotlin JS plain objects compiler plugin |  
+
+Check the dedicated [JS plain objects](../user-guide/advanced/kotlin-compiler-plugins.md#js-plain-objects) section for 
+more information.
+
 #### `settings.kotlin.noArg`
 
 `settings.kotlin.noArg` configures the [Kotlin no-arg compiler plugin](https://kotlinlang.org/docs/no-arg-plugin.html),
@@ -659,6 +690,17 @@ settings:
       invokeInitializers: true
 ```
 
+#### `settings.kotlin.ksp`
+
+`settings.kotlin.ksp` configures the [Kotlin Symbol Processing mechanism](../user-guide/advanced/ksp.md),
+which allows processing Kotlin source code with custom processors (usually to generate extra code).
+
+| Attribute                               | Default | Description                                                                                                              |
+|-----------------------------------------|---------|--------------------------------------------------------------------------------------------------------------------------|
+| `version: string`                       | `2.3.6` | The version of KSP to use                                                                                                |  
+| `processors: string list`               | `[]`    | The list of KSP processors to use. Each item can be a path to a local module, a catalog reference, or maven coordinates. |  
+| `processorOptions: map<string, string>` | `{}`    | Some options to pass to KSP processors. Refer to each processor documentation for details.                               |  
+
 ### `settings.ktor`
 
 `settings.ktor` configures the Ktor server framework.
@@ -666,7 +708,7 @@ settings:
 | Attribute           | Default | Description                                                                                                          |
 |---------------------|---------|----------------------------------------------------------------------------------------------------------------------|
 | `enabled: boolean`  | `false` | Enable the Ktor server framework. This is just a convenience to generate library catalog entries for Ktor libraries. |  
-| `version: string`   | `3.4.0` | The Ktor version used for the BOM and in the generated library catalog entries                                       |  
+| `version: string`   | `3.4.1` | The Ktor version used for the BOM and in the generated library catalog entries                                       |  
 | `applyBom: boolean` | `true`  | Whether to apply the Ktor BOM                                                                                        |
 
 Example:
@@ -757,7 +799,7 @@ settings:
 | Attribute           | Default | Description                          |
 |---------------------|---------|--------------------------------------|
 | `enabled: boolean`  | `false` | Enable Spring Boot                   |  
-| `version: string`   | `4.0.2` | Spring Boot version                  |  
+| `version: string`   | `4.0.5` | Spring Boot version                  |  
 | `applyBom: boolean` | `true`  | Whether to apply the Spring Boot BOM |
 
 Example:

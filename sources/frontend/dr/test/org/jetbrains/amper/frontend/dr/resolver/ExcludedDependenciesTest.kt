@@ -1,11 +1,10 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.dr.resolver
 
 import org.jetbrains.amper.dependency.resolution.IncrementalCacheUsage
-import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.test.runTestRespectingDelays
@@ -37,18 +36,9 @@ class ExcludedDependenciesTest: BaseModuleDrTest() {
         val jvmAppDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    ResolutionScope.COMPILE,
-                    setOf(ResolutionPlatform.JVM),
-                    false,
-                    false)
-                ,
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
             verifyMessages = true,
-            module = "app"
+            module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
         )
 
         assertFiles(testInfo,jvmAppDeps)
@@ -74,19 +64,14 @@ class ExcludedDependenciesTest: BaseModuleDrTest() {
         val jvmAppDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    ResolutionScope.COMPILE,
-                    setOf(ResolutionPlatform.JVM),
-                    false,
-                    false)
-                ,
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-                incrementalCache = incrementalCache
+            resolutionInput = defaultTestResolutionInput.copy(
+                resolutionSettings = defaultTestResolutionInput.resolutionSettings.copy(
+                    incrementalCache = incrementalCache,
+                )
             ),
             verifyMessages = true,
-            module = "app"
+            module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
         )
 
         assertFiles(testInfo,jvmAppDeps)
@@ -98,22 +83,17 @@ class ExcludedDependenciesTest: BaseModuleDrTest() {
         moduleYaml.writeText(patchedModuleYamlText)
 
         val aomPatched = getTestProjectModel(tmpProjectRoot)
-        val jvmAppDepsPatched = doTestByFile(
+        doTestByFile(
             testInfo,
             aomPatched,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    ResolutionScope.COMPILE,
-                    setOf(ResolutionPlatform.JVM),
-                    false,
-                    false)
-                ,
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-                incrementalCache = incrementalCache
+            resolutionInput = defaultTestResolutionInput.copy(
+                resolutionSettings = defaultTestResolutionInput.resolutionSettings.copy(
+                    incrementalCache = incrementalCache,
+                )
             ),
             verifyMessages = true,
             module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
             goldenFileName = "${testInfo.testMethod.get().name}_patched"
         )
     }

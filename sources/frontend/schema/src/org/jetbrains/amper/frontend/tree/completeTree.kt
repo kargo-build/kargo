@@ -66,10 +66,10 @@ private fun ensureCompleteTreeNode(
             val completeChildren = node.children.mapNotNull {
                 ensureCompleteTreeNode(it, valuePath + ("[]" to it.trace))
             }
-            CompleteListNode(completeChildren, node.type, node.trace, node.contexts)
+            CompleteListNode(completeChildren, node.trace, node.contexts)
         }
-        is RefinedMappingNode -> when (val type = node.type) {
-            is SchemaType.MapType -> {
+        is RefinedMappingNode -> when (val declaration = node.declaration) {
+            null -> {  // Map
                 val completeKeyValues = node.refinedChildren.mapValues { (key, keyValue) ->
                     val completeValue = ensureCompleteTreeNode(
                         keyValue.value,
@@ -78,10 +78,9 @@ private fun ensureCompleteTreeNode(
                     completeValue?.let { keyValue.asCompleteForMap(it) }
                 }.filterValues { it != null }.mapValues { it.value!! }
 
-                CompleteMapNode(completeKeyValues, type, node.trace, node.contexts)
+                CompleteMapNode(completeKeyValues, node.trace, node.contexts)
             }
-            is SchemaType.ObjectType -> {
-                val declaration = type.declaration
+            else -> {  // Object
                 for (mapLikePropertyValue in node.refinedChildren.values) {
                     propertyCheckTypeLevelIntegrity(declaration, mapLikePropertyValue)
                 }
@@ -122,7 +121,7 @@ private fun ensureCompleteTreeNode(
                     // We don't allow incomplete objects
                     null
                 } else {
-                    CompleteObjectNode(completeKeyValues, type, node.trace, node.contexts)
+                    CompleteObjectNode(completeKeyValues, declaration, node.trace, node.contexts)
                 }
             }
         }

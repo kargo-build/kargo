@@ -2,16 +2,12 @@
  * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
-import com.charleskorn.kaml.Yaml
-import com.charleskorn.kaml.YamlConfiguration
-import com.charleskorn.kaml.decodeFromStream
 import com.squareup.kotlinpoet.AnnotationSpec
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
-import kotlinx.serialization.Serializable
 import org.eclipse.jgit.api.Git
 import org.jetbrains.amper.plugins.ExecutionAvoidance
 import org.jetbrains.amper.plugins.Output
@@ -20,28 +16,29 @@ import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.createDirectories
 import kotlin.io.path.exists
-import kotlin.io.path.inputStream
 import kotlin.io.path.readBytes
 import kotlin.io.path.writeBytes
 
 private const val PACKAGE_NAME = "org.jetbrains.amper.buildinfo"
 
 @TaskAction(ExecutionAvoidance.Disabled)
-fun generateBuildProperties(@Output taskOutputDirectory: Path) {
+fun generateBuildProperties(
+    @Output taskOutputDirectory: Path,
+    version: String?,
+) {
+    checkNotNull(version) {
+        "`settings.publishing.version` is required to be set for build properties"
+    }
     val taskOutputDirectory = taskOutputDirectory.createDirectories()
 
+    // TODO: Obtain project root from Amper (AMPER-5085) instead of searching for it
     val currentDir = Path(System.getProperty("user.dir"))
     val projectRoot = generateSequence(currentDir) { it.parent }
         .firstOrNull { it.resolve("project.yaml").exists() }
         ?: error("Project root not found: no project.yaml when looking up the parent tree from $currentDir")
 
-    val commonModuleTemplate = projectRoot.resolve("sources/common.module-template.yaml")
-    check(commonModuleTemplate.exists()) {
-        "Common module template file doesn't exist: $commonModuleTemplate"
-    }
     val gitRoot = projectRoot.resolve(".git")
 
-    val version = System.getenv("GITHUB_REF_TAG_VERSION") ?: getConfiguredPublishingVersion(commonModuleTemplate)
 
     // .git is usually a directory, but can be a file in the case when `git worktree add` was used so exists check
     // is sufficient.
@@ -162,22 +159,6 @@ internal fun documentationUrl(version: String): String {
     val majorAndMinorVersion = extractMajorAndMinorVersion(version)
     return if (isDevVersion || isSnapshot) "https://amper.org/dev" else "https://amper.org/$majorAndMinorVersion"
 }
-
-private fun getConfiguredPublishingVersion(commonModuleTemplate: Path): String {
-    val yamlConf = YamlConfiguration(strictMode = false)
-    val yaml = Yaml(configuration = yamlConf)
-    val commonTemplate = commonModuleTemplate.inputStream().use { yaml.decodeFromStream<TemplateYaml>(it) }
-    return commonTemplate.settings.publishing.version
-}
-
-@Serializable
-private data class TemplateYaml(val settings: SettingsYaml)
-
-@Serializable
-private data class SettingsYaml(val publishing: PublishingYaml)
-
-@Serializable
-private data class PublishingYaml(val version: String)
 
 private fun writeContentIfChanged(file: Path, content: ByteArray) {
     if (file.exists()) {

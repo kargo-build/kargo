@@ -24,7 +24,7 @@ import org.jetbrains.amper.frontend.LocalModuleDependency
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.aomBuilder.readProjectModel
-import org.jetbrains.amper.frontend.project.StandaloneAmperProjectContext
+import org.jetbrains.amper.frontend.project.AmperProjectContext
 import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.frontend.schema.keyAlias
 import org.jetbrains.amper.frontend.schema.keyPassword
@@ -199,6 +199,7 @@ class AmperAndroidIntegrationProjectPlugin @Inject constructor(private val probl
                 .resolve("AndroidManifest.xml")
             it.manifest.srcFile(androidApplicationSourceRoot)
             it.res.setSrcDirs(setOf(module.buildDir.resolve("res")))
+            it.jniLibs.setSrcDirs(setOf(module.buildDir.resolve("jniLibs")))
         }
 
         project.afterEvaluate {
@@ -223,7 +224,7 @@ class AmperAndroidIntegrationProjectPlugin @Inject constructor(private val probl
                 }
 
                 // set inter-module dependencies between android modules
-                val androidDependencyPaths = project.gradle.knownModel?.let { _ ->
+                val androidDependencyPaths = if (project.gradle.knownModel != null) {
                     androidFragment
                         .externalDependencies
                         .asSequence()
@@ -233,7 +234,9 @@ class AmperAndroidIntegrationProjectPlugin @Inject constructor(private val probl
                         .mapNotNull { project.gradle.moduleFilePathToProject[it.buildDir] }
                         .filter { it in requestedModules }
                         .toList()
-                } ?: listOf()
+                } else {
+                    emptyList()
+                }
 
                 for (path in androidDependencyPaths) {
                     variant.runtimeConfiguration.dependencies.add(project.dependencies.project(mapOf("path" to path)))
@@ -284,7 +287,7 @@ class AmperAndroidIntegrationSettingsPlugin @Inject constructor(private val tool
         //   Also, it would avoid parsing all modules files in the entire project for each delegated Gradle build.
         // Problems are already reported when running the Amper CLI, so we shouldn't report them again
         val model = with(NoopProblemReporter) {
-            val projectContext = StandaloneAmperProjectContext.create(projectRoot, buildDir = null, project = null)
+            val projectContext = AmperProjectContext.create(rootDir = projectRoot, buildDir = null)
                 ?: error("Invalid project root passed to the delegated Android Gradle build: $projectRoot")
             projectContext.readProjectModel(
                 // We do not recover/pass plugin data here,

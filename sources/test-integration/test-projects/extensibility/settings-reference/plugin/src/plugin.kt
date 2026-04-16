@@ -11,7 +11,7 @@ fun checkSettings(
     kotlinVersion: String,
     kotlinLanguageVersion: String?,
     kotlinWarningsAsErrors: Boolean,
-    jvmRelease: Int,
+    jvmRelease: Int?,
     jvmRuntimeClasspathMode: String,
     jdkVersion: String,
     junitVersion: String,

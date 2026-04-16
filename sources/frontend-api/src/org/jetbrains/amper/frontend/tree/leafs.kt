@@ -6,21 +6,24 @@ package org.jetbrains.amper.frontend.tree
 
 import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.contexts.Contexts
-import org.jetbrains.amper.frontend.contexts.EmptyContexts
 import org.jetbrains.amper.frontend.types.SchemaType
 
 /**
  * Represents an invalid/missing value that the parser was unable to parse.
+ * Also, may be used instead of the [ResolvableNode] that was failed to be resolved.
  */
 class ErrorNode(
+    /**
+     * A type that was expected for this node.
+     */
+    val expectedType: SchemaType,
     /**
      * If there is no PSI element at all for the (absent) value, this trace points to the key-value element that
      * contains no value (E.g. `foo: ` in YAML).
      */
     override val trace: Trace,
-) : LeafTreeNode {
-    override val contexts = EmptyContexts
-}
+    override val contexts: Contexts,
+) : LeafTreeNode
 
 /**
  * Represents the null literal.
@@ -34,8 +37,17 @@ class NullLiteralNode(
  * This is a scalar value tree node.
  * See the sealed inheritors for type-safe access to the actual value.
  */
-sealed interface ScalarNode : LeafTreeNode, CompleteTreeNode {
-    val type: SchemaType.ScalarType
+sealed interface ScalarNode : LeafTreeNode, CompleteTreeNode
+
+/**
+ * A node that contains references and thus can be "resolved" - replaced with another node or an [ErrorNode]
+ * if resolution fails.
+ */
+sealed interface ResolvableNode : LeafTreeNode {
+    /**
+     * A type that the result of this node's resolution is expected to be assignable to.
+     */
+    val expectedType: SchemaType
 }
 
 @RequiresOptIn("This mechanism is only intended for procedural defaults. Do not use it for anything else")
@@ -46,11 +58,11 @@ annotation class DefaultsReferenceTransform
  */
 class ReferenceNode(
     val referencedPath: List<String>,
-    val type: SchemaType,
+    override val expectedType: SchemaType,
     val transform: Transform? = null,
     override val trace: Trace,
     override val contexts: Contexts,
-) : LeafTreeNode {
+) : ResolvableNode {
     /**
      * Implementations must be **named classes**.
      *
@@ -82,10 +94,10 @@ class ReferenceNode(
  */
 class StringInterpolationNode(
     val parts: List<Part>,
-    val type: SchemaType.StringInterpolatableType,
+    override val expectedType: SchemaType.StringInterpolatableType,
     override val trace: Trace,
     override val contexts: Contexts,
-) : LeafTreeNode {
+) : ResolvableNode {
     init {
         require(parts.any { it is Part.Reference }) {
             "Makes no sense to construct StringInterpolationValue without references"
@@ -101,3 +113,10 @@ class StringInterpolationNode(
         data class Text(val text: String): Part
     }
 }
+
+fun StringInterpolationNode.copy(
+    parts: List<StringInterpolationNode.Part> = this.parts,
+    expectedType: SchemaType.StringInterpolatableType = this.expectedType,
+    trace: Trace = this.trace,
+    contexts: Contexts = this.contexts,
+) = StringInterpolationNode(parts, expectedType, trace, contexts)

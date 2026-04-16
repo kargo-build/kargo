@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.contexts
@@ -51,7 +51,7 @@ fun interface ContextsInheritance<T : Context> {
         INDETERMINATE,
     }
 
-    fun Collection<T>.isMoreSpecificThan(other: Collection<T>): Result
+    fun Collection<T>.compareContexts(other: Collection<T>): Result
 }
 
 /**
@@ -60,8 +60,8 @@ fun interface ContextsInheritance<T : Context> {
 inline operator fun <reified F : Context, reified S : Context> ContextsInheritance<F>.plus(
     other: ContextsInheritance<S>
 ) = ContextsInheritance<Context> {
-    val firstResult = filterIsInstance<F>().isMoreSpecificThan(it.filterIsInstance<F>())
-    val secondResult = with(other) { filterIsInstance<S>().isMoreSpecificThan(it.filterIsInstance<S>()) }
+    val firstResult = filterIsInstance<F>().compareContexts(it.filterIsInstance<F>())
+    val secondResult = with(other) { filterIsInstance<S>().compareContexts(it.filterIsInstance<S>()) }
     when {
         firstResult == SAME -> secondResult
         secondResult == SAME -> firstResult

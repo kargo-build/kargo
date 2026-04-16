@@ -12,18 +12,12 @@ import org.jetbrains.amper.frontend.jdkSettings
 import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.messages.extractPsiElement
 import org.jetbrains.amper.frontend.schema.JvmDistribution
-import org.jetbrains.amper.problems.reporting.BuildProblemId
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 
 object JdkDistributionRequiresLicenseFactory : AomSingleModuleDiagnosticFactory {
-    @Deprecated(
-        message = "Use JdkDistributionRequiresLicense.ID",
-        replaceWith = ReplaceWith("JdkDistributionRequiresLicense.ID"),
-    )
-    val diagnosticId: BuildProblemId = JdkDistributionRequiresLicense.ID
 
     override fun analyze(module: AmperModule, problemReporter: ProblemReporter) {
         val jdkSettings = module.jdkSettings
@@ -39,12 +33,7 @@ object JdkDistributionRequiresLicenseFactory : AomSingleModuleDiagnosticFactory 
 class JdkDistributionRequiresLicense(
     val distribution: TraceableEnum<JvmDistribution>,
 ) : PsiBuildProblem(Level.Error, BuildProblemType.InconsistentConfiguration) {
-    companion object {
-        const val ID = "jdk.distribution.requires.license"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId = ID
     override val diagnosticId: DiagnosticId = FrontendDiagnosticId.JdkDistributionRequiresLicense
     override val message = SchemaBundle.message("jdk.distribution.requires.license", distribution.value.schemaValue)
     override val element: PsiElement

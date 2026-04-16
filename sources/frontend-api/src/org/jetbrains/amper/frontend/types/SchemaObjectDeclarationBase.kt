@@ -10,7 +10,6 @@ import org.jetbrains.amper.frontend.tree.createDefault
 abstract class SchemaObjectDeclarationBase : SchemaObjectDeclaration {
     private val propertiesByName by lazy { properties.associateBy { it.name } }
     private val shorthands by lazy(::Shorthands)
-    private val defaults = mutableMapOf<String, RefinedKeyValue?>()
 
     final override fun getProperty(name: String): SchemaObjectDeclaration.Property? {
         return propertiesByName[name]
@@ -32,7 +31,7 @@ abstract class SchemaObjectDeclarationBase : SchemaObjectDeclaration {
         require(propertiesByName[property.name] === property) {
             "Property doesn't belong to the `$this` class: $property"
         }
-        return defaults.getOrPut(property.name) { createDefault(property) }
+        return createDefault(property)
     }
 
     private inner class Shorthands {

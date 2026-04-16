@@ -1,3 +1,4 @@
+RUNTIME
 activity-1.7.0.aar
 activity-ktx-1.7.0.aar
 animation-android-1.8.1.aar

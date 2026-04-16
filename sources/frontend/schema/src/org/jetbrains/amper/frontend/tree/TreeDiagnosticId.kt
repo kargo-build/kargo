@@ -12,6 +12,7 @@ import org.jetbrains.amper.problems.reporting.DiagnosticId
 enum class TreeDiagnosticId : DiagnosticId {
     AliasesAreNotSupported,
     CompoundKeysAreNotSupported,
+    ConflictingProperties,
     ExpectedKeyValue,
     ExpectedSingleKeyValuePair,
     InvalidPath,
@@ -41,12 +42,14 @@ enum class TreeDiagnosticId : DiagnosticId {
     UnexpectedValue,
     UnknownEnumValue,
     UnresolvedReference,
+    ReferenceMemberAccessOnNullable,
 
     // Domain-specific
     CoordinatesInGradleFormat,
-    IncorrectBomDependencyStructure,
     InvalidTaskActionType,
+    BomIsNotSupported,
     LocalBomAreNotSupported,
+    LocalDependenciesAreNotSupported,
     MavenClassifiersAreNotSupported,
     MavenCoordinatesHaveLineBreak,
     MavenCoordinatesHavePartEndingWithDot,
@@ -56,4 +59,5 @@ enum class TreeDiagnosticId : DiagnosticId {
     MavenCoordinatesHaveTooManyParts,
     MavenCoordinatesShouldBuildValidPath,
     MissingTaskActionType,
+    WrongDependencyFormat,
 }

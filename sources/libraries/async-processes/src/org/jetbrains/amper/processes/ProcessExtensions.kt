@@ -189,6 +189,7 @@ internal inline fun <T> Process.withDestructionHook(
     }
     return withShutdownHook(
         name = "Destroyer for PID=${pid()}: $command",
+        runHookIfAlreadyShuttingDown = true, // kill the process immediately if already shutting down
         onJvmShutdown = { killAndAwaitTermination(gracePeriod) },
     ) {
         block(this)
@@ -197,7 +198,12 @@ internal inline fun <T> Process.withDestructionHook(
 
 @OptIn(ExperimentalContracts::class)
 @PublishedApi
-internal inline fun <T> withShutdownHook(name: String, crossinline onJvmShutdown: () -> Unit, block: () -> T): T {
+internal inline fun <T> withShutdownHook(
+    name: String,
+    runHookIfAlreadyShuttingDown: Boolean,
+    crossinline onJvmShutdown: () -> Unit,
+    block: () -> T,
+): T {
     contract {
         callsInPlace(block, kind = InvocationKind.EXACTLY_ONCE)
     }
@@ -209,14 +215,28 @@ internal inline fun <T> withShutdownHook(name: String, crossinline onJvmShutdown
     val runtime = Runtime.getRuntime()
     try {
         runtime.addShutdownHook(hookThread)
+    } catch (e: IllegalStateException) {
+        // IllegalStateException is thrown if the JVM is already shutting down (it's the only documented case).
+        // In this case, we can't register the hook, but we still want to run the onJvmShutdown callback immediately.
+        // Note: there is no direct way to check whether the JVM is shutting down before attempting to add the hook, so
+        // we have to rely on this non-obvious exception mechanism.
+        if (runHookIfAlreadyShuttingDown) {
+            onJvmShutdown()
+        }
+        // Even though we ran our shutdown code, we still have to fail and let the JVM exit.
+        // (we shouldn't try to invent a value for `T` just because we know the JVM is exiting)
+        throw e
+    }
+    try {
         return block()
     } finally {
         try {
             runtime.removeShutdownHook(hookThread)
         } catch (_: IllegalStateException) {
-            // IllegalStateException is thrown if the JVM is already shutting down.
-            // In this case, we actually don't want to unregister the hook, so it's fine to ignore this exception.
-            // There is no direct way to check whether the JVM is shutting down before attempting to remove the hook.
+            // IllegalStateException is thrown if the JVM is already shutting down (it's the only documented case).
+            // In this case, we don't want to unregister the hook, so it's fine to ignore this exception.
+            // Note: there is no direct way to check whether the JVM is shutting down before attempting to remove the
+            // hook, so we have to rely on this non-obvious exception mechanism.
         }
     }
 }

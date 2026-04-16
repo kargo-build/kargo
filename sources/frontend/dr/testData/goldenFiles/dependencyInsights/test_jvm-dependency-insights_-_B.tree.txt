@@ -7,13 +7,18 @@ Module B
 │         ╰─── org.jetbrains.compose.ui:ui-tooling-desktop:1.6.0
 │              ├─── org.jetbrains.compose.runtime:runtime:1.6.0
 │              │    ╰─── org.jetbrains.compose.runtime:runtime-desktop:1.6.0
-│              │         ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3 -> 1.9.0
-│              │              ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0
+│              │         ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3
+│              │              ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3
 │              │                   ├─── org.jetbrains:annotations:23.0.0
-│              │                   ├─── org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.9.0
-│              │                   │    ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (c)
-│              │                   ╰─── org.jetbrains.kotlin:kotlin-stdlib:2.0.0 -> #kotlinVersion
-│              │                        ╰─── org.jetbrains:annotations:13.0 -> 23.0.0
+│              │                   ├─── org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.7.3
+│              │                   ├─── org.jetbrains.kotlin:kotlin-stdlib-common:1.8.20 -> #kotlinVersion
+│              │                   │    ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion
+│              │                   │         ├─── org.jetbrains:annotations:13.0 -> 23.0.0
+│              │                   │         ╰─── org.jetbrains.kotlin:kotlin-stdlib-common:#kotlinVersion (c)
+│              │                   ╰─── org.jetbrains.kotlin:kotlin-stdlib-jdk8:1.8.20 -> 1.9.22
+│              │                        ├─── org.jetbrains.kotlin:kotlin-stdlib:1.9.22 -> #kotlinVersion (*)
+│              │                        ╰─── org.jetbrains.kotlin:kotlin-stdlib-jdk7:1.9.22
+│              │                             ╰─── org.jetbrains.kotlin:kotlin-stdlib:1.9.22 -> #kotlinVersion (*)
 │              ├─── org.jetbrains.compose.ui:ui:1.6.0
 │              │    ╰─── org.jetbrains.compose.ui:ui-desktop:1.6.0
 │              │         ├─── org.jetbrains.compose.runtime:runtime-saveable:1.6.0

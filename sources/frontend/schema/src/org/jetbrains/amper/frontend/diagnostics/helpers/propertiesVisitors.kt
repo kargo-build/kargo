@@ -18,7 +18,6 @@ import org.jetbrains.amper.frontend.tree.ScalarNode
 import org.jetbrains.amper.frontend.tree.StringInterpolationNode
 import org.jetbrains.amper.frontend.tree.StringNode
 import org.jetbrains.amper.frontend.tree.TreeNode
-import org.jetbrains.amper.frontend.tree.declaration
 import org.jetbrains.amper.frontend.tree.enumConstantIfAvailable
 import org.jetbrains.amper.frontend.types.isSameAs
 import kotlin.reflect.KClass

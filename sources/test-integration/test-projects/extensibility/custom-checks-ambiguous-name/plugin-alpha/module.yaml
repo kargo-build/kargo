@@ -1,0 +1,5 @@
+product:
+  type: jvm/amper-plugin
+
+pluginInfo:
+  id: alpha

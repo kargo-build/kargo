@@ -6,6 +6,7 @@ package org.jetbrains.amper.tasks.jvm
 
 import kotlinx.serialization.json.Json
 import org.jetbrains.amper.ProcessRunner
+import org.jetbrains.amper.cli.lazyload.ExtraClasspath
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.jdk.provisioning.Jdk
 import org.jetbrains.amper.jic.JicCompilationRequest
@@ -18,7 +19,6 @@ import org.slf4j.Logger
 import java.lang.management.ManagementFactory
 import java.nio.file.Path
 import kotlin.io.path.Path
-import kotlin.io.path.listDirectoryEntries
 
 internal suspend fun compileJavaWithJic(
     processRunner: ProcessRunner,
@@ -32,11 +32,6 @@ internal suspend fun compileJavaWithJic(
     classpath: List<Path>,
     logger: Logger,
 ): Boolean {
-    val distributionRoot = Path(checkNotNull(System.getProperty("amper.dist.path")) {
-        "Missing `amper.dist.path` system property. Ensure your wrapper script integrity."
-    })
-    val toolClasspath = distributionRoot.resolve("amper-jic-runner").listDirectoryEntries("*.jar")
-
     val request = JicCompilationRequest(
         amperModuleName = module.userReadableName,
         amperModuleDir = module.source.moduleDir,
@@ -69,7 +64,7 @@ internal suspend fun compileJavaWithJic(
         programArgs = emptyList(),
         argsMode = ArgsMode.CommandLine,
         jvmArgs = jvmArgs,
-        classpath = toolClasspath,
+        classpath = ExtraClasspath.AMPER_JIC_RUNNER.findJarsInDistribution(),
         outputListener = object: ProcessOutputListener {
             override fun onStdoutLine(line: String, pid: Long) {
                 logger.info(deserializeJpsCompilerOutput(line))

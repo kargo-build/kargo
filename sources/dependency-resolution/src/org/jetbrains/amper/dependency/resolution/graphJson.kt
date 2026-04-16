@@ -102,7 +102,8 @@ private sealed class MavenDependencyNodeConverter<T: MavenDependencyNode>(): Ser
         SerializableMavenDependencyNode(
             node.originalVersion, node.versionFromBom, node.isBom, node.messages,
             dependencyRef = node.dependency.toSerializableReference(graphContext),
-            coordinatesForPublishing = node.getMavenCoordinatesForPublishing(),
+            // We serialize coordinates for publishing only if those differ from original ones (that is the case for all none-KMP libraries)
+            coordinatesForPublishing = node.getMavenCoordinatesForPublishing().takeIf { it != node.getOriginalMavenCoordinates() },
             parentKmpLibraryCoordinates = node.getParentKmpLibraryCoordinates(),
             graphContext = graphContext
         )

@@ -2,6 +2,7 @@ tasks:
   generate:
     action: !generateBuildProperties
       taskOutputDirectory: ${taskOutputDir}
+      version: ${module.settings.publishing.version}
     markOutputsAs:
       - path: ${taskOutputDir}
         kind: kotlin-sources

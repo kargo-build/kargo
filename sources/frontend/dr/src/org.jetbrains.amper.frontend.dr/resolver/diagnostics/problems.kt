@@ -43,18 +43,6 @@ fun collectBuildProblems(graph: DependencyNode, problemReporter: ProblemReporter
 fun collectBuildProblems(graph: DependencyNode, problemReporter: ProblemReporter, level: Level, diagnosticReporters: List<DrDiagnosticsReporter>){
     val drReporterContext = DrReporterContext(graph)
     for (node in graph.distinctBfsSequence()) {
-        //if (node is MavenDependencyNode) {
-        //  node.dependency
-        //    .files()
-        //    .mapNotNull { it.getPath() }
-        //    .filterNot { it.name.endsWith("-sources.jar") || it.name.endsWith("-javadoc.jar") }
-        //    .forEach { file ->
-        //      // todo (AB) : do not throw from import
-        //      if (!file.exists()) {
-        //        LOG.warn ( "File '$file' was returned from dependency resolution, but is missing on disk" )
-        //      }
-        //    }
-        //}
         diagnosticReporters.forEach { reporter ->
             if (reporter.level.atLeastAsSevereAs(level)) {
                 reporter.reportBuildProblemsForNode(node, problemReporter, level, drReporterContext)

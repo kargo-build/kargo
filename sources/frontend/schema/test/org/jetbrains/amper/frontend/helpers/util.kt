@@ -56,7 +56,7 @@ internal fun TestFrontendPathResolver() = FrontendPathResolver(
  *
  * * This is different from creating a [TestProjectContext], which is a fake context with a manually constructed list
  *   of modules. This function reads the project context from a real `project.yaml`/`module.yaml` file.
- * * This is also different from a plain [StandaloneAmperProjectContext.create] call, because the [FrontendPathResolver]
+ * * This is also different from a plain [AmperProjectContext.create] call, because the [FrontendPathResolver]
  *   used here strips out diagnostic annotations from test PSI files and uses a special configurator for the mock
  *   IntelliJ project.
  *

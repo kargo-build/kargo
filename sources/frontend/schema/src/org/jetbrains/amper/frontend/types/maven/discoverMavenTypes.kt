@@ -15,7 +15,6 @@ import org.jetbrains.amper.frontend.types.SchemaObjectDeclarationBase
 import org.jetbrains.amper.frontend.types.SchemaOrigin
 import org.jetbrains.amper.frontend.types.SchemaType
 import org.jetbrains.amper.frontend.types.generated.*
-import org.jetbrains.amper.frontend.types.withNullability
 import org.jetbrains.amper.maven.MavenPluginXml
 import org.jetbrains.amper.maven.Mojo
 import org.jetbrains.amper.maven.Parameter
@@ -67,7 +66,7 @@ private fun singleMavenPluginProperty(plugin: MavenPluginXml, mojo: Mojo): Schem
     // Adding [MavenPluginsSettings.${amperMavenPluginId(plugin, mojo)}] field.
     return SchemaObjectDeclaration.Property(
         name = amperMavenPluginId(plugin, mojo),
-        type = mojoSettingsDeclaration.toType().withNullability(isMarkedNullable = true),
+        type = mojoSettingsDeclaration.toType(isMarkedNullable = true),
         documentation = mojo.description,
         origin = SchemaOrigin.MavenPlugin,
         default = Default.NestedObject,

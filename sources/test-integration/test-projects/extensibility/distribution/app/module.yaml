@@ -3,6 +3,7 @@ product: jvm/app
 plugins:
   distribution-plugin:
     enabled: true
+    someInt: 42
     extraNamedClasspaths:
       "core": [ ../core ]
       "lib": [ ../lib ]
@@ -12,6 +13,16 @@ plugins:
       "compile":
         dependencies: [ . ]
         scope: compile
+      "moduleCompile":
+        dependencies:
+         - ../lib
+        scope: compile
+      "combined" :
+        dependencies:
+         - $kotlin.reflect
+         - "com.squareup:kotlinpoet:2.2.0"
+         - ../lib
+        scope: runtime
 
 settings:
   kotlin:

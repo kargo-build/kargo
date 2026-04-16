@@ -3,4 +3,3 @@ settings:
   kotlin:
     debug: true
     apiVersion: 2.1
-    languageVersion: 2.2

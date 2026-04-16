@@ -12,7 +12,6 @@ import org.jetbrains.amper.frontend.tree.ListNode
 import org.jetbrains.amper.frontend.tree.MappingNode
 import org.jetbrains.amper.frontend.tree.StringNode
 import org.jetbrains.amper.frontend.tree.TreeNode
-import org.jetbrains.amper.frontend.types.SchemaType
 
 @DslMarker
 internal annotation class SimpleTreeBuilding
@@ -28,7 +27,7 @@ internal inline fun <K, B, R> buildRawTree(
 ) : R = context(SimpleTreeNodeFactory(c.trace, c.contexts)) { block() }
 
 context(f: SimpleTreeNodeFactory)
-internal fun scalar(value: String) = StringNode(value, SchemaType.StringType, f.trace, f.contexts)
+internal fun scalar(value: String) = StringNode(value, semantics = null, f.trace, f.contexts)
 
 context(f: SimpleTreeNodeFactory)
 internal inline fun mapping(block: SimpleMappingBuilder.() -> Unit) = SimpleMappingBuilder().apply(block).build()
@@ -47,7 +46,7 @@ internal class SimpleMappingBuilder {
 
     context(f: SimpleTreeNodeFactory)
     fun build(): MappingNode =
-        MappingNode(children, SchemaType.MapType(SchemaType.StringType, SchemaType.StringType), f.trace, f.contexts)
+        MappingNode(children, declaration = null, f.trace, f.contexts)
 }
 
 @SimpleTreeBuilding
@@ -58,5 +57,5 @@ internal class SimpleListBuilder {
 
     context(f: SimpleTreeNodeFactory)
     fun build(): ListNode =
-        ListNode(children, SchemaType.ListType(SchemaType.StringType), f.trace, f.contexts)
+        ListNode(children, f.trace, f.contexts)
 }

@@ -44,13 +44,7 @@ fun SchemaType.render(
         }
         is SchemaType.IntType -> append("integer")
         is SchemaType.PathType -> append("path")
-        is SchemaType.StringType -> when (semantics) {
-            null -> append("string")
-            SchemaType.StringType.Semantics.MavenCoordinates -> append("maven-coordinates")
-            SchemaType.StringType.Semantics.JvmMainClass -> append("jvm-main-class")
-            SchemaType.StringType.Semantics.PluginSettingsClass -> append("plugin-settings-class")
-            SchemaType.StringType.Semantics.MavenPlexusConfigXml -> append("valid-xml")
-        }
+        is SchemaType.StringType -> append(semantics.render())
         is SchemaType.ListType -> append("sequence [${elementType.render(false)}]")
         is SchemaType.MapType -> append("mapping {${keyType.render(false)} : ${valueType.render(false)}}")
         is SchemaType.EnumType -> {
@@ -66,11 +60,18 @@ fun SchemaType.render(
             }
         }
         is SchemaType.ObjectType -> {
-            // TODO: Introduce a public-name concept?
-            // e.g. Dependency ( string | { string: ( "exported" | DependencyScope | {:} } ) )
-            append(declaration.displayName)
+            // e.g. Dependency ( string | { string: ( "exported" | DependencyScope | {..} } ) )
+            val fromKeyProperty = declaration.getFromKeyAndTheRestNestedProperty()
+            val onlyNestedInEffect = fromKeyProperty != null && onlyNested
+
+            if (!onlyNestedInEffect) {
+                // Skip the name, if rendering only nested part
+                append(declaration.displayName)
+                if (includeSyntax) {
+                    append(" ")
+                }
+            }
             if (includeSyntax) {
-                append(" ")
                 fun appendPossibleSyntax() {
                     val possibleSyntax = buildList {
                         declaration.getBooleanShorthand()?.let {
@@ -92,18 +93,21 @@ fun SchemaType.render(
                     } else {
                         possibleSyntax.joinTo(
                             buffer = this,
-                            prefix = "( ",
-                            postfix = " )",
+                            prefix = if (onlyNestedInEffect) "" else "( ",
+                            postfix = if (onlyNestedInEffect) "" else " )",
                             separator = " | ",
                         )
                     }
                 }
-                val fromKeyProperty = declaration.getFromKeyAndTheRestNestedProperty()
                 if (fromKeyProperty != null && !onlyNested) {
                     append("( ")
                     val fromKeyPropertyType = fromKeyProperty.type.render(false)
-                    append(fromKeyPropertyType).append(" | ").append(fromKeyPropertyType).append(": ")
-                    appendPossibleSyntax()
+                    append(fromKeyPropertyType)
+                    val otherProperties = declaration.properties.filterNot { it.isFromKeyAndTheRestNested }
+                    if (otherProperties.isNotEmpty()) {
+                        append(" | ").append(fromKeyPropertyType).append(": ")
+                        appendPossibleSyntax()
+                    }
                     append(" )")
                 } else {
                     appendPossibleSyntax()
@@ -111,7 +115,6 @@ fun SchemaType.render(
             }
         }
         is SchemaType.VariantType -> {
-            // TODO: Introduce a public-name concept?
             append(declaration.displayName)
             if (includeSyntax) {
                 declaration.variantTree.joinTo(
@@ -126,25 +129,13 @@ fun SchemaType.render(
     if (isMarkedNullable) append(" | null")
 }
 
-private fun String.quote() = '"' + this + '"'
-
-fun <T : SchemaType> T.withNullability(
-    isMarkedNullable: Boolean,
-): T {
-    if (isMarkedNullable == this.isMarkedNullable) {
-        return this
-    }
-    val copy = when (this) {
-        is SchemaType.ListType -> copy(isMarkedNullable = isMarkedNullable)
-        is SchemaType.MapType -> copy(isMarkedNullable = isMarkedNullable)
-        is SchemaType.ObjectType -> copy(isMarkedNullable = isMarkedNullable)
-        is SchemaType.BooleanType -> copy(isMarkedNullable = isMarkedNullable)
-        is SchemaType.EnumType -> copy(isMarkedNullable = isMarkedNullable)
-        is SchemaType.IntType -> copy(isMarkedNullable = isMarkedNullable)
-        is SchemaType.PathType -> copy(isMarkedNullable = isMarkedNullable)
-        is SchemaType.StringType -> copy(isMarkedNullable = isMarkedNullable)
-        is SchemaType.VariantType -> copy(isMarkedNullable = isMarkedNullable)
-    }
-    @Suppress("UNCHECKED_CAST") // the validity of this cast is enforced by each copy() function
-    return copy as T
+fun SchemaType.StringType.Semantics?.render(): String = when (this) {
+    SchemaType.StringType.Semantics.MavenCoordinates -> "maven-coordinates"
+    SchemaType.StringType.Semantics.JvmMainClass -> "jvm-main-class"
+    SchemaType.StringType.Semantics.PluginSettingsClass -> "plugin-settings-class"
+    SchemaType.StringType.Semantics.MavenPlexusConfigXml -> "valid-xml"
+    SchemaType.StringType.Semantics.TaskName -> "task-name"
+    null -> "string"
 }
+
+private fun String.quote() = '"' + this + '"'

@@ -1,11 +1,11 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.dependency.resolution
 
-import kotlinx.coroutines.test.runTest
 import org.jetbrains.amper.dependency.resolution.metadata.json.module.Variant
+import org.jetbrains.amper.test.runTestWithMdc
 import org.junit.jupiter.api.io.TempDir
 import java.nio.file.Path
 import java.util.*
@@ -30,7 +30,7 @@ class GradleLocalRepositoryTest {
     }
 
     @Test
-    fun `guess path`() = runTest {
+    fun `guess path`() = runTestWithMdc {
         val node = kotlinTest()
         var path = gradleLocalRepository.guessPath(node, "${getNameWithoutExtension(node)}.jar")
         assertNull(path)
@@ -49,7 +49,7 @@ class GradleLocalRepositoryTest {
     }
 
     @Test
-    fun `guess path with variant`() = runTest {
+    fun `guess path with variant`() = runTestWithMdc {
         val sha1 = computeHash("sha1", randomString().toByteArray())
         val node = kotlinTest().also {
             it.variants = listOf(

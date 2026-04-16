@@ -33,3 +33,10 @@ tasks:
     markOutputsAs:
       - path: ${taskOutputDir}
         kind: jvm-resources
+
+commands:
+  - name: uploadAmperDistribution
+    performedBy: upload
+
+  - name: uploadAmperDistributionLocal
+    performedBy: uploadLocal

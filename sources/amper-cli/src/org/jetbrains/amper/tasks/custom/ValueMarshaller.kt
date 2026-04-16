@@ -44,7 +44,7 @@ class ValueMarshaller(
             is PathNode -> value.value
             is StringNode -> value.value
             is EnumNode -> withValueCache(value) {
-                val enumClass = publicClassLoader.loadClass(value.type.declaration.publicInterfaceReflectionName)
+                val enumClass = publicClassLoader.loadClass(value.declaration.publicInterfaceReflectionName)
                 enumClass.enumConstants.first { (it as Enum<*>).name == value.entryName }
             }
             is CompleteListNode -> withValueCache(value) {
@@ -56,7 +56,7 @@ class ValueMarshaller(
             is CompleteObjectNode -> withValueCache(value) {
                 createProxy(
                     value = value,
-                    interfaceName = value.type.declaration.publicInterfaceReflectionName
+                    interfaceName = value.declaration.publicInterfaceReflectionName
                         ?: error("No public interface reflection name for $value"),
                 )
             }

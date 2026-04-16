@@ -4,22 +4,19 @@
 
 package org.jetbrains.amper.tasks
 
+import org.jetbrains.amper.CliReportingMavenResolver
 import org.jetbrains.amper.cli.telemetry.setAmperModule
 import org.jetbrains.amper.core.AmperUserCacheRoot
-import org.jetbrains.amper.dependency.resolution.Context
 import org.jetbrains.amper.dependency.resolution.JavaVersion
-import org.jetbrains.amper.dependency.resolution.MavenDependencyNodeWithContext
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
-import org.jetbrains.amper.dependency.resolution.RootDependencyNodeWithContext
 import org.jetbrains.amper.engine.Task
 import org.jetbrains.amper.engine.TaskGraphExecutionContext
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Platform
-import org.jetbrains.amper.frontend.api.TraceableString
 import org.jetbrains.amper.frontend.api.asTraceableValue
-import org.jetbrains.amper.frontend.dr.resolver.CliReportingMavenResolver
-import org.jetbrains.amper.frontend.dr.resolver.flow.toRepository
+import org.jetbrains.amper.frontend.dr.resolver.MavenCoordinatesExt
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies.Companion.toRepository
 import org.jetbrains.amper.frontend.dr.resolver.toDrMavenCoordinates
 import org.jetbrains.amper.frontend.jdkSettings
 import org.jetbrains.amper.frontend.mavenRepositories
@@ -28,7 +25,7 @@ import org.jetbrains.amper.frontend.schema.UnscopedExternalMavenBomDependency
 import org.jetbrains.amper.frontend.schema.UnscopedExternalMavenDependency
 import org.jetbrains.amper.frontend.schema.UnscopedModuleDependency
 import org.jetbrains.amper.frontend.schema.toMavenCoordinates
-import org.jetbrains.amper.frontend.types.generated.coordinatesDelegate
+import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.telemetry.setListAttribute
 import org.jetbrains.amper.telemetry.spanBuilder
@@ -81,37 +78,34 @@ internal abstract class AbstractResolveJvmExternalDependenciesTask(
                     }
                 })
                 .use {
-                    mavenResolver.resolveWithContext(
+                    val externalDependenciesCoordinates = externalUnscopedDependencies.map {
+                        when(it) {
+                            is UnscopedExternalMavenDependency -> {
+                                MavenCoordinatesExt(
+                                    it.coordinatesDelegate.asTraceableValue().toMavenCoordinates().toDrMavenCoordinates(),
+                                    false)
+                            }
+                            is UnscopedExternalMavenBomDependency -> {
+                                MavenCoordinatesExt(
+                                    it.coordinatesDelegate.asTraceableValue().toMavenCoordinates().toDrMavenCoordinates(),
+                                    true)
+                            }
+                            else -> error("Unexpected dependency type: ${it::class.qualifiedName}")
+                        }
+                    }
+
+                    mavenResolver.resolveBomAware(
                         repositories,
                         ResolutionScope.RUNTIME,
                         ResolutionPlatform.JVM,
                         "$resolutionMonikerPrefix${module.userReadableName}-${Platform.JVM.pretty}",
                         jvmRelease = JavaVersion(module.jdkSettings.version),
-                    ) { context ->
-                        RootDependencyNodeWithContext(
-                            templateContext = context,
-                            children = externalUnscopedDependencies.map {
-                                when(it) {
-                                    is UnscopedExternalMavenDependency -> {
-                                        context.parseCoordinates(it.coordinatesDelegate.asTraceableValue(), false)
-                                    }
-                                    is UnscopedExternalMavenBomDependency -> {
-                                        context.parseCoordinates(it.coordinatesDelegate.asTraceableValue(), true)
-                                    }
-                                    else -> error("Unexpected dependency type: ${it::class.qualifiedName}")
-                                }
-                            },
-                        )
-                    }.toIncrementalCacheResult()
+                        mavenCoordinates = externalDependenciesCoordinates,
+                    ).toIncrementalCacheResult()
                 }
         }.outputFiles
 
         return Result(resolvedExternalJars)
-    }
-
-    private fun Context.parseCoordinates(coordinates: TraceableString, isBom: Boolean): MavenDependencyNodeWithContext {
-        val mavenCoordinates = coordinates.toMavenCoordinates().toDrMavenCoordinates()
-        return MavenDependencyNodeWithContext(this, mavenCoordinates, isBom)
     }
 
     class Result(val externalJars: List<Path>) : TaskResult

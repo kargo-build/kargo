@@ -22,12 +22,7 @@ class MavenCoordinatesShouldBuildValidPath(
     @field:UsedInIdePlugin
     val exceptionMessage: String?,
 ) : MavenCoordinatesParsingProblem() {
-    companion object {
-        const val ID = "maven.coordinates.should.build.valid.path"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.MavenCoordinatesShouldBuildValidPath
-    override val message: @Nls String = SchemaBundle.message(ID, coordinates, badPart, exceptionMessage)
+    override val message: @Nls String = SchemaBundle.message("maven.coordinates.should.build.valid.path", coordinates, badPart, exceptionMessage)
 }

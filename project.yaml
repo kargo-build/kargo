@@ -7,6 +7,7 @@ modules:
   - build-sources/generate-build-properties
   - build-sources/generate-template-resources
   - kargo-intellij-plugin
+  - build-sources/project-commands
   - build-sources/protobuf
   - plugin-samples/grpc-hello-world
   - repository-restrictions
@@ -73,4 +74,5 @@ plugins:
   - ./build-sources/dokka
   - ./build-sources/generate-build-properties
   - ./build-sources/generate-template-resources
+  - ./build-sources/project-commands
   - ./build-sources/protobuf

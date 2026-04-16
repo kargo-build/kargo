@@ -54,6 +54,19 @@ settings@android:
     This limitation comes from the Kotlin compilation model and how KSP aligns with it. Please follow 
     [the relevant KSP issue](https://github.com/google/ksp/issues/567) for more information.
 
+## Customizing the KSP version
+
+Amper only supports KSP2 (the standalone tool), not the deprecated KSP1 implementation based compiler plugin.
+
+That said, you can use any version of KSP2 as follows:
+
+```yaml
+settings:
+  kotlin:
+    ksp:
+      version: 2.3.6
+```
+
 ## Passing options to KSP processors
 
 Some processors can be customized by passing options. You can pass these options using the `processorOptions` section:

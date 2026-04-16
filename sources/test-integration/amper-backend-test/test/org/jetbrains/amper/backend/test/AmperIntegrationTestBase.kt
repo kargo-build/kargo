@@ -6,15 +6,13 @@
 
 package org.jetbrains.amper.backend.test
 
-import org.jetbrains.amper.cli.AndroidHomeRoot
+import com.github.ajalt.mordant.terminal.Terminal
 import org.jetbrains.amper.cli.CliContext
 import org.jetbrains.amper.core.AmperUserCacheRoot
-import org.jetbrains.amper.frontend.project.StandaloneAmperProjectContext
+import org.jetbrains.amper.frontend.project.AmperProjectContext
 import org.jetbrains.amper.problems.reporting.CollectingProblemReporter
 import org.jetbrains.amper.test.Dirs
 import org.jetbrains.amper.test.TempDirExtension
-import org.jetbrains.amper.test.TestCollector
-import org.jetbrains.amper.test.android.AndroidTools
 import org.junit.jupiter.api.extension.RegisterExtension
 import org.junit.jupiter.api.fail
 import java.nio.file.Path
@@ -49,7 +47,7 @@ abstract class AmperIntegrationTestBase {
 
     private val userCacheRoot: AmperUserCacheRoot = AmperUserCacheRoot(Dirs.userCacheRoot)
 
-    protected fun TestCollector.setupTestProject(
+    protected fun setupTestProject(
         testProjectPath: Path,
         copyToTemp: Boolean,
     ): CliContext {
@@ -60,7 +58,7 @@ abstract class AmperIntegrationTestBase {
 
         val problemReporter = CollectingProblemReporter()
         val projectContext = with(problemReporter) {
-            StandaloneAmperProjectContext.create(rootDir = projectRoot, buildDir = buildDir)
+            AmperProjectContext.create(rootDir = projectRoot, buildDir = buildDir)
                 ?: error("No Amper project found at $projectRoot")
         }
         if (problemReporter.problems.isNotEmpty()) {
@@ -70,7 +68,7 @@ abstract class AmperIntegrationTestBase {
             commandName = "integration-test-base",
             projectContext = projectContext,
             userCacheRoot = userCacheRoot,
-            terminal = terminal,
+            terminal = Terminal(),
         )
     }
 

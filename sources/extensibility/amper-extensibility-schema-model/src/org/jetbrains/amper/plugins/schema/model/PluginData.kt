@@ -1,16 +1,17 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.plugins.schema.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.jetbrains.amper.serialization.paths.SerializablePath
 
 /**
  * Contains all the knowledge about a plugin that is required for the frontend to function.
  *
- * - This includes the general plugin information: [id], [description]
+ * - This includes the general plugin information: [id], [description], [source]
  * - Information about the `module.yaml` schema extension for the plugin:
  *   [pluginSettingsSchemaName] (may be absent if plugin has no user configuration).
  * - Schema types/tasks descriptions: [declarations]
@@ -20,6 +21,7 @@ data class PluginData(
     val id: Id,
     val pluginSettingsSchemaName: SchemaName? = null,
     val description: String? = null,
+    val source: Source,
     val declarations: Declarations,
 ) {
     @Serializable
@@ -55,6 +57,15 @@ data class PluginData(
     value class Id(
         val value: String,
     )
+
+    @Serializable
+    sealed interface Source {
+        /**
+         * The [path] points to the module directory of the plugin.
+         */
+        @Serializable
+        data class Local(val path: SerializablePath): Source
+    }
 
     @Serializable
     data class VariantData(

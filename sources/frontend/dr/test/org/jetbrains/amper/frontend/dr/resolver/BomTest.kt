@@ -4,7 +4,6 @@
 
 package org.jetbrains.amper.frontend.dr.resolver
 
-import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.dependency.resolution.diagnostics.DependencyResolutionDiagnostics.UnspecifiedDependencyVersion
 import org.jetbrains.amper.dependency.resolution.diagnostics.Severity
@@ -27,18 +26,9 @@ class BomTest: BaseModuleDrTest() {
 
         val jvmAppDeps = doTest(
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    ResolutionScope.COMPILE,
-                    setOf(ResolutionPlatform.JVM),
-                    false,
-                    false)
-                ,
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
             verifyMessages = false,
             module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
             expected = """
                 Module app
                 │ - main
@@ -58,6 +48,7 @@ class BomTest: BaseModuleDrTest() {
 
         assertFiles(
             listOf(
+                "COMPILE",
                 "annotations-13.0.jar",
                 "jackson-annotations-2.18.3.jar",
                 "kotlin-stdlib-${DefaultVersions.kotlin}.jar",
@@ -76,18 +67,12 @@ class BomTest: BaseModuleDrTest() {
 
         val jvmAppDirectOnlyDeps = doTest(
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    ResolutionScope.COMPILE,
-                    setOf(ResolutionPlatform.JVM),
-                    false),
-
-                ResolutionDepth.GRAPH_WITH_DIRECT_DEPENDENCIES,
-
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
+            defaultTestResolutionInput
+                .copy(resolutionRunSettings =
+                    defaultTestResolutionInput.resolutionRunSettings.copy(resolutionDepth = ResolutionDepth.GRAPH_WITH_DIRECT_DEPENDENCIES)),
             verifyMessages = false,
             module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
             expected = """
                 Module app
                 │ - main
@@ -105,6 +90,7 @@ class BomTest: BaseModuleDrTest() {
 
         assertFiles(
             listOf(
+                "COMPILE",
                 "jackson-core-2.18.3.jar",
                 "kotlin-stdlib-${DefaultVersions.kotlin}.jar",
             ),
@@ -122,18 +108,9 @@ class BomTest: BaseModuleDrTest() {
         val jvmAppDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    ResolutionScope.COMPILE,
-                    setOf(ResolutionPlatform.JVM),
-                    false,
-                    false)
-                ,
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
             verifyMessages = false,
-            module = "app"
+            module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.COMPILE),
         )
 
         assertFiles(testInfo,jvmAppDeps)
@@ -161,17 +138,8 @@ class BomTest: BaseModuleDrTest() {
         val androidAppDeps = doTestByFile(
             testInfo = testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    ResolutionScope.RUNTIME,
-                    setOf(ResolutionPlatform.ANDROID),
-                    false,
-                    false)
-                ,
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
             module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.RUNTIME),
         )
 
         assertFiles(testInfo,androidAppDeps)
@@ -199,18 +167,9 @@ class BomTest: BaseModuleDrTest() {
         val androidAppDeps = doTestByFile(
             testInfo = testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.ClassPathType(
-                    ResolutionScope.RUNTIME,
-                    setOf(ResolutionPlatform.ANDROID),
-                    false,
-                    false)
-                ,
-                ResolutionDepth.GRAPH_FULL,
-                fileCacheBuilder = getAmperFileCacheBuilder(amperUserCacheRoot),
-            ),
             verifyMessages = false,
             module = "app",
+            filter = ModuleResolutionFilter(scope = ResolutionScope.RUNTIME),
         )
 
         assertTheOnlyNonInfoMessage(

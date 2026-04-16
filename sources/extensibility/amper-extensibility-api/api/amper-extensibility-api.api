@@ -11,6 +11,15 @@ public final class org/jetbrains/amper/plugins/Classpath$DefaultImpls {
 public abstract interface class org/jetbrains/amper/plugins/CompilationArtifact {
 	public abstract fun getArtifact ()Ljava/nio/file/Path;
 	public abstract fun getFrom ()Lorg/jetbrains/amper/plugins/Dependency$Local;
+	public abstract fun getKind ()Lorg/jetbrains/amper/plugins/CompilationArtifact$Kind;
+}
+
+public final class org/jetbrains/amper/plugins/CompilationArtifact$Kind : java/lang/Enum {
+	public static final field Classes Lorg/jetbrains/amper/plugins/CompilationArtifact$Kind;
+	public static final field Jar Lorg/jetbrains/amper/plugins/CompilationArtifact$Kind;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lorg/jetbrains/amper/plugins/CompilationArtifact$Kind;
+	public static fun values ()[Lorg/jetbrains/amper/plugins/CompilationArtifact$Kind;
 }
 
 public abstract interface annotation class org/jetbrains/amper/plugins/Configurable : java/lang/annotation/Annotation {

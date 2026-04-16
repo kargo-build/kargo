@@ -1,4 +1,7 @@
-Fragment 'app.main' dependencies
+Module app
+│ - main
+│ - scope = COMPILE
+│ - platforms = [jvm]
 ├─── app:main:io.ktor:ktor-client-cio-jvm:unspecified
 │    ╰─── io.ktor:ktor-client-cio-jvm:unspecified -> 3.1.2
 │         ├─── org.slf4j:slf4j-api:2.0.16
@@ -94,5 +97,10 @@ Fragment 'app.main' dependencies
 │         ╰─── org.jetbrains.kotlin:kotlin-stdlib:2.1.20 -> #kotlinVersion (*)
 ├─── app:main:io.ktor:ktor-bom:3.0.2
 │    ╰─── io.ktor:ktor-bom:3.0.2
+├─── Module B
+│    ├─── B:common:org.projectlombok:lombok:1.18.32
+│    │    ╰─── org.projectlombok:lombok:1.18.32
+│    ╰─── B:jvm:org.projectlombok:lombok:1.18.32
+│         ╰─── org.projectlombok:lombok:1.18.32
 ╰─── app:main:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
      ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion (*)

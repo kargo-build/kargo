@@ -1,13 +1,19 @@
 product: jvm/lib
 
+description: Data model for communication between Amper and delegated Android Gradle builds.
+
 apply:
   - ../../common.module-template.yaml
+  - ../../used-in-gradle.module-template.yaml
 
 dependencies:
   - ../../frontend-api
   - ../../libraries/serialization-extended
 
 settings:
+  jvm:
+    # Used in Android Gradle builds (max 17), but common template sets it to 21, so we take the lowest version 17
+    release: 17
   kotlin:
     serialization: enabled
   publishing:

@@ -8,6 +8,7 @@ dependencies:
   - $libs.ktor.client.engine.okhttp
   - $libs.ktor.serialization.json
   - $libs.metro.runtime
+  - $libs.mockwebserver
   - $libs.okhttp
   - $libs.okio
   - $libs.picnic

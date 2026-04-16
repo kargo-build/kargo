@@ -10,18 +10,24 @@ import io.ktor.client.call.body
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 
+@JvmInline value class ForecastBaseUrl(val value: String)
+
+@JvmInline value class GeocodingBaseUrl(val value: String)
+
 @ContributesBinding(AppScope::class)
 @Inject
-class OpenMeteoApi(private val httpClient: HttpClient) : WeatherApi {
-  private val forecastUrl = "https://api.open-meteo.com/v1/forecast"
-  private val geocodingUrl = "https://geocoding-api.open-meteo.com/v1/search"
+class OpenMeteoApi(
+  private val httpClient: HttpClient,
+  private val forecastBaseUrl: ForecastBaseUrl,
+  private val geocodingBaseUrl: GeocodingBaseUrl,
+) : WeatherApi {
 
   override suspend fun getWeatherByCoordinates(
     latitude: Double,
     longitude: Double,
   ): WeatherResponse =
     httpClient
-      .get(forecastUrl) {
+      .get("${forecastBaseUrl.value}/v1/forecast") {
         parameter("latitude", latitude)
         parameter("longitude", longitude)
         parameter("current", "temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m")
@@ -32,7 +38,7 @@ class OpenMeteoApi(private val httpClient: HttpClient) : WeatherApi {
 
   override suspend fun getLocationBySearch(query: String): List<GeocodingResult> =
     httpClient
-      .get(geocodingUrl) {
+      .get("${geocodingBaseUrl.value}/v1/search") {
         parameter("name", query)
         parameter("count", 5)
         parameter("language", "en")

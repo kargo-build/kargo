@@ -25,6 +25,7 @@ import kotlin.io.path.PathWalkOption
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createDirectories
 import kotlin.io.path.div
+import kotlin.io.path.exists
 import kotlin.io.path.extension
 import kotlin.io.path.name
 import kotlin.io.path.readBytes
@@ -231,6 +232,29 @@ class AndroidExampleProjectsTest : AmperCliTestBase() {
             configureAndroidHome = true,
         )
         result.assertStdoutContains("5 tests successful")
+    }
+
+    @Test
+    fun `apk contains jniLibs`() = runSlowTest {
+        val taskName = ":jni-libs:buildAndroidDebug"
+        val result = runCli(
+            projectDir = testProject("android/jni-libs"),
+            "task", taskName,
+            configureAndroidHome = true,
+        )
+        val apkPath = result.getArtifactPath(taskName)
+        val extractedApkPath = apkPath.parent.resolve("extractedApk")
+        extractZip(apkPath, extractedApkPath, false)
+
+        // AGP packages jniLibs/<abi>/libfoo.so into lib/<abi>/libfoo.so in the APK
+        assertTrue(
+            (extractedApkPath / "lib" / "arm64-v8a" / "libtest.so").exists(),
+            "Expected lib/arm64-v8a/libtest.so in APK",
+        )
+        assertTrue(
+            (extractedApkPath / "lib" / "x86_64" / "libtest.so").exists(),
+            "Expected lib/x86_64/libtest.so in APK",
+        )
     }
 
     @Test

@@ -4,13 +4,12 @@
 
 package org.jetbrains.amper.tasks
 
-import org.jetbrains.amper.dependency.resolution.ResolutionScope
+import io.opentelemetry.api.GlobalOpenTelemetry
 import org.jetbrains.amper.frontend.ModuleTasksPart
-import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.allSourceFragmentCompileDependencies
-import org.jetbrains.amper.frontend.fragmentsTargeting
-import org.jetbrains.amper.frontend.isDescendantOf
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies
+import org.jetbrains.amper.frontend.dr.resolver.AmperResolutionSettings
 import org.jetbrains.amper.tasks.ProjectTasksBuilder.Companion.getTaskOutputPath
 
 internal enum class CommonTaskType(override val prefix: String) : PlatformTaskType {
@@ -19,6 +18,7 @@ internal enum class CommonTaskType(override val prefix: String) : PlatformTaskTy
     Dependencies("resolveDependencies"),
     TransformDependencies("transformDependencies"),
     Classes("classes"),
+    MergedClasses("mergedClasses"),
     Jar("jar"),
     SourcesJar("sourcesJar"),
     Publish("publish"),
@@ -34,14 +34,16 @@ internal enum class CommonFragmentTaskType(override val prefix: String) : Fragme
 }
 
 fun ProjectTasksBuilder.setupCommonTasks() {
-    val moduleDependenciesMap = model.modules.associateWith {
-        ModuleDependencies(it, context.userCacheRoot, context.incrementalCache)
+    val moduleDependenciesMap = with(ModuleDependencies) {
+        val resolutionSettings = AmperResolutionSettings(
+            context.userCacheRoot, context.incrementalCache, GlobalOpenTelemetry.get())
+        model.moduleDependencies(resolutionSettings)
+            .associateBy { it.module }
     }
     allModules()
         .alsoPlatforms()
         .alsoTests()
         .withEach {
-            val fragmentsIncludeProduction = module.fragmentsTargeting(platform, includeTestFragments = isTest)
             tasks.registerTask(
                 ResolveExternalDependenciesTask(
                     module = module,
@@ -49,8 +51,6 @@ fun ProjectTasksBuilder.setupCommonTasks() {
                     incrementalCache = context.incrementalCache,
                     platform = platform,
                     isTest = isTest,
-                    // for test code, we resolve dependencies on union of test and prod dependencies
-                    fragments = fragmentsIncludeProduction,
                     moduleDependencies = moduleDependenciesMap[module]!!,
                     taskName = CommonTaskType.Dependencies.getTaskName(module, platform, isTest),
                 )

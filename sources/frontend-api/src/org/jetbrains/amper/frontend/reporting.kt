@@ -33,12 +33,10 @@ fun ProblemReporter.reportBundleError(
     bundle: MessageBundle = SchemaBundle,
     level: Level = Level.Error,
     problemType: BuildProblemType = BuildProblemType.Generic,
-    buildProblemId: String = messageKey,
 ) {
     reportMessage(
         BuildProblemImpl(
             diagnosticId = diagnosticId,
-            buildProblemId = buildProblemId,
             source = source,
             message = bundle.message(messageKey, *arguments),
             level = level,

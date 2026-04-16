@@ -1,0 +1,18 @@
+product:
+  type: lib
+  platforms: [jvm, android, iosArm64, iosSimulatorArm64, iosX64]
+
+dependencies:
+  - bom: io.github.jan-tennert.supabase:bom:3.2.6
+  - io.github.jan-tennert.supabase:postgrest-kt
+  - io.github.jan-tennert.supabase:auth-kt
+
+  - bom: io.ktor:ktor-bom:3.3.2
+  - io.ktor:ktor-client-core
+  - io.ktor:ktor-client-cio
+  - io.ktor:ktor-client-resources
+  - io.ktor:ktor-client-content-negotiation
+  - io.ktor:ktor-client-auth
+
+test-dependencies:
+  - io.ktor:ktor-client-mock

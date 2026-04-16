@@ -31,6 +31,14 @@ internal class ConvertProjectCommand : AmperSubcommand(name = "convert-project")
     val overwriteExisting: Boolean by option("--overwrite-existing", help = "Overwrite existing Kargo files")
         .flag(default = false)
 
+    val enableCompatibilityPlugins: Boolean by option(
+        "--enable-compatibility-plugins",
+        help = "Enables compatibility plugins (which are not natively supported by Amper and are instead delegated " +
+                "to a Maven compatibility layer). By default, they are generated with \"enabled: false\" so that " +
+                "they can be reviewed and selectively enabled only when they are actually needed, avoiding potential " +
+                "issues from untested plugin configurations."
+    ).flag(default = false)
+
     override suspend fun run() {
         try {
             // mustExist doesn't apply for default value because there is no conversion from string anymore
@@ -38,7 +46,13 @@ internal class ConvertProjectCommand : AmperSubcommand(name = "convert-project")
                 userReadableError("pom.xml file not found at: $pathToPomXml")
             }
             spanBuilder("Convert Maven Project to Amper Project").use {
-                MavenProjectConvertor.convert(pathToPomXml, overwriteExisting, commonOptions.sharedCachesRoot, AmperVersion.codeIdentifier)
+                MavenProjectConvertor.convert(
+                    pathToPomXml,
+                    overwriteExisting,
+                    commonOptions.sharedCachesRoot,
+                    AmperVersion.codeIdentifier,
+                    enableCompatibilityPlugins
+                )
             }
             printSuccessfulCommandConclusion("Convert successful")
         } catch (e: MavenRootNotFoundException) {

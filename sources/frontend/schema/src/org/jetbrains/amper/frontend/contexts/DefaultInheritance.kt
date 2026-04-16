@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.contexts
@@ -18,7 +18,7 @@ object DefaultInheritance : ContextsInheritance<DefaultContext> {
         return singleOrNull()?.priority ?: Int.MAX_VALUE
     }
 
-    override fun Collection<DefaultContext>.isMoreSpecificThan(
+    override fun Collection<DefaultContext>.compareContexts(
         other: Collection<DefaultContext>,
     ): ContextsInheritance.Result {
         val result = priority() compareTo other.priority()

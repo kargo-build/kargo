@@ -24,6 +24,7 @@ import org.springframework.samples.petclinic.vet.Vet;
 
 public class PetClinicRuntimeHints implements RuntimeHintsRegistrar {
 
+    @SuppressWarnings("removal") // RuntimeHints#serialization is deprecated in Spring Core 7.0.6
     @Override
     public void registerHints(RuntimeHints hints, ClassLoader classLoader) {
         hints.resources().registerPattern("db/*"); // https://github.com/spring-projects/spring-boot/issues/32654

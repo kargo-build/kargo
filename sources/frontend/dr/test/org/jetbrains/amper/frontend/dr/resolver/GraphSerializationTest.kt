@@ -1,27 +1,26 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.dr.resolver
 
 import javassist.Modifier
-import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.ExperimentalSerializationApi
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.DependencyGraph
 import org.jetbrains.amper.dependency.resolution.DependencyGraph.Companion.toGraph
 import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.dependency.resolution.GraphJson
-import org.jetbrains.amper.dependency.resolution.IncrementalCacheUsage
 import org.jetbrains.amper.dependency.resolution.MavenDependencyConstraintNode
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
+import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.dependency.resolution.SerializableDependencyNode
 import org.jetbrains.amper.dependency.resolution.diagnostics.Message
 import org.jetbrains.amper.dependency.resolution.group
 import org.jetbrains.amper.dependency.resolution.isOrphan
-import org.jetbrains.amper.test.Dirs
 import org.jetbrains.amper.test.assertEqualsWithDiff
+import org.jetbrains.amper.test.runTestWithMdc
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.reflections.Reflections
@@ -44,12 +43,9 @@ class GraphSerializationTest: BaseModuleDrTest() {
         val appModuleGraph = doTestByFile(
             testInfo,
             aom,
-            resolutionInput = ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                incrementalCacheUsage = IncrementalCacheUsage.SKIP,
-                fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
-            ),
+            resolutionInput = ideSyncTestResolutionInput,
             module = "D2",
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
         )
 
         assertRepetitiveGraphSerialization(appModuleGraph, testInfo)
@@ -62,12 +58,14 @@ class GraphSerializationTest: BaseModuleDrTest() {
         val iosAppModuleDeps = doTestByFile(
             testInfo,
             aom,
-            ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                incrementalCacheUsage = IncrementalCacheUsage.SKIP,
-                fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
+            ideSyncTestResolutionInput.copy(
+                resolutionSettings = ideSyncTestResolutionInput.resolutionSettings.copy(
+                    includeNonExportedNative = false
+                )
             ),
             module = "ios-app",
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE),
+            verifyMessages = false
         )
 
         assertRepetitiveGraphSerialization(iosAppModuleDeps, testInfo)
@@ -81,34 +79,31 @@ class GraphSerializationTest: BaseModuleDrTest() {
         val root = doTestByFile(
             testInfo,
             aom,
-            resolutionInput = ResolutionInput(
-                DependenciesFlowType.IdeSyncType(aom), ResolutionDepth.GRAPH_FULL,
-                incrementalCacheUsage = IncrementalCacheUsage.SKIP,
-                fileCacheBuilder = getAmperFileCacheBuilder(AmperUserCacheRoot(Dirs.userCacheRoot)),
-            ),
+            ideSyncTestResolutionInput,
+            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE),
             verifyMessages = false
         )
 
         val deserializedRoot = assertRepetitiveGraphSerialization(root, testInfo)
 
         fun DependencyNode.getErrorMessagesForChild(group: String): Set<String> =
-            children.filterIsInstance<DirectFragmentDependencyNode>()
-                .first { (it.dependencyNode as? MavenDependencyNode)?.group == group }
+            distinctBfsSequence()
+                .filterIsInstance<DirectFragmentDependencyNode>()
+                .first { it.dependencyNode.group == group }
                 .dependencyNode
-                .let { it as MavenDependencyNode }
                 .messages.map { it.message }.toSet()
 
         val expectedDiagnostic = "Unable to resolve dependency com.jetbrains.intellij.platform:core:233.13763.1"
 
         kotlin.test.assertEquals(
             expectedDiagnostic,
-            root.children.single().getErrorMessagesForChild("com.jetbrains.intellij.platform").single(),
+            root.getErrorMessagesForChild("com.jetbrains.intellij.platform").single(),
             "Diagnostic messages taken from deserialized graph differs from original ones"
         )
 
         kotlin.test.assertEquals(
             expectedDiagnostic,
-            deserializedRoot.children.single().getErrorMessagesForChild("com.jetbrains.intellij.platform").single(),
+            deserializedRoot.getErrorMessagesForChild("com.jetbrains.intellij.platform").single(),
             "Diagnostic messages taken from deserialized graph differs from original ones"
         )
     }
@@ -117,26 +112,19 @@ class GraphSerializationTest: BaseModuleDrTest() {
      * @return deserialized graph
      */
     private fun assertRepetitiveGraphSerialization(root: DependencyNode, testInfo: TestInfo): DependencyNode {
-        println("### Asserting the first level serialization")
-        val nodeDeserialized = assertGraphSerialization(root, testInfo, true)
-
-        println("### Asserting the the second level serialization")
+        val nodeDeserialized = assertGraphSerialization(root, testInfo)
         val nodeDeserializedTwice = assertGraphSerialization(nodeDeserialized, testInfo)
-
         return nodeDeserializedTwice
     }
 
     /**
      * @return deserialized graph
      */
-    private fun assertGraphSerialization(root: DependencyNode, testInfo: TestInfo, printGraph: Boolean = false): DependencyNode {
+    private fun assertGraphSerialization(root: DependencyNode, testInfo: TestInfo): DependencyNode {
         val serializableGraph = root.toGraph()
         assertGraphStructure(testInfo, root, serializableGraph)
 
         val encoded = json.encodeToString(serializableGraph)
-//        assertSerializedGraphByGoldenFile(testInfo, encoded)
-        if (printGraph) println(encoded)
-
         val decoded = json.decodeFromString(DependencyGraph.serializer(), encoded)
         val encodedOfDecoded = json.encodeToString(decoded)
 
@@ -159,6 +147,10 @@ class GraphSerializationTest: BaseModuleDrTest() {
         root.assertGraphStructure(testInfo, GraphType.ORIGINAL)
         graph.assertGraphStructure(testInfo)
 
+        val encodedGraph = json.encodeToString(graph)
+        val decodedGraph = json.decodeFromString(DependencyGraph.serializer(), encodedGraph)
+        decodedGraph.assertGraphStructure(testInfo)
+
 //        graph.assertNodePlainIndexes(testInfo)
     }
 
@@ -177,10 +169,14 @@ class GraphSerializationTest: BaseModuleDrTest() {
     private fun DependencyNode.assertParentsInGraph(testInfo: TestInfo, graphType: GraphType) {
         val filterOrphans = (graphType == GraphType.ORIGINAL)
 
-        val actual = distinctBfsSequence().flatMap { dep -> dep.parents
-            .filter{ !filterOrphans || !it.isOrphan(this@assertParentsInGraph) }
-            .map { it to dep } }.toSet()
-            .sortedBy { it.first.graphEntryName + it.second.graphEntryName }
+        fun DependencyNode.nodeName() = if (this is ModuleDependencyNode) "module:$moduleName" else graphEntryName
+
+        val actual = distinctBfsSequence().flatMap { dep ->
+            dep.parents
+                .filter { !filterOrphans || !it.isOrphan(this@assertParentsInGraph) }
+                .map { it.nodeName() to dep.nodeName() }
+        }.toSet()
+            .sortedBy { it.first + it.second }
             .joinToString(System.lineSeparator())
 
         val goldenFile = goldenFileOsAware(
@@ -270,14 +266,15 @@ class GraphSerializationTest: BaseModuleDrTest() {
     }
 
     @Test
-    fun `all classes implementing Message are annotated with Serializable and properly registered`() = runTest {
+    fun `all classes implementing Message are annotated with Serializable and properly registered`() = runTestWithMdc {
         checkPolymorphicRequirements(Message::class)
     }
 
     @Test
-    fun `all classes implementing DependencyNodePlain are annotated with Serializable and properly registered`() = runTest {
-        checkPolymorphicRequirements(SerializableDependencyNode::class)
-    }
+    fun `all classes implementing DependencyNodePlain are annotated with Serializable and properly registered`() =
+        runTestWithMdc {
+            checkPolymorphicRequirements(SerializableDependencyNode::class)
+        }
 
     /**
      * Check that all classes implementing the given interface are annotated with [Serializable] and properly registered
@@ -307,7 +304,8 @@ class GraphSerializationTest: BaseModuleDrTest() {
         }
 
         val notRegistered = allNonAbstractChildrenKotlin.filter {
-            json.serializersModule.getPolymorphic(kClass, it.jvmName) == null
+            val getSerializedClassName = it.annotations.filterIsInstance<SerialName>().singleOrNull()?.value ?: it.jvmName
+            json.serializersModule.getPolymorphic(kClass, getSerializedClassName) == null
         }
         assertTrue("Serializable classes implementing ${kClass.simpleName}, should be registered in a polymorphic serializer module: $notRegistered") {
             notRegistered.isEmpty()
@@ -320,7 +318,7 @@ class GraphSerializationTest: BaseModuleDrTest() {
      * this is why data classes are not suitable here.
      */
     @Test
-    fun `all classes implementing DependencyNodePlain are not data classes`() = runTest {
+    fun `all classes implementing DependencyNodePlain are not data classes`() = runTestWithMdc {
         val kClass = SerializableDependencyNode::class
 
         val reflections = Reflections("org.jetbrains.amper")

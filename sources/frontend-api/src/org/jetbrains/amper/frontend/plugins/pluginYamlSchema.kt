@@ -6,12 +6,14 @@ package org.jetbrains.amper.frontend.plugins
 
 import org.jetbrains.amper.frontend.SchemaEnum
 import org.jetbrains.amper.frontend.api.CanBeReferenced
+import org.jetbrains.amper.frontend.api.ConstInit
 import org.jetbrains.amper.frontend.api.CustomSchemaDeclaration
-import org.jetbrains.amper.frontend.api.IgnoreForSchema
 import org.jetbrains.amper.frontend.api.ReadOnly
 import org.jetbrains.amper.frontend.api.SchemaDoc
 import org.jetbrains.amper.frontend.api.SchemaNode
 import org.jetbrains.amper.frontend.api.Shorthand
+import org.jetbrains.amper.frontend.api.StringSemantics
+import org.jetbrains.amper.frontend.types.SchemaType
 import org.jetbrains.amper.frontend.plugins.generated.ShadowClasspath
 import org.jetbrains.amper.frontend.plugins.generated.ShadowCompilationArtifact
 import org.jetbrains.amper.frontend.plugins.generated.ShadowDependencyLocal
@@ -26,13 +28,25 @@ class PluginYamlRoot : SchemaNode() {
             "They are conventionally lowerCamelCase.")
     val tasks by value<Map<String, Task>>(default = emptyMap())
 
+    @SchemaDoc("The checks registered by this plugin. Each check defines a custom checker " +
+            "that can be invoked via the 'amper check' command.")
+    val checks by value<List<CustomCheck>>(default = emptyList())
+
+    @SchemaDoc("The commands registered by this plugin. Each command defines a custom command " +
+            "that can be invoked via the 'amper do' command.")
+    val commands by value<List<CustomCommand>>(default = emptyList())
+
     @ReadOnly
     @SchemaDoc("Data from the module the plugin is applied to")
     val module by value<ModuleDataForPlugin>()
 
     @ReadOnly
+    @SchemaDoc("Data from the project within which the plugin is applied")
+    val project by value<ProjectDataForPlugin>()
+
+    @ReadOnly
     @CanBeReferenced
-    val pluginSettings: PluginSettingsPlaceholder? by nullableValue()
+    val pluginSettings: PluginSettingsPlaceholder by value()
 }
 
 @CustomSchemaDeclaration
@@ -72,6 +86,10 @@ class ModuleDataForPlugin : SchemaNode() {
     val jar by value<ShadowCompilationArtifact>()
 
     @CanBeReferenced
+    @SchemaDoc("Unpacked classes for the module (jvm, main)")
+    val classes by value<ShadowCompilationArtifact>()
+
+    @CanBeReferenced
     @SchemaDoc("Dependency on the module itself")
     val self by value<ShadowDependencyLocal>()
 
@@ -79,10 +97,15 @@ class ModuleDataForPlugin : SchemaNode() {
     val settings by value<Settings>()
 }
 
+class ProjectDataForPlugin : SchemaNode() {
+    @CanBeReferenced
+    @SchemaDoc("Project's root directory (where `project.yaml` resides if present)")
+    val rootDir by value<Path>()
+}
+
 @CustomSchemaDeclaration
 class TaskAction(
-    // TODO: Remove @IgnoreForSchema here?
-    @IgnoreForSchema val taskInfo: PluginData.TaskInfo,
+    val taskInfo: PluginData.TaskInfo,
 ) : SchemaNode()
 
 class Task : SchemaNode() {
@@ -132,6 +155,30 @@ class FragmentDescriptor : SchemaNode() {
 
     @SchemaDoc("`true` to select a test fragment, `false` by default")
     val isTest by value(default = false)
+}
+
+class CustomCheck : SchemaNode() {
+    @ConstInit
+    @Shorthand
+    @SchemaDoc("The name of the task that performs this check.")
+    @StringSemantics(SchemaType.StringType.Semantics.TaskName)
+    val performedBy by value<String>()
+
+    @ConstInit
+    @SchemaDoc("The name of this check. Defaults to the task name specified in 'performedBy'.")
+    val name: String by referenceValue(::performedBy)
+}
+
+class CustomCommand : SchemaNode() {
+    @ConstInit
+    @Shorthand
+    @SchemaDoc("The name of the task that performs this command.")
+    @StringSemantics(SchemaType.StringType.Semantics.TaskName)
+    val performedBy by value<String>()
+
+    @ConstInit
+    @SchemaDoc("The name of this command. Defaults to the task name specified in 'performedBy'.")
+    val name: String by referenceValue(::performedBy)
 }
 
 enum class GeneratedPathKind(

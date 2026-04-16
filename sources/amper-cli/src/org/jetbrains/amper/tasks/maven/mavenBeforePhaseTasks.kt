@@ -4,6 +4,7 @@
 
 package org.jetbrains.amper.tasks.maven
 
+import io.opentelemetry.api.GlobalOpenTelemetry
 import org.apache.maven.project.MavenProject
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
@@ -14,12 +15,11 @@ import org.jetbrains.amper.engine.TaskGraphExecutionContext
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.TaskName
-import org.jetbrains.amper.frontend.dr.resolver.CliReportingMavenResolver
-import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencyNodeWithModuleAndContext
+import org.jetbrains.amper.CliReportingMavenResolver
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies
+import org.jetbrains.amper.frontend.dr.resolver.AmperResolutionSettings
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.tasks.EmptyTaskResult
-import org.jetbrains.amper.tasks.ModuleDependencies
-import org.jetbrains.amper.tasks.TaskOutputRoot
 import org.jetbrains.amper.tasks.TaskResult
 import org.jetbrains.amper.tasks.artifacts.ArtifactTaskBase
 import org.jetbrains.amper.tasks.artifacts.JvmResourcesDirArtifact
@@ -178,22 +178,20 @@ class InitialMavenPhaseTask(parameters: PhaseTaskParameters) : BeforeMavenPhaseT
         CliReportingMavenResolver(parameters.cacheRoot, parameters.incrementalCache)
     }
 
-    /**
-     * [ModuleDependencyNodeWithModuleAndContext] cannot be reused, as its transitive children can change after
-     * resolve and as a result - change cache key that is used within DR incremental request.
-     * Thus, we need to create a new instance of the node every time here.
-     */
-    private fun getModuleDependencies(isTest: Boolean) =
-        ModuleDependencies(parameters.module, parameters.cacheRoot, parameters.incrementalCache)
-            .forResolution(isTest)
+    private fun getModuleDependencies() =
+        with(ModuleDependencies) {
+            val resolutionSettings = AmperResolutionSettings(
+                parameters.cacheRoot, parameters.incrementalCache, GlobalOpenTelemetry.get()
+            )
+            parameters.module.moduleDependencies(resolutionSettings)
+        }
 
     // Here we are converting the external dependencies graph to the flat list of maven artifacts.
     private suspend fun PhaseTaskParameters.getExternalAetherArtifacts(isTest: Boolean) =
         mavenResolver.doResolveExternalDependencies(
-            module = module,
             platform = Platform.JVM,
             isTest = isTest,
-            moduleDependencies = getModuleDependencies(isTest),
+            moduleDependencies = getModuleDependencies(),
         )
             .let { it.runtimeDependenciesRootNode ?: it.compileDependenciesRootNode }
             .distinctBfsSequence()

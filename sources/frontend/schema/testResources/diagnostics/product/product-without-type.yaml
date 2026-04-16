@@ -1,1 +1,1 @@
-<![Error] Expected a value!>product:<!>
+<![Error] Expected a value: `ModuleProduct ( "lib" | "jvm/app" | "jvm/lib" | "jvm/amper-plugin" | "android/app" | "ios/app" | "macos/app" | "linux/app" | "windows/app" | "wasm-js/app" | "wasm-wasi/app" | "js/app" | {..} )`!>product:<!>

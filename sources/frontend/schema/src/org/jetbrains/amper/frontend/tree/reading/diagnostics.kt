@@ -5,14 +5,27 @@
 package org.jetbrains.amper.frontend.tree.reading
 
 import com.intellij.psi.PsiElement
+import org.jetbrains.amper.core.UsedInIdePlugin
 import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.tree.TreeDiagnosticId
+import org.jetbrains.amper.frontend.types.SchemaType
 import org.jetbrains.amper.frontend.types.SchemaVariantDeclaration
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
 import org.jetbrains.annotations.Nls
+
+class MissingValue(
+    override val element: PsiElement,
+    @UsedInIdePlugin
+    val expectedType: SchemaType,
+    typeString: String,
+) : PsiBuildProblem(level = Level.Error, type = BuildProblemType.Generic) {
+
+    override val diagnosticId get() = TreeDiagnosticId.MissingValue
+    override val message = SchemaBundle.message("validation.structure.missing.value", typeString)
+}
 
 class InvalidTaskActionType(
     override val element: PsiElement,
@@ -22,15 +35,10 @@ class InvalidTaskActionType(
     level = Level.Error,
     type = BuildProblemType.UnknownSymbol,
 ) {
-    companion object {
-        const val ID = "validation.types.tag.task.action.invalid"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.InvalidTaskActionType
     override val message: @Nls String by lazy {
-        SchemaBundle.message(ID, invalidType, formatAvailableTasks(taskActionType))
+        SchemaBundle.message("validation.types.tag.task.action.invalid", invalidType, formatAvailableTasks(taskActionType))
     }
 }
 
@@ -41,16 +49,11 @@ class MissingTaskActionType(
     level = Level.Error,
     type = BuildProblemType.Generic,
 ) {
-    companion object {
-        const val ID = "validation.types.tag.task.action.missing"
-    }
 
-    @Deprecated("Should be replaced with `diagnosticId` property", replaceWith = ReplaceWith("diagnosticId"))
-    override val buildProblemId get() = ID
     override val diagnosticId: DiagnosticId = TreeDiagnosticId.MissingTaskActionType
 
     override val message: @Nls String by lazy {
-        SchemaBundle.message(ID, formatAvailableTasks(taskActionType))
+        SchemaBundle.message("validation.types.tag.task.action.missing", formatAvailableTasks(taskActionType))
     }
 }
 

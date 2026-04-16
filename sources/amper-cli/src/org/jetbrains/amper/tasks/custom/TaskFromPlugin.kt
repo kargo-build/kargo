@@ -11,10 +11,10 @@ import org.jetbrains.amper.engine.TaskGraphExecutionContext
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.TaskName
-import org.jetbrains.amper.frontend.api.SchemaNode
 import org.jetbrains.amper.frontend.api.toStableJsonLikeString
 import org.jetbrains.amper.frontend.plugins.GeneratedPathKind
 import org.jetbrains.amper.frontend.plugins.TaskFromPluginDescription
+import org.jetbrains.amper.frontend.plugins.generated.ShadowCompilationArtifactKind
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.tasks.EmptyTaskResult
 import org.jetbrains.amper.tasks.TaskResult
@@ -24,6 +24,7 @@ import org.jetbrains.amper.tasks.artifacts.api.Artifact
 import org.jetbrains.amper.tasks.artifacts.api.ArtifactSelector
 import org.jetbrains.amper.tasks.artifacts.api.ArtifactTask
 import org.jetbrains.amper.tasks.jvm.JvmClassesJarTask
+import org.jetbrains.amper.tasks.jvm.JvmMergedClassesTask
 import org.jetbrains.amper.tasks.jvm.JvmRuntimeClasspathTask
 import org.jetbrains.amper.util.StandardStreamsCapture
 import org.slf4j.LoggerFactory
@@ -31,7 +32,6 @@ import java.lang.reflect.InvocationTargetException
 import java.net.URLClassLoader
 import java.nio.file.Path
 import kotlin.io.path.exists
-import kotlin.reflect.jvm.javaType
 import kotlin.reflect.jvm.kotlinFunction
 
 class TaskFromPlugin(
@@ -89,9 +89,18 @@ class TaskFromPlugin(
             .single()
 
         description.requestedCompilationArtifacts.forEach { request ->
-            val result = dependenciesResult.filterIsInstance<JvmClassesJarTask.Result>()
-                .first { it.module == request.from }
-            request.node.artifact = result.jarPath
+            when (request.node.kind) {
+                ShadowCompilationArtifactKind.Jar -> {
+                    val result = dependenciesResult.filterIsInstance<JvmClassesJarTask.Result>()
+                        .first { it.module == request.from }
+                    request.node.artifact = result.jarPath
+                }
+                ShadowCompilationArtifactKind.Classes -> {
+                    val result = dependenciesResult.filterIsInstance<JvmMergedClassesTask.Result>()
+                        .first { it.module == request.from }
+                    request.node.artifact = result.path
+                }
+            }
         }
 
         val doNotUseExecutionAvoidance = description.explicitOptOutOfExecutionAvoidance ||

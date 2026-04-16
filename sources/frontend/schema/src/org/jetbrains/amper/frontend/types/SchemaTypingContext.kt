@@ -11,11 +11,7 @@ import org.jetbrains.amper.frontend.plugins.TaskAction
 import org.jetbrains.amper.frontend.plugins.generated.ShadowMaps
 import org.jetbrains.amper.frontend.schema.PluginSettings
 import org.jetbrains.amper.frontend.types.SchemaObjectDeclaration.Property
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfModule
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfPluginYamlRoot
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfTask
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfTemplate
-import org.jetbrains.amper.frontend.types.generated.PublicInterfaceToDeclaration
+import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.frontend.types.maven.createMavenPluginsSettingsDeclaration
 import org.jetbrains.amper.maven.MavenPluginXml
 import org.jetbrains.amper.plugins.schema.model.Defaults
@@ -35,7 +31,7 @@ class SchemaTypingContext(
         DeclarationOfPluginYamlRoot(
             pluginSettingsPlaceholderDeclaration = declarations.settingsClassDeclaration,
             taskDeclaration = DeclarationOfTask(
-                taskActionDeclaration = SyntheticVariantDeclaration(
+                taskActionDeclaration = TaskActionVariantDeclaration(
                     qualifiedName = "org.jetbrains.amper.frontend.plugins.TaskAction",
                     variants = declarations.pluginData.declarations.tasks.map { taskInfo ->
                         declarations.ObjectDeclaration(
@@ -60,7 +56,7 @@ class SchemaTypingContext(
                 name = id.value,
                 type = declarations.settingsClassDeclaration.toType(isMarkedNullable = true),
                 documentation = declarations.pluginData.description,
-                origin = declarations.settingsClassDeclaration.origin,
+                origin = declarations.pluginData.source.toOrigin(),
                 default = Default.Static(null),
             )
         }
@@ -81,7 +77,7 @@ class SchemaTypingContext(
     }
 }
 
-private class SyntheticVariantDeclaration(
+internal class TaskActionVariantDeclaration(
     override val qualifiedName: String,
     override val variants: List<SchemaObjectDeclaration>,
 ) : SchemaVariantDeclaration {
@@ -140,11 +136,7 @@ private class PluginDeclarations(
     val settingsClassDeclaration: SchemaObjectDeclaration = pluginData.pluginSettingsSchemaName?.let {
         classDeclarationFor(it)
     } ?: object : SchemaObjectDeclarationBase() {
-        override val properties = listOf(
-            // TODO: Provide a proper user-friendly origin here,
-            //  that would somehow point to the plugin module
-            enabledProperty(SchemaOrigin.Builtin)
-        )
+        override val properties = listOf(enabledProperty(pluginData.source.toOrigin()))
         override fun createInstance() = ExtensionSchemaNode()
         override val qualifiedName: String get() = "${pluginData.id.value}.Settings"
     }
@@ -168,7 +160,7 @@ private class PluginDeclarations(
             data: PluginData.ClassData,
             instantiationStrategy: () -> SchemaNode = ::ExtensionSchemaNode,
         ) : this(
-            data.name, data.properties, data.origin.toLocalPluginOrigin(),
+            data.name, data.properties, data.origin.toPluginOrigin(pluginData.source),
             instantiationStrategy
         )
 
@@ -191,14 +183,14 @@ private class PluginDeclarations(
                         hasShorthand = property.internalAttributes?.isShorthand == true,
                         isFromKeyAndTheRestNested = property.internalAttributes?.isDependencyNotation == true,
                         inputOutputMark = property.inputOutputMark,
-                        origin = property.origin.toLocalPluginOrigin(),
+                        origin = property.origin.toPluginOrigin(pluginData.source),
                         // All user properties can be referenced
                         canBeReferenced = true,
                     )
                 }
                 if (schemaName == pluginData.pluginSettingsSchemaName) {
                     // Add a synthetic `enabled` property if this is a plugin schema extension
-                    this += enabledProperty(origin)
+                    this += enabledProperty(pluginData.source.toOrigin())
                 }
             }
         }
@@ -216,19 +208,19 @@ private class PluginDeclarations(
         origin = origin,
     )
 
-    private class EnumDeclaration(
+    private inner class EnumDeclaration(
         private val data: PluginData.EnumData,
     ) : SchemaEnumDeclarationBase(), PluginBasedTypeDeclaration {
         override val schemaName: PluginData.SchemaName
             get() = data.schemaName
-        override val origin: SchemaOrigin = data.origin.toLocalPluginOrigin()
+        override val origin: SchemaOrigin = data.origin.toPluginOrigin(pluginData.source)
         override val entries: List<SchemaEnumDeclaration.EnumEntry> by lazy {
             data.entries.map { entry ->
                 SchemaEnumDeclaration.EnumEntry(
                     name = entry.name,
                     schemaValue = entry.schemaName,
                     documentation = entry.doc,
-                    origin = entry.origin.toLocalPluginOrigin(),
+                    origin = entry.origin.toPluginOrigin(pluginData.source),
                 )
             }
         }
@@ -267,10 +259,17 @@ private fun Defaults.toValue(): Any? = when(this) {
     Defaults.Null -> null
 }
 
-private fun SourceLocation?.toLocalPluginOrigin(): SchemaOrigin {
+private fun SourceLocation?.toPluginOrigin(pluginSource: PluginData.Source): SchemaOrigin {
     if (this == null) return SchemaOrigin.Builtin
-    return SchemaOrigin.LocalPlugin(
-        sourceFile = path,
-        textRange = textRange,
-    )
+    return when (pluginSource) {
+        is PluginData.Source.Local -> SchemaOrigin.LocalPlugin(
+            pluginSource.path,
+            sourceCodeLocation = SchemaOrigin.LocalPlugin.SourceCodeLocation(path, textRange),
+        )
+    }
+}
+
+private fun PluginData.Source.toOrigin(): SchemaOrigin = when (this) {
+    // Should point to a directory
+    is PluginData.Source.Local -> SchemaOrigin.LocalPlugin(path, sourceCodeLocation = null)
 }

@@ -145,7 +145,10 @@ class ModuleProduct : SchemaNode() {
 
     class PlatformTransform : ReferenceNode.TransformFunction<List<TraceableEnum<Platform>>> {
         override fun transform(node: RefinedTreeNode): List<TraceableEnum<Platform>> {
-            val productType = (node as EnumNode).enumConstantIfAvailable as ProductType
+            if (node !is EnumNode) {  // Can be ErrorNode
+                return emptyList()
+            }
+            val productType = node.enumConstantIfAvailable as ProductType
             return productType.defaultPlatforms
                 ?.map { platform ->
                     platform.asTraceable(DefaultTrace)

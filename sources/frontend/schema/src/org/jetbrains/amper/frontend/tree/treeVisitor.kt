@@ -84,11 +84,32 @@ abstract class RecurringTreeVisitor<R> : TreeVisitor<R> {
         aggregateMap(node, node.children.map { it.value }.map(::visit))
 }
 
+abstract class RecurringRefinedTreeVisitor<R> : RefinedTreeVisitor<R> {
+    abstract fun aggregate(node: RefinedTreeNode, childResults: List<R>): R
+    open fun aggregateList(node: RefinedListNode, childResults: List<R>): R = aggregate(node, childResults)
+    open fun aggregateMap(node: RefinedMappingNode, childResults: List<R>): R = aggregate(node, childResults)
+
+    override fun visitList(node: RefinedListNode): R =
+        aggregateList(node, node.children.map(::visit))
+
+    override fun visitMap(node: RefinedMappingNode): R =
+        aggregateMap(node, node.children.map { visit(it.value) })
+}
+
 /**
  * Convenient specification of [TreeVisitor] that returns nothing.
  */
 abstract class RecurringTreeVisitorUnit : RecurringTreeVisitor<Unit>() {
     override fun aggregate(node: TreeNode, childResults: List<Unit>) = Unit
+    override fun visitScalar(node: ScalarNode) = Unit
+    override fun visitNull(node: NullLiteralNode) = Unit
+    override fun visitReference(node: ReferenceNode) = Unit
+    override fun visitStringInterpolation(node: StringInterpolationNode) = Unit
+    override fun visitError(node: ErrorNode) = Unit
+}
+
+abstract class RecurringRefinedTreeVisitorUnit : RecurringRefinedTreeVisitor<Unit>() {
+    override fun aggregate(node: RefinedTreeNode, childResults: List<Unit>) = Unit
     override fun visitScalar(node: ScalarNode) = Unit
     override fun visitNull(node: NullLiteralNode) = Unit
     override fun visitReference(node: ReferenceNode) = Unit

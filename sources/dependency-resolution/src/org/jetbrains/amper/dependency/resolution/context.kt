@@ -38,6 +38,9 @@ import kotlin.io.path.Path
  */
 class Context internal constructor(
     val settings: Settings,
+    /**
+     * Global resolution cache that might be shared across different resolution sessions
+     */
     val resolutionCache: Cache = Cache(),
     /**
      * Contains a map of all already created [MavenDependencyNode]s by their original maven dependency.
@@ -51,9 +54,10 @@ class Context internal constructor(
      */
     private val nodesByMavenDependency: MutableMap<MavenDependencyImpl, MavenDependencyNodeWithContext> = ConcurrentHashMap(),
     private val constraintsByMavenDependency: MutableMap<MavenDependencyConstraintImpl, MavenDependencyConstraintNodeWithContext> = ConcurrentHashMap(),
-) : Closeable {
+) {
 
-    constructor(block: SettingsBuilder.() -> Unit = {}) : this(SettingsBuilder(block).settings)
+    constructor(resolutionCache: Cache? = Cache(), block: SettingsBuilder.() -> Unit = {})
+            : this(SettingsBuilder(block).settings, resolutionCache ?: Cache())
 
     val nodeCache: Cache = Cache()
 
@@ -103,10 +107,6 @@ class Context internal constructor(
         constraintsByMavenDependency
             .computeIfAbsent(dependencyConstraint) { MavenDependencyConstraintNodeWithContext(templateContext = this, dependencyConstraint) }
             .apply { parentNode?.let { context.nodeParents.add(parentNode) } }
-
-    override fun close() {
-        resolutionCache.close()
-    }
 }
 
 /**
@@ -235,6 +235,25 @@ interface ResolutionConfig {
     val scope: ResolutionScope
     val platforms: Set<ResolutionPlatform>
     val repositories: List<Repository>
+
+    fun toSerializableReference(graphContext: DependencyGraphContext): ResolutionConfigReference {
+        val resolutionConfigPlain = ResolutionConfigPlain(scope, platforms, repositories)
+        return graphContext.getResolutionConfigReference(resolutionConfigPlain)
+            ?: graphContext.registerResolutionConfigPlain(resolutionConfigPlain, resolutionConfigPlain)
+    }
+}
+
+@Serializable(with = ResolutionConfigReference.Serializer::class)
+class ResolutionConfigReference(
+    override val index: ResolutionConfigIndex
+): GraphEntryReference {
+    fun toNodePlain(graphContext: DependencyGraphContext): ResolutionConfig =
+        graphContext.getResolutionConfig(index)
+
+    internal companion object Serializer : ReferenceSerializer<ResolutionConfigReference>() {
+        override fun Int.toReference() = ResolutionConfigReference(this)
+        override fun getReferenceClass() = ResolutionConfigReference::class
+    }
 }
 
 data class MavenGroupAndArtifact(

@@ -206,25 +206,6 @@ class IosFrameworkSettings : SchemaNode() {
     val isStatic by value(false)
 }
 
-class PublishingSettings : SchemaNode() {
-
-    @PlatformAgnostic
-    @SchemaDoc("Enables the publication of the module to Maven repositories (via `./amper publish`)")
-    val enabled by value(default = false)
-
-    @PlatformAgnostic
-    @SchemaDoc("Group ID of the published Maven artifact")
-    val group by nullableValue<String>()
-
-    @PlatformAgnostic
-    @SchemaDoc("Version of the published Maven artifact")
-    val version by nullableValue<String>()
-
-    @Misnomers("artifact")
-    @SchemaDoc("Artifact ID of the published Maven artifact")
-    val name by nullableValue<String>()
-}
-
 class KoverSettings : SchemaNode() {
 
     @Shorthand

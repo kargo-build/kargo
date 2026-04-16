@@ -51,6 +51,22 @@
               </list>
             </option>
           </RegExpInspectionConfiguration>
+          <RegExpInspectionConfiguration>
+            <option name="cleanup" value="true" />
+            <option name="description" value="listOf() doesn't express the intent as well as emptyList()" />
+            <option name="name" value="listOf() could be replaced with emptyList()" />
+            <option name="uuid" value="0c135031-7957-32f2-970e-871154660972" />
+            <option name="patterns">
+              <list>
+                <InspectionPattern>
+                  <option name="regExp" value="\blistOf\(\)" />
+                  <option name="_fileType" value="UNKNOWN" />
+                  <option name="searchContext" value="ANY" />
+                  <option name="replacement" value="emptyList()" />
+                </InspectionPattern>
+              </list>
+            </option>
+          </RegExpInspectionConfiguration>
         </list>
       </option>
     </inspection_tool>
@@ -134,6 +150,15 @@
         <constraint name="Setup4" within="" contains="" />
         <constraint name="Setup5" within="" contains="" />
       </searchConfiguration>
+      <replaceConfiguration name="runTest -&gt; runTestWithMdc" description="Some JUnit extensions rely on the MDC context propagation to do their work. It's necessary to capture the current MDC context when creating root coroutines, like in runTest()." problemDescriptor="Replace runTest with runTestWithMdc to respect the MDC context" text="runTest {&#10;    $statement$&#10;}" recursive="false" caseInsensitive="true" type="Kotlin" pattern_context="default" reformatAccordingToStyle="false" shortenFQN="true" replacement="org.jetbrains.amper.test.runTestWithMdc {&#10;    $statement$&#10;}">
+        <constraint name="__context__" within="" contains="" />
+        <constraint name="statement" minCount="0" maxCount="2147483647" within="" contains="" />
+      </replaceConfiguration>
+      <replaceConfiguration name="runTest -&gt; runTestWithMdc" text="runTest($args$) {&#10;    $statement$&#10;}" recursive="false" caseInsensitive="true" type="Kotlin" pattern_context="default" reformatAccordingToStyle="false" shortenFQN="true" replacement="org.jetbrains.amper.test.runTestWithMdc($args$) {&#10;    $statement$&#10;}">
+        <constraint name="__context__" within="" contains="" />
+        <constraint name="statement" minCount="0" maxCount="2147483647" within="" contains="" />
+        <constraint name="args" minCount="0" maxCount="2147483647" within="" contains="" />
+      </replaceConfiguration>
     </inspection_tool>
     <inspection_tool class="SystemOutErr" enabled="true" level="INFORMATION" enabled_by_default="true" editorAttributes="INFORMATION_ATTRIBUTES">
       <scope name="Production" level="WARNING" enabled="true" />

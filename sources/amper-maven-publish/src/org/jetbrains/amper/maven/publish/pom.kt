@@ -5,7 +5,10 @@ package org.jetbrains.amper.maven.publish
 
 import org.apache.maven.model.Dependency
 import org.apache.maven.model.DependencyManagement
+import org.apache.maven.model.Developer
+import org.apache.maven.model.License
 import org.apache.maven.model.Model
+import org.apache.maven.model.Scm
 import org.apache.maven.model.io.xpp3.MavenXpp3Writer
 import org.codehaus.plexus.util.xml.XmlStreamWriter
 import org.jetbrains.amper.frontend.AmperModule
@@ -18,6 +21,9 @@ import org.jetbrains.amper.frontend.Notation
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.ancestralPath
 import org.jetbrains.amper.frontend.dr.resolver.toDrMavenCoordinates
+import org.jetbrains.amper.frontend.schema.DeveloperInfo
+import org.jetbrains.amper.frontend.schema.LicenseInfo
+import org.jetbrains.amper.frontend.schema.ScmInfo
 import java.nio.file.Path
 import kotlin.io.path.readText
 import kotlin.io.path.writeText
@@ -76,6 +82,8 @@ private fun generatePomModel(
     val coords = module.publicationCoordinates(platform)
     val fragment = module.singleProductionFragmentOrNull(platform)
         ?: error("Cannot generate pom for module '${module.userReadableName}': expected a single fragment for platform $platform")
+    val publishSettings = fragment.settings.publishing
+
     // FIXME [distinct] can be error prone here, because we (I guess) have no guarantees about [externalDependencies] equality.
     val (bomDependencies, regularDependencies) = fragment.ancestralPath()
         .flatMap { it.externalDependencies }
@@ -89,11 +97,12 @@ private fun generatePomModel(
     
     // "$groupId:$artifactId" is "common practice" for the <name> field according to Sonatype's website:
     // https://central.sonatype.org/publish/requirements/#project-name-description-and-url
-    // However, but that's not what I found empirically in Maven Central in general. Rather, the module name is used.
-    // TODO provide a way to override this in the frontend
-    model.name = module.userReadableName
-    model.description = module.description
-    
+    // However, that's not what I found empirically in Maven Central in general. Rather, the module name is used.
+    model.name = publishSettings.pom.name ?: module.userReadableName
+    // TODO Maybe strip the Markdown syntax when we fall back to the (Markdown) module.description?
+    model.description = publishSettings.pom.description ?: module.description
+    model.url = publishSettings.pom.url
+
     model.groupId = coords.groupId
     model.artifactId = coords.artifactId
     model.version = coords.version
@@ -103,12 +112,37 @@ private fun generatePomModel(
         model.dependencyManagement = DependencyManagement().apply { dependencies.addAll(bomPomDependencies) }
     }
 
-    // TODO add url for Maven Central compatibility
-    // TODO add licenses for Maven Central compatibility
-    // TODO add developers for Maven Central compatibility
-    // TODO add SCM info for Maven Central compatibility
+    model.licenses = publishSettings.pom.licenses.map { it.toMavenLicense() }
+    model.developers = publishSettings.pom.developers.map { it.toMavenDeveloper() }
+    model.scm = publishSettings.pom.scm.toMavenScmOrNull()
 
     return model
+}
+
+private fun ScmInfo.toMavenScmOrNull(): Scm? {
+    // Avoid an empty <scm /> tag if the SCM properties aren't set
+    if (url == null && connection == null && developerConnection == null) {
+        return null
+    }
+    return Scm().apply {
+        url = this@toMavenScmOrNull.url
+        connection = this@toMavenScmOrNull.connection
+        developerConnection = this@toMavenScmOrNull.developerConnection
+    }
+}
+
+private fun LicenseInfo.toMavenLicense(): License = License().apply {
+    name = this@toMavenLicense.name
+    url = this@toMavenLicense.url
+}
+
+private fun DeveloperInfo.toMavenDeveloper(): Developer = Developer().apply {
+    id = this@toMavenDeveloper.id
+    name = this@toMavenDeveloper.name
+    url = this@toMavenDeveloper.url
+    email = this@toMavenDeveloper.email
+    organization = this@toMavenDeveloper.organization
+    organizationUrl = this@toMavenDeveloper.organizationUrl
 }
 
 private fun Notation.toPomDependency(

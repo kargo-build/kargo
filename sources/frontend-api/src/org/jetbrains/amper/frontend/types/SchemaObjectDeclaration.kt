@@ -79,6 +79,7 @@ interface SchemaObjectDeclaration : SchemaTypeDeclaration {
         val inputOutputMark: InputOutputMark? = null,
         val canBeReferenced: Boolean = false,
         val isUserSettable: Boolean = true,
+        val isConstInit: Boolean = false,
         val origin: SchemaOrigin = SchemaOrigin.Builtin,
     )
 }
