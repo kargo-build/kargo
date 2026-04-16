@@ -31,7 +31,7 @@ internal fun readPlugins(
     pluginData: List<PluginData>,
 ): List<AmperPluginImpl> {
     val seenPluginIds = hashMapOf<String, MutableList<TraceableString>>()
-    val pluginReaders = projectContext.pluginsModuleFiles.mapNotNull mapPlugins@{ pluginModuleFile ->
+    val pluginReaders = projectContext.enabledLocalAmperPluginModuleFiles.mapNotNull mapPlugins@{ pluginModuleFile ->
         val pluginModule = modules.find { it.moduleFile == pluginModuleFile }
             ?: return@mapPlugins null
 

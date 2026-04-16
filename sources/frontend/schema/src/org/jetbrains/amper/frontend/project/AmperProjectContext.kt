@@ -53,9 +53,21 @@ interface AmperProjectContext {
     val externalMavenPlugins: List<MavenPlugin>
 
     /**
+     * Local plugin module files of this project that are *applied* to the project itself.
+     * Subset of [amperModuleFiles].
+     */
+    val enabledLocalAmperPluginModuleFiles: List<VirtualFile>
+
+    /**
      * Local plugin module files of this project. Subset of [amperModuleFiles].
      */
+    @Deprecated(
+        message = "Use enabledLocalAmperPluginModuleFiles instead",
+        replaceWith = ReplaceWith("enabledLocalAmperPluginModuleFiles"),
+        level = DeprecationLevel.ERROR,
+    )
     val pluginsModuleFiles: List<VirtualFile>
+        get() = enabledLocalAmperPluginModuleFiles
 
     companion object {
         /**

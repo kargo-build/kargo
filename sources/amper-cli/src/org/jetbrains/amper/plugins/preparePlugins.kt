@@ -21,7 +21,7 @@ suspend fun preparePlugins(
     return spanBuilder("Prepare plugins").use {
         val projectContext = context.projectContext
         val seenPluginIds = hashSetOf<String>()
-        val pluginInfos = projectContext.pluginsModuleFiles.associateNotNull { pluginModuleFile ->
+        val pluginInfos = projectContext.enabledLocalAmperPluginModuleFiles.associateNotNull { pluginModuleFile ->
             val pluginManifest = spanBuilder("Read plugin manifest").use {
                 parsePluginManifestFromModuleFile(
                     frontendPathResolver = projectContext.frontendPathResolver,
