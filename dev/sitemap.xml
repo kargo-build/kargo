@@ -93,6 +93,10 @@
          <lastmod>2026-04-16</lastmod>
     </url>
     <url>
+         <loc>https://kargo.build/dev/user-guide/advanced/maven-plugins/</loc>
+         <lastmod>2026-04-16</lastmod>
+    </url>
+    <url>
          <loc>https://kargo.build/dev/user-guide/advanced/native-interop/</loc>
          <lastmod>2026-04-16</lastmod>
     </url>
@@ -101,7 +105,11 @@
          <lastmod>2026-04-16</lastmod>
     </url>
     <url>
-         <loc>https://kargo.build/dev/user-guide/builtin-tech/kotlin-serialization/</loc>
+         <loc>https://kargo.build/dev/user-guide/builtin-tech/kotlinx-rpc/</loc>
+         <lastmod>2026-04-16</lastmod>
+    </url>
+    <url>
+         <loc>https://kargo.build/dev/user-guide/builtin-tech/kotlinx-serialization/</loc>
          <lastmod>2026-04-16</lastmod>
     </url>
     <url>

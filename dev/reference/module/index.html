@@ -1248,6 +1248,8 @@
       
         
       
+        
+      
     
     
     
@@ -1328,14 +1330,42 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/builtin-tech/kotlin-serialization/" class="md-nav__link">
+      <a href="../../user-guide/builtin-tech/kotlinx-serialization/" class="md-nav__link">
         
   
   
   <span class="md-ellipsis">
     
   
-    Kotlin Serialization
+    Kotlinx Serialization
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/builtin-tech/kotlinx-rpc/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlinx RPC
   
 
     
@@ -1704,6 +1734,8 @@
       
         
       
+        
+      
     
     
     
@@ -1904,6 +1936,34 @@
     
   
     Maven-like layout
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../user-guide/advanced/maven-plugins/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Maven plugins
   
 
     
@@ -2482,10 +2542,43 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#settingskotlincompilerplugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        settings.kotlin.compilerPlugins
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settingskotlinjsplainobjects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        settings.kotlin.jsPlainObjects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#settingskotlinnoarg" class="md-nav__link">
     <span class="md-ellipsis">
       
         settings.kotlin.noArg
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settingskotlinksp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        settings.kotlin.ksp
       
     </span>
   </a>
@@ -2922,10 +3015,43 @@
 </li>
         
           <li class="md-nav__item">
+  <a href="#settingskotlincompilerplugins" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        settings.kotlin.compilerPlugins
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settingskotlinjsplainobjects" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        settings.kotlin.jsPlainObjects
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#settingskotlinnoarg" class="md-nav__link">
     <span class="md-ellipsis">
       
         settings.kotlin.noArg
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#settingskotlinksp" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        settings.kotlin.ksp
       
     </span>
   </a>
@@ -3170,9 +3296,11 @@ Read more in the <a href="../../user-guide/testing/">Testing</a> section.</p>
 <span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">org.postgresql:postgresql:42.3.3</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">runtime-only</span>
 </code></pre></div>
 <h2 id="description"><code>description</code><a class="headerlink" href="#description" title="Permanent link">&para;</a></h2>
-<p>The description of the module.</p>
-<p>It can be used in CLI introspection commands (<code>./amper show modules</code>) or in UIs to show information about modules.
-For libraries, it also used as a description in published metadata by default.</p>
+<p>An optional description of the module. This description supports Markdown formatting and can span multiple lines.</p>
+<p>When writing multiline descriptions, the first line should act as a short summary that can stand on its own, like 
+commit messages. Only the first line is displayed by default in <code>./amper show modules</code>.</p>
+<p>This description is used by the CLI and by IDEs to show information about the module.
+For libraries, it is also used as a description in published metadata by default.</p>
 <h2 id="layout"><code>layout</code><a class="headerlink" href="#layout" title="Permanent link">&para;</a></h2>
 <p>The <code>layout</code> defines the module file structure. Valid values:</p>
 <ul>
@@ -3615,7 +3743,7 @@ framework. Read more about <a href="../../user-guide/builtin-tech/compose-multip
 </tr>
 <tr>
 <td><code>version: string</code></td>
-<td><code>1.10.1</code></td>
+<td><code>1.10.3</code></td>
 <td>The Compose plugin version to use.</td>
 </tr>
 <tr>
@@ -3681,7 +3809,7 @@ framework. Read more about <a href="../../user-guide/builtin-tech/compose-multip
 <tbody>
 <tr>
 <td><code>version: string</code></td>
-<td><code>1.0.0-rc01</code></td>
+<td><code>1.0.0</code></td>
 <td>The Compose Hot Reload toolchain version to use.</td>
 </tr>
 </tbody>
@@ -3946,7 +4074,7 @@ Read more about <a href="../../user-guide/testing/">testing support</a>.</p>
 <tbody>
 <tr>
 <td><code>version: string</code></td>
-<td>2.3.10</td>
+<td>2.3.20</td>
 <td>The version of the Kotlin compiler and stdlib to use.</td>
 </tr>
 <tr>
@@ -3983,6 +4111,11 @@ Read more about <a href="../../user-guide/testing/">testing support</a>.</p>
 <td><code>jsPlainObjects: object \| enum</code></td>
 <td></td>
 <td>Enable the Kotlin JS-plain-objects compiler plugin.</td>
+</tr>
+<tr>
+<td><code>ksp: object</code></td>
+<td></td>
+<td>Configure <a href="../../user-guide/advanced/ksp/">Kotlin Symbol Processing</a>.</td>
 </tr>
 <tr>
 <td><code>languageVersion: enum</code></td>
@@ -4130,6 +4263,59 @@ which makes classes annotated with specific annotations open automatically witho
 <span class="w">      </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 <span class="w">      </span><span class="nt">presets</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="nv">spring</span><span class="w"> </span><span class="p p-Indicator">]</span>
 </code></pre></div>
+<h4 id="settingskotlincompilerplugins"><code>settings.kotlin.compilerPlugins</code><a class="headerlink" href="#settingskotlincompilerplugins" title="Permanent link">&para;</a></h4>
+<p><code>settings.kotlin.compilerPlugins</code> allows adding 
+<a href="../../user-guide/advanced/kotlin-compiler-plugins/#third-party-compiler-plugins">third-party compiler plugins</a> to your 
+compilation.</p>
+<table>
+<thead>
+<tr>
+<th style="text-align: left;">Attribute</th>
+<th></th>
+<th style="text-align: left;">Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align: left;"><code>id: string</code></td>
+<td></td>
+<td style="text-align: left;">The ID of this compiler plugin, used to pass options. It is defined by the <code>pluginId</code> property in the <code>CommandLineProcessor</code> implementation of the plugin. If the plugin is also implemented as a Gradle plugin, its ID can also be found in <code>getCompilerPluginId()</code> in the corresponding <code>KotlinCompilerPluginSupportPlugin</code> subclass.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>dependency: string</code></td>
+<td></td>
+<td style="text-align: left;">The compiler plugin dependency, in the form of <code>groupId:artifactId:version</code> Maven coordinates, or a catalog reference.</td>
+</tr>
+<tr>
+<td style="text-align: left;"><code>options: map&lt;string, string&gt;</code></td>
+<td><code>{}</code></td>
+<td style="text-align: left;">The options to pass to this compiler plugin, as a key-value map.</td>
+</tr>
+</tbody>
+</table>
+<p>Check the <a href="../../user-guide/advanced/kotlin-compiler-plugins/#third-party-compiler-plugins">third-party compiler plugins</a>
+section for more information and examples.</p>
+<h4 id="settingskotlinjsplainobjects"><code>settings.kotlin.jsPlainObjects</code><a class="headerlink" href="#settingskotlinjsplainobjects" title="Permanent link">&para;</a></h4>
+<p><code>settings.kotlin.jsPlainObjects</code> configures the <a href="https://kotlinlang.org/docs/js-plain-objects.html">JS plain objects compiler plugin</a>,
+which lets you create and copy plain JS objects in a type-safe way.</p>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>enabled: boolean</code></td>
+<td><code>false</code></td>
+<td>Enable the Kotlin JS plain objects compiler plugin</td>
+</tr>
+</tbody>
+</table>
+<p>Check the dedicated <a href="../../user-guide/advanced/kotlin-compiler-plugins/#js-plain-objects">JS plain objects</a> section for 
+more information.</p>
 <h4 id="settingskotlinnoarg"><code>settings.kotlin.noArg</code><a class="headerlink" href="#settingskotlinnoarg" title="Permanent link">&para;</a></h4>
 <p><code>settings.kotlin.noArg</code> configures the <a href="https://kotlinlang.org/docs/no-arg-plugin.html">Kotlin no-arg compiler plugin</a>,
 which generates no-arg constructors for classes with specific annotations.</p>
@@ -4179,6 +4365,35 @@ which generates no-arg constructors for classes with specific annotations.</p>
 <span class="w">      </span><span class="nt">annotations</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="w"> </span><span class="nv">com.example.NoArg</span><span class="w"> </span><span class="p p-Indicator">]</span>
 <span class="w">      </span><span class="nt">invokeInitializers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
 </code></pre></div>
+<h4 id="settingskotlinksp"><code>settings.kotlin.ksp</code><a class="headerlink" href="#settingskotlinksp" title="Permanent link">&para;</a></h4>
+<p><code>settings.kotlin.ksp</code> configures the <a href="../../user-guide/advanced/ksp/">Kotlin Symbol Processing mechanism</a>,
+which allows processing Kotlin source code with custom processors (usually to generate extra code).</p>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Default</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>version: string</code></td>
+<td><code>2.3.6</code></td>
+<td>The version of <abbr title="The Kotlin Symbol Processing tool, developed by Google">KSP</abbr> to use</td>
+</tr>
+<tr>
+<td><code>processors: string list</code></td>
+<td><code>[]</code></td>
+<td>The list of <abbr title="The Kotlin Symbol Processing tool, developed by Google">KSP</abbr> processors to use. Each item can be a path to a local module, a catalog reference, or maven coordinates.</td>
+</tr>
+<tr>
+<td><code>processorOptions: map&lt;string, string&gt;</code></td>
+<td><code>{}</code></td>
+<td>Some options to pass to <abbr title="The Kotlin Symbol Processing tool, developed by Google">KSP</abbr> processors. Refer to each processor documentation for details.</td>
+</tr>
+</tbody>
+</table>
 <h3 id="settingsktor"><code>settings.ktor</code><a class="headerlink" href="#settingsktor" title="Permanent link">&para;</a></h3>
 <p><code>settings.ktor</code> configures the Ktor server framework.</p>
 <table>
@@ -4197,7 +4412,7 @@ which generates no-arg constructors for classes with specific annotations.</p>
 </tr>
 <tr>
 <td><code>version: string</code></td>
-<td><code>3.4.0</code></td>
+<td><code>3.4.1</code></td>
 <td>The Ktor version used for the <abbr title="Bill of materials">BOM</abbr> and in the generated library catalog entries</td>
 </tr>
 <tr>
@@ -4336,7 +4551,7 @@ which generates no-arg constructors for classes with specific annotations.</p>
 </tr>
 <tr>
 <td><code>version: string</code></td>
-<td><code>4.0.2</code></td>
+<td><code>4.0.5</code></td>
 <td>Spring Boot version</td>
 </tr>
 <tr>
@@ -4372,7 +4587,7 @@ which generates no-arg constructors for classes with specific annotations.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 10, 2026 03:37:14 UTC">March 10, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 27, 2026 11:14:58 UTC">March 27, 2026</span>
   </span>
 
     

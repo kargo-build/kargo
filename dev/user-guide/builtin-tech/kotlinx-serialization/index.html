@@ -6,41 +6,43 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="This page describes how to set up your IDE to work with Kargo.">
+        <meta name="description" content="Kotlin Serialization is the official multiplatform and multi-format serialization library for Kotlin.
+Kargo provides support for it out of the box.
+">
       
       
         <meta name="author" content="Kargo team">
       
       
-        <link rel="canonical" href="https://kargo.build/dev/getting-started/ide-setup/">
+        <link rel="canonical" href="https://kargo.build/dev/user-guide/builtin-tech/kotlinx-serialization/">
       
       
-        <link rel="prev" href="../">
+        <link rel="prev" href="../compose-multiplatform/">
       
       
-        <link rel="next" href="../tutorial/">
+        <link rel="next" href="../kotlinx-rpc/">
       
       
         
       
       
-      <link rel="icon" href="../../images/kargo-icon.svg">
+      <link rel="icon" href="../../../images/kargo-icon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
   
     
       
-        <title>IDE setup - Kargo</title>
+        <title>Kotlinx Serialization - Kargo</title>
       
     
   
 
     
-      <link rel="stylesheet" href="../../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -65,9 +67,9 @@
       
     
     
-      <link rel="stylesheet" href="../../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
   <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -80,17 +82,21 @@
     
   
 <meta property="og:type" content="website" />
-<meta property="og:title" content="IDE setup - Kargo" />
-<meta property="og:description" content="This page describes how to set up your IDE to work with Kargo." />
-<meta property="og:image" content="https://kargo.build/dev/assets/images/social/getting-started/ide-setup.png" />
+<meta property="og:title" content="Kotlinx Serialization - Kargo" />
+<meta property="og:description" content="Kotlin Serialization is the official multiplatform and multi-format serialization library for Kotlin.
+Kargo provides support for it out of the box.
+" />
+<meta property="og:image" content="https://kargo.build/dev/assets/images/social/user-guide/builtin-tech/kotlinx-serialization.png" />
 <meta property="og:image:type" content="image/png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:url" content="https://kargo.build/dev/getting-started/ide-setup/" />
+<meta property="og:url" content="https://kargo.build/dev/user-guide/builtin-tech/kotlinx-serialization/" />
 <meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:title" content="IDE setup - Kargo" />
-<meta property="twitter:description" content="This page describes how to set up your IDE to work with Kargo." />
-<meta property="twitter:image" content="https://kargo.build/dev/assets/images/social/getting-started/ide-setup.png" />
+<meta property="twitter:title" content="Kotlinx Serialization - Kargo" />
+<meta property="twitter:description" content="Kotlin Serialization is the official multiplatform and multi-format serialization library for Kotlin.
+Kargo provides support for it out of the box.
+" />
+<meta property="twitter:image" content="https://kargo.build/dev/assets/images/social/user-guide/builtin-tech/kotlinx-serialization.png" />
 </head>
   
   
@@ -110,7 +116,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ide-setup" class="md-skip">
+        <a href="#kotlin-serialization" class="md-skip">
           Skip to content
         </a>
       
@@ -133,9 +139,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="../.." title="Kargo" class="md-header__button md-logo" aria-label="Kargo" data-md-component="logo">
+    <a href="../../.." title="Kargo" class="md-header__button md-logo" aria-label="Kargo" data-md-component="logo">
       
-  <img src="../../images/kargo-icon.svg" alt="logo">
+  <img src="../../../images/kargo-icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -152,7 +158,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              IDE setup
+              Kotlinx Serialization
             
           </span>
         </div>
@@ -281,7 +287,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../.." class="md-tabs__link">
+      <a href="../../.." class="md-tabs__link">
         
   
   
@@ -298,13 +304,11 @@
   
   
   
-    
-  
   
     
     
-      <li class="md-tabs__item md-tabs__item--active">
-        <a href="../" class="md-tabs__link">
+      <li class="md-tabs__item">
+        <a href="../../../getting-started/" class="md-tabs__link">
           
   
   
@@ -322,11 +326,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../../user-guide/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../" class="md-tabs__link">
           
   
   
@@ -348,7 +354,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../cli/" class="md-tabs__link">
+        <a href="../../../cli/" class="md-tabs__link">
           
   
   
@@ -370,7 +376,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../../reference/project/" class="md-tabs__link">
+        <a href="../../../reference/project/" class="md-tabs__link">
           
   
   
@@ -390,7 +396,7 @@
   
   
     <li class="md-tabs__item">
-      <a href="../../faq/" class="md-tabs__link">
+      <a href="../../../faq/" class="md-tabs__link">
         
   
   
@@ -444,9 +450,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="../.." title="Kargo" class="md-nav__button md-logo" aria-label="Kargo" data-md-component="logo">
+    <a href="../../.." title="Kargo" class="md-nav__button md-logo" aria-label="Kargo" data-md-component="logo">
       
-  <img src="../../images/kargo-icon.svg" alt="logo">
+  <img src="../../../images/kargo-icon.svg" alt="logo">
 
     </a>
     Kargo
@@ -473,7 +479,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../.." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
   
@@ -497,8 +503,6 @@
       
   
   
-    
-  
   
   
     
@@ -518,21 +522,20 @@
     
     
       
-        
-        
-      
       
     
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
         
         
-        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+          
+        
+        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_2" >
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../" class="md-nav__link ">
+            <a href="../../../getting-started/" class="md-nav__link ">
               
   
   
@@ -550,13 +553,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="">
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
           <label class="md-nav__title" for="__nav_2">
             <span class="md-nav__icon md-icon"></span>
             
@@ -573,19 +576,10 @@
                 
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-        
-      
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../../getting-started/ide-setup/" class="md-nav__link">
         
   
   
@@ -601,7 +595,6 @@
   
 
       </a>
-      
     </li>
   
 
@@ -614,7 +607,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../tutorial/" class="md-nav__link">
+      <a href="../../../getting-started/tutorial/" class="md-nav__link">
         
   
   
@@ -642,7 +635,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../migrating-from-maven/" class="md-nav__link">
+      <a href="../../../getting-started/migrating-from-maven/" class="md-nav__link">
         
   
   
@@ -674,6 +667,8 @@
       
   
   
+    
+  
   
   
     
@@ -709,20 +704,21 @@
     
     
       
+        
+        
+      
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../user-guide/" class="md-nav__link ">
+            <a href="../../" class="md-nav__link ">
               
   
   
@@ -740,13 +736,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -766,7 +762,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/basics/" class="md-nav__link">
+      <a href="../../basics/" class="md-nav__link">
         
   
   
@@ -794,7 +790,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/dependencies/" class="md-nav__link">
+      <a href="../../dependencies/" class="md-nav__link">
         
   
   
@@ -822,7 +818,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/git-dependencies/" class="md-nav__link">
+      <a href="../../git-dependencies/" class="md-nav__link">
         
   
   
@@ -850,7 +846,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/multiplatform/" class="md-nav__link">
+      <a href="../../multiplatform/" class="md-nav__link">
         
   
   
@@ -878,7 +874,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/testing/" class="md-nav__link">
+      <a href="../../testing/" class="md-nav__link">
         
   
   
@@ -906,7 +902,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/templates/" class="md-nav__link">
+      <a href="../../templates/" class="md-nav__link">
         
   
   
@@ -973,7 +969,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../user-guide/product-types/" class="md-nav__link ">
+            <a href="../../product-types/" class="md-nav__link ">
               
   
   
@@ -1017,7 +1013,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/product-types/android-app/" class="md-nav__link">
+      <a href="../../product-types/android-app/" class="md-nav__link">
         
   
   
@@ -1045,7 +1041,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/product-types/ios-app/" class="md-nav__link">
+      <a href="../../product-types/ios-app/" class="md-nav__link">
         
   
   
@@ -1073,7 +1069,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/product-types/jvm-app/" class="md-nav__link">
+      <a href="../../product-types/jvm-app/" class="md-nav__link">
         
   
   
@@ -1101,7 +1097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/product-types/jvm-lib/" class="md-nav__link">
+      <a href="../../product-types/jvm-lib/" class="md-nav__link">
         
   
   
@@ -1129,7 +1125,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/product-types/kmp-lib/" class="md-nav__link">
+      <a href="../../product-types/kmp-lib/" class="md-nav__link">
         
   
   
@@ -1157,7 +1153,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/product-types/js-app/" class="md-nav__link">
+      <a href="../../product-types/js-app/" class="md-nav__link">
         
   
   
@@ -1185,7 +1181,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/product-types/native-app/" class="md-nav__link">
+      <a href="../../product-types/native-app/" class="md-nav__link">
         
   
   
@@ -1213,7 +1209,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/product-types/wasm-app/" class="md-nav__link">
+      <a href="../../product-types/wasm-app/" class="md-nav__link">
         
   
   
@@ -1246,8 +1242,10 @@
                 
   
   
+    
   
   
+  
     
     
       
@@ -1270,13 +1268,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" checked>
         
           
           <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
@@ -1297,7 +1293,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1315,7 +1311,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/builtin-tech/compose-multiplatform/" class="md-nav__link">
+      <a href="../compose-multiplatform/" class="md-nav__link">
         
   
   
@@ -1340,10 +1336,37 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../../user-guide/builtin-tech/kotlinx-serialization/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Kotlinx Serialization
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1359,6 +1382,37 @@
   
 
       </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#more-control-over-serialization-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        More control over serialization formats
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1371,7 +1425,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/builtin-tech/kotlinx-rpc/" class="md-nav__link">
+      <a href="../kotlinx-rpc/" class="md-nav__link">
         
   
   
@@ -1399,7 +1453,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/builtin-tech/ktor/" class="md-nav__link">
+      <a href="../ktor/" class="md-nav__link">
         
   
   
@@ -1427,7 +1481,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/builtin-tech/lombok/" class="md-nav__link">
+      <a href="../lombok/" class="md-nav__link">
         
   
   
@@ -1455,7 +1509,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/builtin-tech/spring/" class="md-nav__link">
+      <a href="../spring/" class="md-nav__link">
         
   
   
@@ -1557,7 +1611,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/plugins/overview/" class="md-nav__link">
+      <a href="../../plugins/overview/" class="md-nav__link">
         
   
   
@@ -1585,7 +1639,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/plugins/quick-start/" class="md-nav__link">
+      <a href="../../plugins/quick-start/" class="md-nav__link">
         
   
   
@@ -1613,7 +1667,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/plugins/topics/structure/" class="md-nav__link">
+      <a href="../../plugins/topics/structure/" class="md-nav__link">
         
   
   
@@ -1641,7 +1695,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/plugins/topics/configuration/" class="md-nav__link">
+      <a href="../../plugins/topics/configuration/" class="md-nav__link">
         
   
   
@@ -1669,7 +1723,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/plugins/topics/references/" class="md-nav__link">
+      <a href="../../plugins/topics/references/" class="md-nav__link">
         
   
   
@@ -1697,7 +1751,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/plugins/topics/tasks/" class="md-nav__link">
+      <a href="../../plugins/topics/tasks/" class="md-nav__link">
         
   
   
@@ -1801,7 +1855,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/advanced/native-interop/" class="md-nav__link">
+      <a href="../../advanced/native-interop/" class="md-nav__link">
         
   
   
@@ -1829,7 +1883,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/advanced/jdk-provisioning/" class="md-nav__link">
+      <a href="../../advanced/jdk-provisioning/" class="md-nav__link">
         
   
   
@@ -1857,7 +1911,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/advanced/java-annotation-processing/" class="md-nav__link">
+      <a href="../../advanced/java-annotation-processing/" class="md-nav__link">
         
   
   
@@ -1885,7 +1939,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/advanced/ksp/" class="md-nav__link">
+      <a href="../../advanced/ksp/" class="md-nav__link">
         
   
   
@@ -1913,7 +1967,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/advanced/kotlin-compiler-plugins/" class="md-nav__link">
+      <a href="../../advanced/kotlin-compiler-plugins/" class="md-nav__link">
         
   
   
@@ -1941,7 +1995,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/advanced/maven-like-layout/" class="md-nav__link">
+      <a href="../../advanced/maven-like-layout/" class="md-nav__link">
         
   
   
@@ -1969,7 +2023,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/advanced/maven-plugins/" class="md-nav__link">
+      <a href="../../advanced/maven-plugins/" class="md-nav__link">
         
   
   
@@ -2005,7 +2059,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../user-guide/yaml-primer/" class="md-nav__link">
+      <a href="../../yaml-primer/" class="md-nav__link">
         
   
   
@@ -2065,7 +2119,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../../cli/" class="md-nav__link ">
+            <a href="../../../cli/" class="md-nav__link ">
               
   
   
@@ -2109,7 +2163,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../cli/provisioning/" class="md-nav__link">
+      <a href="../../../cli/provisioning/" class="md-nav__link">
         
   
   
@@ -2202,7 +2256,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/project/" class="md-nav__link">
+      <a href="../../../reference/project/" class="md-nav__link">
         
   
   
@@ -2230,7 +2284,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../reference/module/" class="md-nav__link">
+      <a href="../../../reference/module/" class="md-nav__link">
         
   
   
@@ -2265,7 +2319,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../faq/" class="md-nav__link">
+      <a href="../../../faq/" class="md-nav__link">
         
   
   
@@ -2332,6 +2386,25 @@
     
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#more-control-over-serialization-formats" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        More control over serialization formats
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -2347,7 +2420,7 @@
 
 
   
-    <a href="https://github.com/kargo-build/kargo/edit/main/docs/src/getting-started/ide-setup.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/kargo-build/kargo/edit/main/docs/src/user-guide/builtin-tech/kotlinx-serialization.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -2355,100 +2428,75 @@
   
 
 
-<h1 id="ide-setup">IDE Setup<a class="headerlink" href="#ide-setup" title="Permanent link">&para;</a></h1>
-<details class="question">
-<summary>Do I need to use IntelliJ IDEA?</summary>
-<p>Kargo is a command line tool that stands on its own, so using IntelliJ IDEA is not required.
-If you prefer to work directly with the terminal or in another IDE, check out the <a href="../../cli/">Kargo CLI</a>.</p>
-<p>However, to make the most out of Kargo and its toolability, we recommend using IntelliJ IDEA.
-There are tons of diagnostics and quick fixes that make your life a bliss when working with Kargo.</p>
-</details>
-<ol>
+<h1 id="kotlin-serialization">Kotlin Serialization<a class="headerlink" href="#kotlin-serialization" title="Permanent link">&para;</a></h1>
+<p><a href="https://github.com/Kotlin/kotlinx.serialization">Kotlin Serialization</a> is the official multiplatform and multi-format
+serialization library for Kotlin.</p>
+<p>If you need to (de)serialize Kotlin classes to/from JSON, you can enable Kotlin Serialization it in its simplest form:
+<div class="highlight"><pre><span></span><code><span class="nt">settings</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">kotlin</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">serialization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">json</span><span class="w">  </span><span class="c1"># JSON or other format</span>
+</code></pre></div>
+This snippet configures the compiler to process <code>@Serializable</code> classes, and adds dependencies on the serialization
+runtime and JSON format libraries.</p>
+<p>You can also customize the version of the Kotlin Serialization libraries using the full form of the configuration:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">settings</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">kotlin</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">serialization</span><span class="p">:</span>
+<span class="w">      </span><span class="nt">format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">json</span>
+<span class="w">      </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1.7.3</span>
+</code></pre></div>
+<h2 id="more-control-over-serialization-formats">More control over serialization formats<a class="headerlink" href="#more-control-over-serialization-formats" title="Permanent link">&para;</a></h2>
+<p>If you don't need serialization format dependencies or if you need more control over them, you can use the following:
+<div class="highlight"><pre><span></span><code><span class="nt">settings</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">kotlin</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">serialization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">enabled</span><span class="w"> </span><span class="c1"># configures the compiler and serialization runtime library</span>
+</code></pre></div>
+This snippet on its own only configures the compiler and the serialization runtime library, but doesn't add any format
+dependency. However, it adds a built-in catalog with official serialization formats libraries, which you can use in
+your <code>dependencies</code> section. This is useful in multiple cases:</p>
+<ul>
 <li>
-<p>Preferably use the latest <a href="https://www.jetbrains.com/idea/nextversion/"><span class="twemoji"><!--
-  - Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-  -->
+<p>if you need a format dependency only in tests:
+  <div class="highlight"><pre><span></span><code><span class="nt">settings</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">kotlin</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">serialization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">enabled</span>
 
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="none" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="a" x1="-.717383" x2="24.1455" y1="7.61946" y2="61.2456" gradientUnits="userSpaceOnUse">
-      <stop offset=".1" stop-color="#FC801D"/>
-      <stop offset=".59" stop-color="#FE2857"/>
-    </linearGradient>
-    <linearGradient id="b" x1="4.22243" x2="62.9273" y1="60.0186" y2="1.31316" gradientUnits="userSpaceOnUse">
-      <stop offset=".21" stop-color="#FE2857"/>
-      <stop offset=".7" stop-color="#007EFF"/>
-    </linearGradient>
-  </defs>
-  <path fill="#FF8100" d="m15.9476 5.81641-11.87545.00174C1.82284 5.81815 0 7.64157 0 9.89088V21.3975c0 1.1887.519564 2.3185 1.42196 3.0924L39.5828 57.1997c.7384.6324 1.6786.9803 2.6508.9803h11.8755c2.2493 0 4.0727-1.8234 4.0727-4.0727V42.599c0-1.1887-.5195-2.3186-1.4219-3.0924L18.599 6.79735c-.7383-.63302-1.6786-.98036-2.6514-.98036v-.00058Z"/>
-  <path fill="url(#a)" d="M14.5193 5.81641H4.07273C1.82342 5.81641 0 7.63982 0 9.88913V22.9818c0 .1926.013964.3852.040727.576L5.31782 60.5015c.28683 2.0067 2.00494 3.4967 4.032 3.4967H25.0228c2.2499 0 4.0733-1.824 4.0728-4.0739l-.0047-18.5384c0-.4376-.0704-.8722-.2089-1.287L18.3825 8.60099c-.5544-1.66284-2.1108-2.78458-3.8638-2.78458h.0006Z"/>
-  <path fill="url(#b)" d="M59.9275 0H25.9592c-1.6291 0-3.1017.971054-3.7435 2.46807L6.14767 39.9587c-.21702.5068-.32931 1.0531-.32931 1.6046v18.364C5.81836 62.1766 7.64178 64 9.89109 64H27.8571c.8046 0 1.5912-.2385 2.2609-.6854l32.0687-21.4033c1.1322-.7552 1.8117-2.0265 1.8117-3.3874l.0018-34.45117C64.0002 1.82342 62.1768 0 59.9275 0Z"/>
-  <path fill="#000" d="M52 12H12v40h40V12Z"/>
-  <path fill="#fff" d="M17 29.3856h2.9788v-9.7712H17V17h8.839v2.6144h-2.9788v9.7712h2.9788V32H17v-2.6144Z"/>
-  <path fill="#fff" d="M27.3389 29.3002h2.1538c.4354 0 .8233-.0928 1.1625-.2784.3392-.1857.6016-.4481.7872-.7873.1857-.3392.2785-.7265.2785-1.1625V17h2.9249v10.2748c0 .9001-.2074 1.7092-.6216 2.4271-.4143.7179-.9855 1.2805-1.7143 1.6873-.7288.4074-1.5464.6108-2.4534.6108h-2.5176v-2.6998Z"/>
-  <path fill="#fff" d="M17 44h16v3H17v-3Z"/>
-</svg>
-</span> IntelliJ IDEA EAP</a>. 
-   The best way to get the most recent IDE versions is by using the <a href="https://www.jetbrains.com/lp/toolbox/"><span class="twemoji"><!--
-  - Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-  -->
-
-<svg xmlns="http://www.w3.org/2000/svg" width="48" height="56" fill="none" viewBox="0 0 48 56">
-  <defs>
-    <linearGradient id="a" x1=".254835" x2="48.1428" y1="40.072" y2="15.2" gradientUnits="userSpaceOnUse">
-      <stop offset=".04" stop-color="#FC801D"/>
-      <stop offset=".38" stop-color="#FE2857"/>
-      <stop offset=".99" stop-color="#AF1DF5"/>
-    </linearGradient>
-  </defs>
-  <path fill="#000" d="m24.0068 56 24-14V14l-24 13.9999V56Z"/>
-  <path fill="#fff" d="m39.0068 42-10 6v-4l10-6v4Z"/>
-  <path fill="url(#a)" d="M24.0068 0 .006836 14v28L24.0068 56V28l24-14-24-14Z"/>
-</svg>
-</span> Toolbox App</a>.</p>
+<span class="nt">test-dependencies</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$kotlin.serialization.json</span>
+</code></pre></div></p>
 </li>
 <li>
-<p>Make sure to install the <a href="https://plugins.jetbrains.com/plugin/23076-amper"><span class="twemoji"><!--
-  - Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-  -->
+<p>if you need to customize the scope of the format dependencies:
+  <div class="highlight"><pre><span></span><code><span class="nt">settings</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">kotlin</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">serialization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">enabled</span>
 
-<svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M36 36H4L26.2117 4H35.9778L36 36ZM26.0666 19.6083L21.4439 26.2681H26.0666V19.6083Z" fill="url(#paint0_linear_3772_154)"/>
-<defs>
-<linearGradient id="paint0_linear_3772_154" x1="11.8703" y1="11.8778" x2="36.2903" y2="36.2871" gradientUnits="userSpaceOnUse">
-<stop offset="0.21217" stop-color="#3BEA62"/>
-<stop offset="0.75254" stop-color="#087CFA"/>
-</linearGradient>
-</defs>
-</svg>
-</span> Kargo plugin</a>:</p>
-</li>
-</ol>
-<p><img alt="" src="../../images/ij-plugin.png" /></p>
-<ol>
-<li>
-<p>[Optional] If you want to write code for <span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11"/></svg></span> Apple platforms or share code between several platforms, 
-   install the <a href="https://plugins.jetbrains.com/plugin/14936-kotlin-multiplatform"><span class="twemoji"><!--
-  - Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-  -->
-
-<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M0 22.5629V0.0835311L22.4794 22.5629H0ZM0 25.4372V48H0.0572568L22.6201 25.4372H0ZM25.9906 22.0094L48 0H3.98128L25.9906 22.0094ZM26.0193 26.1028L4.1221 48H47.9164L26.0193 26.1028Z" fill="url(#paint0_radial_4088_319)"/>
-<defs>
-<radialGradient id="paint0_radial_4088_319" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(43.5 4.5) rotate(135) scale(61.5183)">
-<stop stop-color="#37BCFD"/>
-<stop offset="0.580197" stop-color="#7F52FF"/>
-<stop offset="1" stop-color="#C711E1"/>
-</radialGradient>
-</defs>
-</svg>
-</span> Kotlin Multiplatform plugin</a>.</p>
+<span class="nt">dependencies</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">$kotlin.serialization.json</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">compile-only</span>
+</code></pre></div></p>
 </li>
 <li>
-<p>[Optional] If you want to write some Android-specific code, also install the
-   <a href="https://plugins.jetbrains.com/plugin/22989-android"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" width="152" height="89" viewBox="0 0 152 89" fill="none"><g clip-path="url(#a)"><path fill="#34A853" d="M151.025 85.224q-.071-.464-.147-.92a75.665 75.665 0 0 0-7.546-22.597 76.5 76.5 0 0 0-5.511-8.995 76 76 0 0 0-8.322-9.808 76.034 76.034 0 0 0-13.398-10.626q.042-.074.085-.148 2.286-3.948 4.572-7.897l4.47-7.712a3946 3946 0 0 0 3.208-5.54q.38-.658.604-1.355a6.97 6.97 0 0 0-.652-5.702 6.9 6.9 0 0 0-2.406-2.398 7 7 0 0 0-2.954-.95 7 7 0 0 0-2.376.206 6.93 6.93 0 0 0-4.22 3.227q-1.606 2.77-3.208 5.54l-4.47 7.712c-1.523 2.634-3.05 5.263-4.573 7.897q-.25.43-.5.865c-.232-.092-.46-.184-.692-.272-8.398-3.205-17.511-4.958-27.036-4.958q-.39-.001-.78.004A75.7 75.7 0 0 0 50.977 25q-1.317.46-2.608.968-.234-.404-.467-.806-2.286-3.95-4.573-7.897l-4.47-7.713a4385 4385 0 0 1-3.208-5.54A6.93 6.93 0 0 0 29.055.58a6.9 6.9 0 0 0-2.954.95 6.92 6.92 0 0 0-3.157 4.185 6.96 6.96 0 0 0 .703 5.27l3.208 5.54 4.47 7.713c1.523 2.634 3.05 5.263 4.573 7.897.01.022.025.044.036.066a76.3 76.3 0 0 0-13.527 10.711 76.5 76.5 0 0 0-8.322 9.808 75.4 75.4 0 0 0-5.51 8.995 75.7 75.7 0 0 0-7.546 22.597 76.038 76.038 0 0 0-.581 4.247h151a77 77 0 0 0-.434-3.327z"/><path fill="#202124" d="M115.225 67.663c3.022-2.012 3.461-6.668.981-10.4-2.48-3.73-6.939-5.123-9.96-3.11-3.021 2.012-3.46 6.668-.98 10.4 2.479 3.73 6.938 5.123 9.959 3.11M46.762 64.564c2.48-3.73 2.04-8.387-.98-10.4-3.022-2.012-7.481-.619-9.96 3.112s-2.041 8.387.98 10.4 7.48.62 9.96-3.112"/></g><defs><clipPath id="a"><path fill="#fff" d="M.459.555h151v88h-151z"/></clipPath></defs></svg></span> Android plugin</a>.</p>
+<p>if you need to expose format dependencies transitively:
+  <div class="highlight"><pre><span></span><code><span class="nt">settings</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">kotlin</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">serialization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">enabled</span>
+
+<span class="nt">dependencies</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">$kotlin.serialization.json</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">exported</span>
+</code></pre></div></p>
 </li>
-</ol>
+<li>
+<p>if you need multiple formats:
+  <div class="highlight"><pre><span></span><code><span class="nt">settings</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">kotlin</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">serialization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">enabled</span>
+
+<span class="nt">dependencies</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$kotlin.serialization.json</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">$kotlin.serialization.protobuf</span>
+</code></pre></div></p>
+</li>
+</ul>
 
 
 
@@ -2505,7 +2553,7 @@ There are tons of diagnostics and quick fixes that make your life a bliss when w
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../" class="md-footer__link md-footer__link--prev" aria-label="Previous: Getting started">
+          <a href="../compose-multiplatform/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Compose Multiplatform">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -2515,20 +2563,20 @@ There are tons of diagnostics and quick fixes that make your life a bliss when w
                 Previous
               </span>
               <div class="md-ellipsis">
-                Getting started
+                Compose Multiplatform
               </div>
             </div>
           </a>
         
         
           
-          <a href="../tutorial/" class="md-footer__link md-footer__link--next" aria-label="Next: Tutorial">
+          <a href="../kotlinx-rpc/" class="md-footer__link md-footer__link--next" aria-label="Next: Kotlinx RPC">
             <div class="md-footer__title">
               <span class="md-footer__direction">
                 Next
               </span>
               <div class="md-ellipsis">
-                Tutorial
+                Kotlinx RPC
               </div>
             </div>
             <div class="md-footer__button md-icon">
@@ -2569,10 +2617,10 @@ There are tons of diagnostics and quick fixes that make your life a bliss when w
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "../..", "features": ["content.action.edit", "content.code.annotate", "content.code.copy", "content.footnote.tooltips", "content.tooltips", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.preview", "navigation.tabs", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.annotate", "content.code.copy", "content.footnote.tooltips", "content.tooltips", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.preview", "navigation.tabs", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>

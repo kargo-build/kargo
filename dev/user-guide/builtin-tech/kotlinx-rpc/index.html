@@ -6,39 +6,43 @@
       <meta charset="utf-8">
       <meta name="viewport" content="width=device-width,initial-scale=1">
       
-        <meta name="description" content="Frequently asked questions about Kargo.">
+        <meta name="description" content="kotlinx.rpc is a Kotlin Multiplatform library providing tools to implement Remote Procedure Calls (RPC) easily. 
+Amper provides support for it out of the box.
+">
       
       
         <meta name="author" content="Kargo team">
       
       
-        <link rel="canonical" href="https://kargo.build/dev/faq/">
+        <link rel="canonical" href="https://kargo.build/dev/user-guide/builtin-tech/kotlinx-rpc/">
       
       
-        <link rel="prev" href="../reference/module/">
+        <link rel="prev" href="../kotlinx-serialization/">
       
+      
+        <link rel="next" href="../ktor/">
       
       
         
       
       
-      <link rel="icon" href="../images/kargo-icon.svg">
+      <link rel="icon" href="../../../images/kargo-icon.svg">
       <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
   
     
       
-        <title>FAQ - Kargo</title>
+        <title>Kotlinx RPC - Kargo</title>
       
     
   
 
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.484c7ddc.min.css">
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.484c7ddc.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.ab4e12ef.min.css">
       
       
 
@@ -63,9 +67,9 @@
       
     
     
-      <link rel="stylesheet" href="../stylesheets/extra.css">
+      <link rel="stylesheet" href="../../../stylesheets/extra.css">
     
-    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
   <!-- Google Tag Manager -->
   <script>(function(w,d,s,l,i){w[l]=w[l]||[];w[l].push({'gtm.start':
@@ -78,17 +82,21 @@
     
   
 <meta property="og:type" content="website" />
-<meta property="og:title" content="FAQ - Kargo" />
-<meta property="og:description" content="Frequently asked questions about Kargo." />
-<meta property="og:image" content="https://kargo.build/dev/assets/images/social/faq.png" />
+<meta property="og:title" content="Kotlinx RPC - Kargo" />
+<meta property="og:description" content="kotlinx.rpc is a Kotlin Multiplatform library providing tools to implement Remote Procedure Calls (RPC) easily. 
+Amper provides support for it out of the box.
+" />
+<meta property="og:image" content="https://kargo.build/dev/assets/images/social/user-guide/builtin-tech/kotlinx-rpc.png" />
 <meta property="og:image:type" content="image/png" />
 <meta property="og:image:width" content="1200" />
 <meta property="og:image:height" content="630" />
-<meta property="og:url" content="https://kargo.build/dev/faq/" />
+<meta property="og:url" content="https://kargo.build/dev/user-guide/builtin-tech/kotlinx-rpc/" />
 <meta property="twitter:card" content="summary_large_image" />
-<meta property="twitter:title" content="FAQ - Kargo" />
-<meta property="twitter:description" content="Frequently asked questions about Kargo." />
-<meta property="twitter:image" content="https://kargo.build/dev/assets/images/social/faq.png" />
+<meta property="twitter:title" content="Kotlinx RPC - Kargo" />
+<meta property="twitter:description" content="kotlinx.rpc is a Kotlin Multiplatform library providing tools to implement Remote Procedure Calls (RPC) easily. 
+Amper provides support for it out of the box.
+" />
+<meta property="twitter:image" content="https://kargo.build/dev/assets/images/social/user-guide/builtin-tech/kotlinx-rpc.png" />
 </head>
   
   
@@ -108,7 +116,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#general" class="md-skip">
+        <a href="#kotlinx-rpc" class="md-skip">
           Skip to content
         </a>
       
@@ -131,9 +139,9 @@
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Kargo" class="md-header__button md-logo" aria-label="Kargo" data-md-component="logo">
+    <a href="../../.." title="Kargo" class="md-header__button md-logo" aria-label="Kargo" data-md-component="logo">
       
-  <img src="../images/kargo-icon.svg" alt="logo">
+  <img src="../../../images/kargo-icon.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -150,7 +158,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              FAQ
+              Kotlinx RPC
             
           </span>
         </div>
@@ -279,7 +287,7 @@
   
   
     <li class="md-tabs__item">
-      <a href=".." class="md-tabs__link">
+      <a href="../../.." class="md-tabs__link">
         
   
   
@@ -300,7 +308,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../getting-started/" class="md-tabs__link">
+        <a href="../../../getting-started/" class="md-tabs__link">
           
   
   
@@ -318,11 +326,13 @@
   
   
   
+    
+  
   
     
     
-      <li class="md-tabs__item">
-        <a href="../user-guide/" class="md-tabs__link">
+      <li class="md-tabs__item md-tabs__item--active">
+        <a href="../../" class="md-tabs__link">
           
   
   
@@ -344,7 +354,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../cli/" class="md-tabs__link">
+        <a href="../../../cli/" class="md-tabs__link">
           
   
   
@@ -366,7 +376,7 @@
     
     
       <li class="md-tabs__item">
-        <a href="../reference/project/" class="md-tabs__link">
+        <a href="../../../reference/project/" class="md-tabs__link">
           
   
   
@@ -384,11 +394,9 @@
   
   
   
-    
   
-  
-    <li class="md-tabs__item md-tabs__item--active">
-      <a href="./" class="md-tabs__link">
+    <li class="md-tabs__item">
+      <a href="../../../faq/" class="md-tabs__link">
         
   
   
@@ -431,9 +439,7 @@
           
             
               
-                
-              
-              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" hidden>
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
                     
@@ -444,9 +450,9 @@
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Kargo" class="md-nav__button md-logo" aria-label="Kargo" data-md-component="logo">
+    <a href="../../.." title="Kargo" class="md-nav__button md-logo" aria-label="Kargo" data-md-component="logo">
       
-  <img src="../images/kargo-icon.svg" alt="logo">
+  <img src="../../../images/kargo-icon.svg" alt="logo">
 
     </a>
     Kargo
@@ -473,7 +479,7 @@
   
   
     <li class="md-nav__item">
-      <a href=".." class="md-nav__link">
+      <a href="../../.." class="md-nav__link">
         
   
   
@@ -529,7 +535,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../getting-started/" class="md-nav__link ">
+            <a href="../../../getting-started/" class="md-nav__link ">
               
   
   
@@ -573,7 +579,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/ide-setup/" class="md-nav__link">
+      <a href="../../../getting-started/ide-setup/" class="md-nav__link">
         
   
   
@@ -601,7 +607,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/tutorial/" class="md-nav__link">
+      <a href="../../../getting-started/tutorial/" class="md-nav__link">
         
   
   
@@ -629,7 +635,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../getting-started/migrating-from-maven/" class="md-nav__link">
+      <a href="../../../getting-started/migrating-from-maven/" class="md-nav__link">
         
   
   
@@ -661,6 +667,8 @@
       
   
   
+    
+  
   
   
     
@@ -696,20 +704,21 @@
     
     
       
+        
+        
+      
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--section md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../user-guide/" class="md-nav__link ">
+            <a href="../../" class="md-nav__link ">
               
   
   
@@ -727,13 +736,13 @@
             </a>
             
               
-              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="">
                 <span class="md-nav__icon md-icon"></span>
               </label>
             
           </div>
         
-        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3">
             <span class="md-nav__icon md-icon"></span>
             
@@ -753,7 +762,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/basics/" class="md-nav__link">
+      <a href="../../basics/" class="md-nav__link">
         
   
   
@@ -781,7 +790,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/dependencies/" class="md-nav__link">
+      <a href="../../dependencies/" class="md-nav__link">
         
   
   
@@ -809,7 +818,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/git-dependencies/" class="md-nav__link">
+      <a href="../../git-dependencies/" class="md-nav__link">
         
   
   
@@ -837,7 +846,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/multiplatform/" class="md-nav__link">
+      <a href="../../multiplatform/" class="md-nav__link">
         
   
   
@@ -865,7 +874,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/testing/" class="md-nav__link">
+      <a href="../../testing/" class="md-nav__link">
         
   
   
@@ -893,7 +902,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/templates/" class="md-nav__link">
+      <a href="../../templates/" class="md-nav__link">
         
   
   
@@ -960,7 +969,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../user-guide/product-types/" class="md-nav__link ">
+            <a href="../../product-types/" class="md-nav__link ">
               
   
   
@@ -1004,7 +1013,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/product-types/android-app/" class="md-nav__link">
+      <a href="../../product-types/android-app/" class="md-nav__link">
         
   
   
@@ -1032,7 +1041,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/product-types/ios-app/" class="md-nav__link">
+      <a href="../../product-types/ios-app/" class="md-nav__link">
         
   
   
@@ -1060,7 +1069,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/product-types/jvm-app/" class="md-nav__link">
+      <a href="../../product-types/jvm-app/" class="md-nav__link">
         
   
   
@@ -1088,7 +1097,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/product-types/jvm-lib/" class="md-nav__link">
+      <a href="../../product-types/jvm-lib/" class="md-nav__link">
         
   
   
@@ -1116,7 +1125,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/product-types/kmp-lib/" class="md-nav__link">
+      <a href="../../product-types/kmp-lib/" class="md-nav__link">
         
   
   
@@ -1144,7 +1153,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/product-types/js-app/" class="md-nav__link">
+      <a href="../../product-types/js-app/" class="md-nav__link">
         
   
   
@@ -1172,7 +1181,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/product-types/native-app/" class="md-nav__link">
+      <a href="../../product-types/native-app/" class="md-nav__link">
         
   
   
@@ -1200,7 +1209,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/product-types/wasm-app/" class="md-nav__link">
+      <a href="../../product-types/wasm-app/" class="md-nav__link">
         
   
   
@@ -1233,8 +1242,10 @@
                 
   
   
+    
   
   
+  
     
     
       
@@ -1257,13 +1268,11 @@
       
     
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
         
         
-          
-        
-        <input class="md-nav__toggle md-toggle md-toggle--indeterminate" type="checkbox" id="__nav_3_9" >
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3_9" checked>
         
           
           <label class="md-nav__link" for="__nav_3_9" id="__nav_3_9_label" tabindex="0">
@@ -1284,7 +1293,7 @@
             <span class="md-nav__icon md-icon"></span>
           </label>
         
-        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="false">
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_3_9_label" aria-expanded="true">
           <label class="md-nav__title" for="__nav_3_9">
             <span class="md-nav__icon md-icon"></span>
             
@@ -1302,7 +1311,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/builtin-tech/compose-multiplatform/" class="md-nav__link">
+      <a href="../compose-multiplatform/" class="md-nav__link">
         
   
   
@@ -1330,7 +1339,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/builtin-tech/kotlinx-serialization/" class="md-nav__link">
+      <a href="../kotlinx-serialization/" class="md-nav__link">
         
   
   
@@ -1355,10 +1364,19 @@
                 
   
   
+    
   
   
-    <li class="md-nav__item">
-      <a href="../user-guide/builtin-tech/kotlinx-rpc/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         
   
   
@@ -1374,6 +1392,7 @@
   
 
       </a>
+      
     </li>
   
 
@@ -1386,7 +1405,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/builtin-tech/ktor/" class="md-nav__link">
+      <a href="../ktor/" class="md-nav__link">
         
   
   
@@ -1414,7 +1433,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/builtin-tech/lombok/" class="md-nav__link">
+      <a href="../lombok/" class="md-nav__link">
         
   
   
@@ -1442,7 +1461,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/builtin-tech/spring/" class="md-nav__link">
+      <a href="../spring/" class="md-nav__link">
         
   
   
@@ -1544,7 +1563,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/plugins/overview/" class="md-nav__link">
+      <a href="../../plugins/overview/" class="md-nav__link">
         
   
   
@@ -1572,7 +1591,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/plugins/quick-start/" class="md-nav__link">
+      <a href="../../plugins/quick-start/" class="md-nav__link">
         
   
   
@@ -1600,7 +1619,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/plugins/topics/structure/" class="md-nav__link">
+      <a href="../../plugins/topics/structure/" class="md-nav__link">
         
   
   
@@ -1628,7 +1647,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/plugins/topics/configuration/" class="md-nav__link">
+      <a href="../../plugins/topics/configuration/" class="md-nav__link">
         
   
   
@@ -1656,7 +1675,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/plugins/topics/references/" class="md-nav__link">
+      <a href="../../plugins/topics/references/" class="md-nav__link">
         
   
   
@@ -1684,7 +1703,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/plugins/topics/tasks/" class="md-nav__link">
+      <a href="../../plugins/topics/tasks/" class="md-nav__link">
         
   
   
@@ -1788,7 +1807,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/advanced/native-interop/" class="md-nav__link">
+      <a href="../../advanced/native-interop/" class="md-nav__link">
         
   
   
@@ -1816,7 +1835,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/advanced/jdk-provisioning/" class="md-nav__link">
+      <a href="../../advanced/jdk-provisioning/" class="md-nav__link">
         
   
   
@@ -1844,7 +1863,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/advanced/java-annotation-processing/" class="md-nav__link">
+      <a href="../../advanced/java-annotation-processing/" class="md-nav__link">
         
   
   
@@ -1872,7 +1891,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/advanced/ksp/" class="md-nav__link">
+      <a href="../../advanced/ksp/" class="md-nav__link">
         
   
   
@@ -1900,7 +1919,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/advanced/kotlin-compiler-plugins/" class="md-nav__link">
+      <a href="../../advanced/kotlin-compiler-plugins/" class="md-nav__link">
         
   
   
@@ -1928,7 +1947,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/advanced/maven-like-layout/" class="md-nav__link">
+      <a href="../../advanced/maven-like-layout/" class="md-nav__link">
         
   
   
@@ -1956,7 +1975,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/advanced/maven-plugins/" class="md-nav__link">
+      <a href="../../advanced/maven-plugins/" class="md-nav__link">
         
   
   
@@ -1992,7 +2011,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../user-guide/yaml-primer/" class="md-nav__link">
+      <a href="../../yaml-primer/" class="md-nav__link">
         
   
   
@@ -2052,7 +2071,7 @@
         
           
           <div class="md-nav__link md-nav__container">
-            <a href="../cli/" class="md-nav__link ">
+            <a href="../../../cli/" class="md-nav__link ">
               
   
   
@@ -2096,7 +2115,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../cli/provisioning/" class="md-nav__link">
+      <a href="../../../cli/provisioning/" class="md-nav__link">
         
   
   
@@ -2189,7 +2208,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/project/" class="md-nav__link">
+      <a href="../../../reference/project/" class="md-nav__link">
         
   
   
@@ -2217,7 +2236,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../reference/module/" class="md-nav__link">
+      <a href="../../../reference/module/" class="md-nav__link">
         
   
   
@@ -2249,35 +2268,10 @@
       
   
   
-    
   
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          
-  
-  
-  <span class="md-ellipsis">
-    
-  
-    FAQ
-  
-
-    
-  </span>
-  
-  
-
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../../faq/" class="md-nav__link">
         
   
   
@@ -2293,311 +2287,6 @@
   
 
       </a>
-      
-        
-
-<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#general" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        General
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="General">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#is-kargo-a-brand-new-build-tool-from-jetbrains" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Is Kargo a brand-new build tool from JetBrains?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#do-you-plan-to-support-only-kotlin" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Do you plan to support only Kotlin?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#which-target-platforms-are-supported" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Which target platforms are supported?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#does-kargo-support-compose-multiplatform" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Does Kargo support Compose Multiplatform?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#does-kargo-support-kotlinjs-or-kotlinwasm-projects" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Does Kargo support Kotlin/JS or Kotlin/Wasm projects?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#what-functionality-do-you-plan-to-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What functionality do you plan to support?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#will-kargo-be-open-source" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Will Kargo be open source?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#when-will-kargo-be-released-as-stable" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        When will Kargo be released as stable?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#should-i-start-my-next-project-with-kargo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Should I start my next project with Kargo?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#should-i-migrate-my-existing-projects" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Should I migrate my existing projects?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-do-i-report-a-bug" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How do I report a bug?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-dont-you-use-kotlin-for-kargos-configuration-files" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why don’t you use Kotlin for Kargo's configuration files?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-did-you-have-a-gradle-based-option-to-use-kargo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why did you have a Gradle-based option to use Kargo?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-not-simply-improve-gradle" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why not simply improve Gradle?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#what-about-gradle-extensibility-and-plugins" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What about Gradle extensibility and plugins?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-do-kargo-and-declarative-gradle-relate-to-each-other" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How do Kargo and Declarative Gradle relate to each other?
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Usage
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Usage">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-are-the-requirements-to-use-kargo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What are the requirements to use Kargo?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-do-i-create-a-new-kargo-project" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How do I create a new Kargo project?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-do-i-create-a-multi-module-project-in-kargo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How do I create a multi-module project in Kargo?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#is-there-an-automated-migration-tool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Is there an automated migration tool?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#feature-x-is-not-yet-supported-what-can-i-do" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Feature X is not yet supported, what can I do?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#can-i-write-a-custom-task-or-use-a-plugin" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Can I write a custom task or use a plugin?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-can-i-use-c-interop-in-kargo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How can I use C-interop in Kargo?
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -2637,8 +2326,6 @@
             
             
               
-                
-              
               <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
                 <div class="md-sidebar__scrollwrap">
                   <div class="md-sidebar__inner">
@@ -2648,301 +2335,8 @@
   
   
   
+    
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Table of contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#general" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        General
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="General">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#is-kargo-a-brand-new-build-tool-from-jetbrains" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Is Kargo a brand-new build tool from JetBrains?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#do-you-plan-to-support-only-kotlin" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Do you plan to support only Kotlin?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#which-target-platforms-are-supported" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Which target platforms are supported?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#does-kargo-support-compose-multiplatform" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Does Kargo support Compose Multiplatform?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#does-kargo-support-kotlinjs-or-kotlinwasm-projects" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Does Kargo support Kotlin/JS or Kotlin/Wasm projects?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#what-functionality-do-you-plan-to-support" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What functionality do you plan to support?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#will-kargo-be-open-source" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Will Kargo be open source?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#when-will-kargo-be-released-as-stable" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        When will Kargo be released as stable?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#should-i-start-my-next-project-with-kargo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Should I start my next project with Kargo?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#should-i-migrate-my-existing-projects" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Should I migrate my existing projects?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-do-i-report-a-bug" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How do I report a bug?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-dont-you-use-kotlin-for-kargos-configuration-files" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why don’t you use Kotlin for Kargo's configuration files?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-did-you-have-a-gradle-based-option-to-use-kargo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why did you have a Gradle-based option to use Kargo?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#why-not-simply-improve-gradle" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Why not simply improve Gradle?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#what-about-gradle-extensibility-and-plugins" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What about Gradle extensibility and plugins?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-do-kargo-and-declarative-gradle-relate-to-each-other" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How do Kargo and Declarative Gradle relate to each other?
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#usage" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Usage
-      
-    </span>
-  </a>
-  
-    <nav class="md-nav" aria-label="Usage">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#what-are-the-requirements-to-use-kargo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        What are the requirements to use Kargo?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-do-i-create-a-new-kargo-project" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How do I create a new Kargo project?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-do-i-create-a-multi-module-project-in-kargo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How do I create a multi-module project in Kargo?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#is-there-an-automated-migration-tool" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Is there an automated migration tool?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#feature-x-is-not-yet-supported-what-can-i-do" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Feature X is not yet supported, what can I do?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#can-i-write-a-custom-task-or-use-a-plugin" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        Can I write a custom task or use a plugin?
-      
-    </span>
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#how-can-i-use-c-interop-in-kargo" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        How can I use C-interop in Kargo?
-      
-    </span>
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
   
 </nav>
                   </div>
@@ -2956,12 +2350,10 @@
               <article class="md-content__inner md-typeset">
                 
                   
-  
-
 
 
   
-    <a href="https://github.com/kargo-build/kargo/edit/main/docs/src/faq.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
+    <a href="https://github.com/kargo-build/kargo/edit/main/docs/src/user-guide/builtin-tech/kotlinx-rpc.md" title="Edit this page" class="md-content__button md-icon" rel="edit">
       
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4zm10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1z"/></svg>
     </a>
@@ -2969,145 +2361,26 @@
   
 
 
-  <h1>FAQ</h1>
-
-<h2 id="general">General<a class="headerlink" href="#general" title="Permanent link">&para;</a></h2>
-<h3 id="is-kargo-a-brand-new-build-tool-from-jetbrains">Is Kargo a brand-new build tool from JetBrains?<a class="headerlink" href="#is-kargo-a-brand-new-build-tool-from-jetbrains" title="Permanent link">&para;</a></h3>
-<p>Yes, Kargo is a new build tool with a focus on user experience and IDE support.</p>
-<h3 id="do-you-plan-to-support-only-kotlin">Do you plan to support only Kotlin?<a class="headerlink" href="#do-you-plan-to-support-only-kotlin" title="Permanent link">&para;</a></h3>
-<p>Kargo already supports both Kotlin and Java as first-class citizens.
-Also, because one of Kargo's main targets is Kotlin Multiplatform projects, it supports Swift and Objective-C for iOS.</p>
-<p>We’ll investigate other tech stacks in the future based on the demand for them.</p>
-<h3 id="which-target-platforms-are-supported">Which target platforms are supported?<a class="headerlink" href="#which-target-platforms-are-supported" title="Permanent link">&para;</a></h3>
-<p>Currently, you can create applications for the JVM, Android, iOS, macOS, Linux, Windows, but also JS and WASM (although
-those cannot be run directly with Kargo).</p>
-<p>Libraries can be created for all Kotlin Multiplatform targets.</p>
-<h3 id="does-kargo-support-compose-multiplatform">Does Kargo support Compose Multiplatform?<a class="headerlink" href="#does-kargo-support-compose-multiplatform" title="Permanent link">&para;</a></h3>
-<p>Yes, you can configure Compose for Android, iOS, and desktop.
-Check out our <a href="../user-guide/builtin-tech/compose-multiplatform/">Compose Multiplatform guide</a>.</p>
-<h3 id="does-kargo-support-kotlinjs-or-kotlinwasm-projects">Does Kargo support Kotlin/JS or Kotlin/Wasm projects?<a class="headerlink" href="#does-kargo-support-kotlinjs-or-kotlinwasm-projects" title="Permanent link">&para;</a></h3>
-<p>Yes, but it doesn't provide tooling to work on full stack web projects yet. For instance, Kargo doesn't install any 
-browser or Node.js runtime, doesn't generate or process any HTML entry point, and cannot run <code>js/app</code> modules on its own.</p>
-<h3 id="what-functionality-do-you-plan-to-support">What functionality do you plan to support?<a class="headerlink" href="#what-functionality-do-you-plan-to-support" title="Permanent link">&para;</a></h3>
-<p>We plan to cover all the common use cases based on demand.
-At the moment, we’re working on extensibility, publication, and exploring Maven migration and integration.</p>
-<h3 id="will-kargo-be-open-source">Will Kargo be open source?<a class="headerlink" href="#will-kargo-be-open-source" title="Permanent link">&para;</a></h3>
-<p>Kargo is already open source. Check out our <a href="https://github.com/kargo-build/kargo">GitHub repository</a> to see what we're 
-up to!</p>
-<h3 id="when-will-kargo-be-released-as-stable">When will Kargo be released as stable?<a class="headerlink" href="#when-will-kargo-be-released-as-stable" title="Permanent link">&para;</a></h3>
-<p>Right now, we’re focusing on getting feedback and understanding your needs. Based on that, we’ll be able to provide a
-more accurate estimate of a release date sometime in the future.</p>
-<h3 id="should-i-start-my-next-project-with-kargo">Should I start my next project with Kargo?<a class="headerlink" href="#should-i-start-my-next-project-with-kargo" title="Permanent link">&para;</a></h3>
-<p>You’re welcome to use it in any type of project. However, please understand that Kargo is still in the experimental
-phase, and we expect things to change.</p>
-<h3 id="should-i-migrate-my-existing-projects">Should I migrate my existing projects?<a class="headerlink" href="#should-i-migrate-my-existing-projects" title="Permanent link">&para;</a></h3>
-<p>Understanding real-world scenarios is crucial for us to provide a better experience, so from our side we’d love
-to hear about the challenges you may face porting existing projects. However, please understand that the project is
-still in the experimental phase, and we cannot guarantee that all scenarios can be supported.</p>
-<h3 id="how-do-i-report-a-bug">How do I report a bug?<a class="headerlink" href="#how-do-i-report-a-bug" title="Permanent link">&para;</a></h3>
-<p>Please report problems to our <a href="https://youtrack.jetbrains.com/issues/AMPER"><span class="twemoji"><!--
-  - Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+<h1 id="kotlinx-rpc"><span class="twemoji"><?xml version="1.0" encoding="UTF-8"?><!--
+  - Copyright 2023-2024 JetBrains s.r.o and contributors. Use of this source code is governed by the Apache 2.0 license.
   -->
 
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="none" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="a" x1="-.102411" x2="64.0532" y1="32.0002" y2="32.0002" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FB43FF"/>
-      <stop offset=".97" stop-color="#FB406D"/>
-    </linearGradient>
-  </defs>
-  <path fill="url(#a)" d="M1.30634 51.2446c-.09688-.0713-.12875-.2019-.07625-.31L8.86571 35.209.058214 24.6908c-.08875-.1056-.074375-.2637.031875-.3518L25.7788 2.93209C30.3495-.877908 36.967-.985408 41.6626 2.67147c4.6937 3.65687 6.1937 10.08813 3.5969 15.43623l-2.7994 5.7669c1.0919-.3663 2.1725-.6994 3.2412-.9988l12.6738-3.6406c.1381-.04.2819.045.3131.1856l5.3056 23.585c.0325.1457-.0662.2882-.215.3069-1.6818.2119-10.8575 1.53-22.2812 6.3294-12.9431 5.4362-21.4844 13.1625-22.6944 14.2925-.0894.0837-.2206.0869-.3187.0144L1.30634 51.2446Z"/>
-  <path fill="#000" d="M52 12H12v40h40V12Z"/>
-  <path fill="#fff" d="m21.4666 26.3709-5.4881-9.3787h3.1513l3.3981 5.9919.3969.8575.3968-.8682 3.3119-5.9812h3.0975l-5.4025 9.3575v5.6487h-2.8619v-5.6275Z"/>
-  <path fill="#fff" d="M33 43.9984H17v3h16v-3Z"/>
-  <path fill="#fff" d="M42.3248 16.9922H30.2879l-.0006 2.6369h4.5662v12.3693h2.9263V19.6291h4.545v-2.6369Z"/>
-</svg>
-</span> YouTrack issue tracker</a>.
-Since this project is in the experimental phase, we would also greatly appreciate feedback and suggestions regarding 
-the configuration experience – join our 
-<a href="https://kotlinlang.slack.com/archives/C062WG3A7T8"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 15a2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2h2zm1 0a2 2 0 0 1 2-2 2 2 0 0 1 2 2v5a2 2 0 0 1-2 2 2 2 0 0 1-2-2zm2-8a2 2 0 0 1-2-2 2 2 0 0 1 2-2 2 2 0 0 1 2 2v2zm0 1a2 2 0 0 1 2 2 2 2 0 0 1-2 2H4a2 2 0 0 1-2-2 2 2 0 0 1 2-2zm8 2a2 2 0 0 1 2-2 2 2 0 0 1 2 2 2 2 0 0 1-2 2h-2zm-1 0a2 2 0 0 1-2 2 2 2 0 0 1-2-2V5a2 2 0 0 1 2-2 2 2 0 0 1 2 2zm-2 8a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-2-2v-2zm0-1a2 2 0 0 1-2-2 2 2 0 0 1 2-2h5a2 2 0 0 1 2 2 2 2 0 0 1-2 2z"/></svg></span> Slack channel</a> for discussion.</p>
-<h3 id="why-dont-you-use-kotlin-for-kargos-configuration-files">Why don’t you use Kotlin for Kargo's configuration files?<a class="headerlink" href="#why-dont-you-use-kotlin-for-kargos-configuration-files" title="Permanent link">&para;</a></h3>
-<p>Currently, we use YAML as a simple and readable markup language. It allows us to experiment with the UX and the IDE
-support much faster. We’ll review the language choice as we proceed with the design and based on demand. The Kotlin DSL,
-or a limited form thereof, is one of the possible options.</p>
-<p>Having said that, we believe that the declarative approach to project configuration has significant advantages over the
-imperative approach. Declarative configuration is easily toolable, recovery from errors is much easier, and
-interpretation is much faster. These properties are critical for a good UX.</p>
-<p>Our final language choice will be made based on the overall UX it provides.</p>
-<h3 id="why-did-you-have-a-gradle-based-option-to-use-kargo">Why did you have a Gradle-based option to use Kargo?<a class="headerlink" href="#why-did-you-have-a-gradle-based-option-to-use-kargo" title="Permanent link">&para;</a></h3>
-<p>In the initial Kargo prototype, our main focus was improving the user experience and toolability of build configuration.
-Gradle, as a well-tested build engine, allowed us to start experimenting with the UX of the configuration very quickly.
-What’s more, smooth interoperability with Gradle allowed using Kargo in existing projects, which is important if we want
-to get feedback from real-world use cases.</p>
-<p>Now, Kargo is a standalone build tool, which allows us to improve the IDE support and workflows even further.</p>
-<h3 id="why-not-simply-improve-gradle">Why not simply improve Gradle?<a class="headerlink" href="#why-not-simply-improve-gradle" title="Permanent link">&para;</a></h3>
-<p>We believe there is room to improve the project configuration experience and IDE support.
-With Kargo, we want to show you our design and get your feedback, as it will help us to decide which direction to take
-the design.</p>
-<p>At the same time, we are also <a href="https://blog.gradle.org/declarative-gradle">working with the Gradle team</a> to improve
-Gradle support in our IDEs and Gradle itself.</p>
-<h3 id="what-about-gradle-extensibility-and-plugins">What about Gradle extensibility and plugins?<a class="headerlink" href="#what-about-gradle-extensibility-and-plugins" title="Permanent link">&para;</a></h3>
-<p>We aim to support most of the Kotlin and Kotlin Multiplatform use cases out of the box and offer a reasonable level of
-extensibility.</p>
-<h3 id="how-do-kargo-and-declarative-gradle-relate-to-each-other">How do Kargo and Declarative Gradle relate to each other?<a class="headerlink" href="#how-do-kargo-and-declarative-gradle-relate-to-each-other" title="Permanent link">&para;</a></h3>
-<p>Both projects aim to improve the developer experience and the IDE support, but from opposite directions and with
-different constraints. Kargo's approach is to design, from the ground up, a tool that is easy to use for the developers
-regardless of their background, with great IDE support in mind, and focused on specific use-cases.
-The <a href="https://blog.gradle.org/declarative-gradle">Declarative Gradle project</a> approaches the same goal from the other end, 
-improving the developer experience and the IDE support in an already exising powerful tool. </p>
-<p>While both projects are still experimental, it's important that you provide your feedback to shape the future development.</p>
-<h2 id="usage">Usage<a class="headerlink" href="#usage" title="Permanent link">&para;</a></h2>
-<h3 id="what-are-the-requirements-to-use-kargo">What are the requirements to use Kargo?<a class="headerlink" href="#what-are-the-requirements-to-use-kargo" title="Permanent link">&para;</a></h3>
-<p>The Kargo command line tool doesn't require any software preinstallation, except the Xcode toolchain if you want to 
-build iOS applications. See the <a href="../cli/">CLI instructions</a>.</p>
-<p>We recommend using the latest <a href="https://www.jetbrains.com/idea/nextversion/">IntelliJ IDEA EAP</a> to make the most out of
-Kargo. Our focus on the tooling and UX really pays off in IntelliJ IDEA. To learn about the required and optional 
-plugins in IntelliJ IDEA, see the <a href="../getting-started/ide-setup/">IDE setup instructions</a>.</p>
-<h3 id="how-do-i-create-a-new-kargo-project">How do I create a new Kargo project?<a class="headerlink" href="#how-do-i-create-a-new-kargo-project" title="Permanent link">&para;</a></h3>
-<p>You have several options:</p>
+<svg id="Layer_2_copy_2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 256 256"><defs><linearGradient id="linear-gradient" x1="273.1916635252" y1="131.4789077095" x2="135.9175011362" y2="126.1650691654" gradientTransform="translate(226.2670856044 -91.4213216628) rotate(66.1504459827)" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#c600f0"/><stop offset=".9979332011" stop-color="#070093"/></linearGradient><linearGradient id="linear-gradient-2" x1="263.5900258964" y1="164.5714288279" x2="24.4672914124" y2="164.5714288279" gradientUnits="userSpaceOnUse"><stop offset=".0032655423" stop-color="#ff5f99"/><stop offset=".9946469907" stop-color="#c200f1"/></linearGradient><linearGradient id="linear-gradient-3" x1="263.5900258964" y1="54.8571493007" x2="24.4672914124" y2="54.8571493006" xlink:href="#linear-gradient-2"/><linearGradient id="linear-gradient-4" x1="263.5900258964" y1="201.142855337" x2="24.4672914123" y2="201.142855337" xlink:href="#linear-gradient-2"/><linearGradient id="linear-gradient-5" x1="263.5900258964" y1="91.4285758098" x2="24.4672914124" y2="91.4285758098" xlink:href="#linear-gradient-2"/><linearGradient id="linear-gradient-6" x1="263.5900258964" y1="128.0000023189" x2="24.4672914124" y2="128.0000023188" xlink:href="#linear-gradient-2"/><linearGradient id="linear-gradient-7" x1="263.5900258964" y1="91.4285758098" x2="24.4672914124" y2="91.4285758097" xlink:href="#linear-gradient-2"/><linearGradient id="linear-gradient-8" x1="263.5900258964" y1="54.8571493007" x2="24.4672914124" y2="54.8571493007" xlink:href="#linear-gradient-2"/></defs><ellipse cx="183.3198810303" cy="128" rx="116.9555180552" ry="60.3232526471" transform="translate(-7.8731530202 243.9111837207) rotate(-66.1504459827)" fill="url(#linear-gradient)" stroke-width="0"/><path d="m195.0476080484,176.7619043309h30.8363077849c4.5958330742-7.6617555203,8.8321423591-15.8313979168,12.6071421462-24.380951006h-43.4434499311c-6.7327377156,0-12.190475503,5.457886597-12.190475503,12.190475503s5.4577377875,12.190475503,12.190475503,12.190475503Z" fill="url(#linear-gradient-2)" stroke-width="0"/><path d="m195.0476080484,54.8571493007c0,6.732588906,5.4577377875,12.190475503,12.190475503,12.190475503h48.3508901305c-.7732142421-9.2119042424-2.6523808028-17.4276775886-5.5464282587-24.3809510061h-42.8044618719c-6.7327377156,0-12.190475503,5.457886597-12.190475503,12.190475503Z" fill="url(#linear-gradient-3)" stroke-width="0"/><path d="m109.7142795272,188.952379834c-6.7327377156,0-12.190475503,5.4577377875-12.190475503,12.1903266935v.0001488095c0,6.732588906,5.4577377875,12.190475503,12.190475503,12.190475503h87.6874950551c7.1833329282-6.9532734174,14.1309515841-15.1691955731,20.586903601-24.3809510061h-108.274398656Z" fill="url(#linear-gradient-4)" stroke-width="0"/><path d="m12.190475503,103.6190513128h73.1428530181c6.7327377156,0,12.190475503-5.457886597,12.190475503-12.190475503s-5.4577377875-12.190475503-12.190475503-12.190475503H12.190475503c-6.7327377156,0-12.190475503,5.457886597-12.190475503,12.190475503s5.4577377875,12.190475503,12.190475503,12.190475503Z" fill="url(#linear-gradient-5)" stroke-width="0"/><path d="m73.1428530181,128.0000023188c0,6.732588906,5.4577377875,12.190475503,12.190475503,12.190475503h97.5238040242c6.7327377156,0,12.190475503-5.457886597,12.190475503-12.190475503s-5.4577377875-12.190475503-12.190475503-12.190475503h-97.5238040242c-6.7327377156,0-12.190475503,5.457886597-12.190475503,12.190475503Z" fill="url(#linear-gradient-6)" stroke-width="0"/><path d="m121.9047550303,103.6190513128h109.7142795272c6.7327377156,0,12.190475503-5.457886597,12.190475503-12.190475503s-5.4577377875-12.190475503-12.190475503-12.190475503h-109.7142795272c-6.7327377156,0-12.190475503,5.457886597-12.190475503,12.190475503s5.4577377875,12.190475503,12.190475503,12.190475503Z" fill="url(#linear-gradient-7)" stroke-width="0"/><path d="m121.9047550303,54.8571493007c0-6.732588906-5.4577377875-12.190475503-12.190475503-12.190475503h-48.7619020121c-6.7327377156,0-12.190475503,5.457886597-12.190475503,12.190475503s5.4577377875,12.190475503,12.190475503,12.190475503h48.7619020121c6.7327377156,0,12.190475503-5.457886597,12.190475503-12.190475503Z" fill="url(#linear-gradient-8)" stroke-width="0"/><path d="m231.6190500265,128.0000295343v-.0000243809c0-6.7326069484-5.4578563123-12.1904632459-12.1904632607-12.1904632177h-.0000245855c-6.732606894.0000000282-12.1904631381,5.4578562217-12.1904631307,12.1904631157v.000024617c.0000000074,6.732606899,5.4578563302,12.190463166,12.1904632292,12.1904631862h.0000244125c6.7326069875.0000000202,12.1904633352-5.4578563327,12.1904633352-12.1904633202Zm-60.9523780326,36.5713994816v-.0000243809c.0000000115-6.7326070019-5.4578563646-12.1904633406-12.1904633665-12.190463283l-12.1904983763.0000001043c-6.7326067871.0000000576-12.190462928,5.4578562543-12.1904629169,12.1904630414v.0000246737c.0000000111,6.7326068685,5.457856234,12.1904631142,12.1904631026,12.1904631534l12.1904980855.000000071c6.7326070491.0000000392,12.1904634601-5.4578563307,12.1904634716-12.1904633798Zm12.1904750574-109.7154438001v-.0000244108c-.0000000029-6.7326069542-5.4578563153-12.1904632619-12.1904632695-12.190463259l-24.3809784193.0000000105c-6.7326069429.0000000029-12.1904632459,5.4578562977-12.190463259,12.1904632406v.0000243809c-.000000013,6.7326069597,5.4578562949,12.1904632825,12.1904632546,12.1904632879l24.3809784193.0000000194c6.73260696.0000000053,12.1904632768-5.4578563094,12.1904632739-12.1904632695Z" fill="#ffb966" stroke-width="0"/></svg></span> Kotlinx RPC<a class="headerlink" href="#kotlinx-rpc" title="Permanent link">&para;</a></h1>
+<p>The <a href="https://kotlin.github.io/kotlinx-rpc/get-started.html">kotlinx.rpc</a> library allows you to implement Remote 
+Procedure Calls (RPC) more easily by generating boilerplate code behind the scenes for you.</p>
+<p>To enable kotlinx.rpc support, add the following to the <code>module.yaml</code> file of each client or server module, and each 
+module declaring <code>@Rpc</code> services:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">settings</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">kotlin</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">rpc</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">enabled</span>
+</code></pre></div>
+<p>This will automatically:</p>
 <ul>
-<li>
-<p>Open IntelliJ IDEA and create a new Kotlin project with the Kargo build tool</p>
-</li>
-<li>
-<p>Kick-start your project using one of the <a href="https://github.com/kargo-build/kargo/tree/main/examples">examples</a></p>
-</li>
-<li>
-<p>Download the Kargo script by following the <a href="../cli/">CLI instructions</a>, and generate a project 
-  from a template using the <code>./amper init</code> command.</p>
-</li>
+<li>enable code generation for your <code>@Rpc</code> services via the kotlinx.rpc compiler plugin</li>
+<li>apply the kotlinx.rpc <a href="../../dependencies/#using-a-maven-bom"><abbr title="Bill of materials">BOM</abbr> (Bill of Materials)</a> to align the versions of the 
+  RPC-related artifacts</li>
+<li>add some useful <a href="../../dependencies/#library-catalogs">library catalog</a> entries starting with <code>$kotlin.rpc.</code></li>
 </ul>
-<h3 id="how-do-i-create-a-multi-module-project-in-kargo">How do I create a multi-module project in Kargo?<a class="headerlink" href="#how-do-i-create-a-multi-module-project-in-kargo" title="Permanent link">&para;</a></h3>
-<p>See the documentation on the <a href="../user-guide/basics/#project-layout">project layout</a>.</p>
-<h3 id="is-there-an-automated-migration-tool">Is there an automated migration tool?<a class="headerlink" href="#is-there-an-automated-migration-tool" title="Permanent link">&para;</a></h3>
-<p>Not currently, but it's certainly something we’re looking into.</p>
-<h3 id="feature-x-is-not-yet-supported-what-can-i-do">Feature X is not yet supported, what can I do?<a class="headerlink" href="#feature-x-is-not-yet-supported-what-can-i-do" title="Permanent link">&para;</a></h3>
-<p>Please let us know about it! We're eager to hear what you're trying to do, because we plan to expand the list of
-supported use cases based on demand.
-Please submit your requests and sugg estions in the
-<a href="https://youtrack.jetbrains.com/issues/AMPER"><span class="twemoji"><!--
-  - Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
-  -->
-
-<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="none" viewBox="0 0 64 64">
-  <defs>
-    <linearGradient id="a" x1="-.102411" x2="64.0532" y1="32.0002" y2="32.0002" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#FB43FF"/>
-      <stop offset=".97" stop-color="#FB406D"/>
-    </linearGradient>
-  </defs>
-  <path fill="url(#a)" d="M1.30634 51.2446c-.09688-.0713-.12875-.2019-.07625-.31L8.86571 35.209.058214 24.6908c-.08875-.1056-.074375-.2637.031875-.3518L25.7788 2.93209C30.3495-.877908 36.967-.985408 41.6626 2.67147c4.6937 3.65687 6.1937 10.08813 3.5969 15.43623l-2.7994 5.7669c1.0919-.3663 2.1725-.6994 3.2412-.9988l12.6738-3.6406c.1381-.04.2819.045.3131.1856l5.3056 23.585c.0325.1457-.0662.2882-.215.3069-1.6818.2119-10.8575 1.53-22.2812 6.3294-12.9431 5.4362-21.4844 13.1625-22.6944 14.2925-.0894.0837-.2206.0869-.3187.0144L1.30634 51.2446Z"/>
-  <path fill="#000" d="M52 12H12v40h40V12Z"/>
-  <path fill="#fff" d="m21.4666 26.3709-5.4881-9.3787h3.1513l3.3981 5.9919.3969.8575.3968-.8682 3.3119-5.9812h3.0975l-5.4025 9.3575v5.6487h-2.8619v-5.6275Z"/>
-  <path fill="#fff" d="M33 43.9984H17v3h16v-3Z"/>
-  <path fill="#fff" d="M42.3248 16.9922H30.2879l-.0006 2.6369h4.5662v12.3693h2.9263V19.6291h4.545v-2.6369Z"/>
-</svg>
-</span> YouTrack issue tracker</a> or join the
-<a href="https://kotlinlang.slack.com/archives/C062WG3A7T8"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M6 15a2 2 0 0 1-2 2 2 2 0 0 1-2-2 2 2 0 0 1 2-2h2zm1 0a2 2 0 0 1 2-2 2 2 0 0 1 2 2v5a2 2 0 0 1-2 2 2 2 0 0 1-2-2zm2-8a2 2 0 0 1-2-2 2 2 0 0 1 2-2 2 2 0 0 1 2 2v2zm0 1a2 2 0 0 1 2 2 2 2 0 0 1-2 2H4a2 2 0 0 1-2-2 2 2 0 0 1 2-2zm8 2a2 2 0 0 1 2-2 2 2 0 0 1 2 2 2 2 0 0 1-2 2h-2zm-1 0a2 2 0 0 1-2 2 2 2 0 0 1-2-2V5a2 2 0 0 1 2-2 2 2 0 0 1 2 2zm-2 8a2 2 0 0 1 2 2 2 2 0 0 1-2 2 2 2 0 0 1-2-2v-2zm0-1a2 2 0 0 1-2-2 2 2 0 0 1 2-2h5a2 2 0 0 1 2 2 2 2 0 0 1-2 2z"/></svg></span> Slack channel</a> for discussions.</p>
-<h3 id="can-i-write-a-custom-task-or-use-a-plugin">Can I write a custom task or use a plugin?<a class="headerlink" href="#can-i-write-a-custom-task-or-use-a-plugin" title="Permanent link">&para;</a></h3>
-<p>Yes! Kargo now includes a preview of a plugin system. See the dedicated <a href="../user-guide/plugins/overview/">docs</a>.</p>
-<h3 id="how-can-i-use-c-interop-in-kargo">How can I use C-interop in Kargo?<a class="headerlink" href="#how-can-i-use-c-interop-in-kargo" title="Permanent link">&para;</a></h3>
-<p>For now, Kargo doesn't directly support C-interop.</p>
 
 
 
@@ -3128,7 +2401,7 @@ Please submit your requests and sugg estions in the
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="February 25, 2026 23:19:31 UTC">February 25, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 18, 2026 15:10:23 UTC">March 18, 2026</span>
   </span>
 
     
@@ -3138,8 +2411,6 @@ Please submit your requests and sugg estions in the
   </aside>
 
 
-
-  
 
 
 
@@ -3163,12 +2434,10 @@ Please submit your requests and sugg estions in the
   
     
       
-        
-      
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../reference/module/" class="md-footer__link md-footer__link--prev" aria-label="Previous: module.yaml">
+          <a href="../kotlinx-serialization/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Kotlinx Serialization">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
@@ -3178,11 +2447,27 @@ Please submit your requests and sugg estions in the
                 Previous
               </span>
               <div class="md-ellipsis">
-                module.yaml
+                Kotlinx Serialization
               </div>
             </div>
           </a>
         
+        
+          
+          <a href="../ktor/" class="md-footer__link md-footer__link--next" aria-label="Next: Ktor">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Ktor
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11z"/></svg>
+            </div>
+          </a>
         
       </nav>
     
@@ -3216,10 +2501,10 @@ Please submit your requests and sugg estions in the
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["content.action.edit", "content.code.annotate", "content.code.copy", "content.footnote.tooltips", "content.tooltips", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.preview", "navigation.tabs", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "../../..", "features": ["content.action.edit", "content.code.annotate", "content.code.copy", "content.footnote.tooltips", "content.tooltips", "navigation.expand", "navigation.footer", "navigation.indexes", "navigation.instant", "navigation.instant.preview", "navigation.tabs", "navigation.top", "navigation.tracking", "search.highlight", "search.share", "search.suggest"], "search": "../../../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.79ae519e.min.js"></script>
+      <script src="../../../assets/javascripts/bundle.79ae519e.min.js"></script>
       
     
   </body>
