@@ -5,6 +5,7 @@
 package org.jetbrains.amper.frontend.aomBuilder
 
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vfs.readText
 import com.intellij.psi.PsiFile
 import org.jetbrains.amper.frontend.AmperModuleFileSource
 import org.jetbrains.amper.frontend.FrontendPathResolver
@@ -42,8 +43,10 @@ internal class ModuleBuildCtx(
 ) {
     val module by lazy {
         context(problemReporter, pathResolver) {
+            val suggestedName = moduleFile.parent.findChild(".amper-module-name")?.readText()?.trim()?.takeIf { it.isNotEmpty() }
+
             DefaultModule(
-                userReadableName = moduleFile.parent.name,
+                userReadableName = suggestedName ?: moduleFile.parent.name,
                 description = moduleCtxModule.description,
                 type = moduleCtxModule.product.type,
                 aliases = moduleCtxModule.aliases.orEmpty().entries.associate { alias ->

@@ -28,7 +28,10 @@ class GitSourceCloner(
         try {
             cloneOrUpdate(repoUrl, repoDir)
             checkout(repoDir, version)
-            return if (subPath != null) repoDir.resolve(subPath) else repoDir
+
+            val resolvedDir = if (subPath != null) repoDir.resolve(subPath) else repoDir
+            writeModuleNameMetadata(repoUrl, subPath, resolvedDir)
+            return resolvedDir
         } finally {
             lock.unlock()
         }
@@ -39,28 +42,55 @@ class GitSourceCloner(
             repoUrl = extractRepositoryUrl(source),
             version = source.version.value,
             subPath = source.path?.toString()
-        )
+    )
 
-    fun extractRepositoryUrl(source: GitSource): String =
-            when (source) {
-                is GitHubSource -> "https://github.com/${source.github}.git"
-                is GitLabSource -> "https://gitlab.com/${source.gitlab}.git"
-                is BitbucketSource -> "https://bitbucket.org/${source.bitbucket}.git"
-                is GitUrlSource -> source.git
-            }
+    private fun writeModuleNameMetadata(repoUrl: String, subPath: String?, targetDir: Path) {
+        val repoIdentifier = repoUrl.removeSuffix(".git")
+            .substringAfter("://")
+            .substringAfter('/')
+            .replace('/', '-')
+            .lowercase()
 
-    fun extractSourceName(source: GitSource): String =
-            when (source) {
-                is GitHubSource -> source.github
-                is GitLabSource -> source.gitlab
-                is BitbucketSource -> source.bitbucket
-                is GitUrlSource -> source.git.substringAfterLast('/').removeSuffix(".git")
+        val name = buildString {
+            append("vendor.")
+            append(repoIdentifier)
+            subPath?.split('/')?.filter { it.isNotBlank() }?.forEach {
+                append(".")
+                append(it.lowercase())
             }
+        }
+
+        try {
+            targetDir.createDirectories()
+            targetDir.resolve(".amper-module-name").writeText(name)
+        } catch (_: Exception) {
+            // Best effort
+        }
+    }
+
+    fun extractRepositoryUrl(source: GitSource) = when (source) {
+        is GitHubSource -> "https://github.com/${source.github}.git"
+        is GitLabSource -> "https://gitlab.com/${source.gitlab}.git"
+        is BitbucketSource -> "https://bitbucket.org/${source.bitbucket}.git"
+        is GitUrlSource -> source.git
+    }
+
+    fun extractSourceName(source: GitSource) = when (source) {
+        is GitHubSource -> source.github
+        is GitLabSource -> source.gitlab
+        is BitbucketSource -> source.bitbucket
+        is GitUrlSource -> source.git.substringAfterLast('/').removeSuffix(".git")
+    }
 
     fun generateCacheKey(repoUrl: String, version: String): String {
-        val repoName = repoUrl.substringAfterLast('/').removeSuffix(".git")
+        val repoIdentifier = repoUrl.removeSuffix(".git")
+            .substringAfter("://")
+            .substringAfter('/')
+            .replace('/', '-')
+            .lowercase()
+
         val shortRef = version.take(7)
-        return "$repoName/$shortRef"
+        return "$repoIdentifier/$shortRef"
     }
 
     fun cloneOrUpdate(repoUrl: String, targetDir: Path): Path {
@@ -127,7 +157,7 @@ class GitSourceException(
         get() = buildString {
             appendLine()
             appendLine("  Git Source Error: $rawMessage")
-            if (details != null) details.lines().forEach { appendLine("    $it") }
+            details?.lines()?.forEach { appendLine("    $it") }
             appendLine()
         }
 }

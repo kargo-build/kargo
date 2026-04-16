@@ -99,7 +99,7 @@ object GitSourcePreScanner {
         
         // Use Amper's tree completion to get a typed SchemaNode instance
         // Best-effort: if it doesn't match GitSource schema, we skip it
-        val complete = node.completeTree() as? CompleteObjectNode ?: return null
+        val complete = node.completeTree() ?: return null
         val source = complete.instance as? GitSource ?: return null
         
         val cloner = GitSourceCloner()

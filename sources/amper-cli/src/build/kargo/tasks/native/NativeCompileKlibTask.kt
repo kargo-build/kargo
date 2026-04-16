@@ -87,7 +87,7 @@ internal class NativeCompileKlibTask(
             destination.parent.createDirectories()
             artifactPath.copyTo(destination, overwrite = true)
 
-            logger.info("Copied native library klib to $destination")
+            logger.debug("Copied native library klib to {}", destination)
 
             // Return the new destination so subsequent tasks use it
             return NativeCompileKlibTask.Result(
