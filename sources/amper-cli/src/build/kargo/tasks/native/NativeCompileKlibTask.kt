@@ -77,11 +77,13 @@ internal class NativeCompileKlibTask(
             val destination = if (outputSetting.endsWith("/")) {
                 moduleRoot.resolve(outputSetting).resolve(artifactPath.fileName)
             } else {
-                val baseName = outputSetting.substringAfterLast("/")
-                val dir = outputSetting.substringBeforeLast("/", "")
-                val ext = artifactPath.fileName.toString().substringAfter(".")
-                val resolvedDir = if (dir.isEmpty()) moduleRoot else moduleRoot.resolve(dir)
-                resolvedDir.resolve("$baseName.$ext")
+                val fileName = outputSetting.substringAfterLast("/")
+                if (fileName.contains(".")) {
+                    moduleRoot.resolve(outputSetting)
+                } else {
+                    val ext = artifactPath.fileName.toString().substringAfterLast(".", "")
+                    if (ext.isNotEmpty()) moduleRoot.resolve("$outputSetting.$ext") else moduleRoot.resolve(outputSetting)
+                }
             }
 
             destination.parent.createDirectories()

@@ -97,6 +97,9 @@ class JvmSettings : SchemaNode() {
             "The default is `jars`, which means all the dependencies including local dependencies on Amper modules will " +
             "be built as jars. The `classes` mode will use classes for local modules as part of the runtime classpath.")
     val runtimeClasspathMode by value(default = DependencyMode.JARS)
+
+    @SchemaDoc("Output directory or path for the final distributable, relative to the module root.")
+    val output by nullableValue<String>()
 }
 
 class JdkSettings : SchemaNode() {
