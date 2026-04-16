@@ -8,6 +8,7 @@ package org.jetbrains.amper.frontend.project
 
 import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
+import build.kargo.frontend.schema.GitSourcePreScanner
 import io.opentelemetry.api.common.Attributes
 import org.jetbrains.amper.core.UsedInIdePlugin
 import org.jetbrains.amper.frontend.FrontendPathResolver
@@ -114,11 +115,16 @@ class StandaloneAmperProjectContext(
                 // We found a module file while going up, and the project file higher up doesn't include it.
                 // This means that the potential context (defined by the project file) is not our actual context,
                 // we're just a single module project.
+                val singleModuleFiles = listOf(result.startModuleFile)
+                val amperModuleFiles = runCatching {
+                    GitSourcePreScanner.preScanAndResolveGitSources(singleModuleFiles, frontendPathResolver)
+                }.getOrDefault(singleModuleFiles)
+
                 return StandaloneAmperProjectContext(
                     frontendPathResolver = frontendPathResolver,
                     projectRootDir = result.startModuleFile.parent,
                     projectBuildDir = buildDir,
-                    amperModuleFiles = listOf(result.startModuleFile),
+                    amperModuleFiles = amperModuleFiles,
                     pluginsModuleFiles = emptyList(), // no plugins for the single-module project.
                     externalMavenPlugins = emptyList(), // no maven plugins for the single-module project.
                 )
@@ -170,7 +176,19 @@ class StandaloneAmperProjectContext(
             }
 
             val explicitProjectModuleFiles = amperProject?.modulePaths(rootDir) ?: emptyList()
-            val amperModuleFiles = listOfNotNull(rootModuleFile) + explicitProjectModuleFiles
+            val amperModuleFilesOriginal = listOfNotNull(rootModuleFile) + explicitProjectModuleFiles
+            
+            val amperModuleFiles = try {
+                GitSourcePreScanner.preScanAndResolveGitSources(
+                    amperModuleFilesOriginal,
+                    frontendPathResolver
+                )
+            } catch (e: Exception) {
+                // If the Git prescanner fails to download something, we fall back to the original list
+                // so the compiler can gracefully report unresolved dependencies in the IDE or CLI later
+                amperModuleFilesOriginal
+            }
+
             if (amperModuleFiles.isEmpty()) {
                 problemReporter.reportBundleError(
                     source = amperProject?.asBuildProblemSource() ?: GlobalBuildProblemSource,

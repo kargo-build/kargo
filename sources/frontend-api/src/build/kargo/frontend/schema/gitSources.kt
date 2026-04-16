@@ -1,7 +1,3 @@
-/*
- * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
- */
-
 package build.kargo.frontend.schema
 
 import org.jetbrains.amper.frontend.Platform
@@ -24,9 +20,6 @@ sealed class GitSource : SchemaNode() {
 
     @SchemaDoc("Optional subdirectory containing the Kargo project")
     val path by nullableValue<Path>()
-
-    @SchemaDoc("If true, build and publish artifacts without injecting them as dependencies (default: false)")
-    val publishOnly by value(false)
 
     @SchemaDoc("Optional platforms to build (defaults to all platforms supported by the source)")
     val platforms by nullableValue<List<TraceableEnum<Platform>>>()

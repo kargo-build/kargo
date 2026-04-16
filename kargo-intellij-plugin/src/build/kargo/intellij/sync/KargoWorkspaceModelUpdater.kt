@@ -174,11 +174,20 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     
                     val contentEntry = if (moduleRootPath != null) {
                         val moduleBaseUrl = VfsUtilCore.pathToUrl(moduleRootPath)
-                        if (modifiableModel.contentEntries.none { it.url == moduleBaseUrl }) {
+                        val entry = if (modifiableModel.contentEntries.none { it.url == moduleBaseUrl }) {
                             modifiableModel.addContentEntry(moduleBaseUrl)
                         } else {
                             modifiableModel.contentEntries.first { it.url == moduleBaseUrl }
                         }
+                        
+                        // Exclude commonly generated directories to speed up IDE search and indexing
+                        listOf("build", "logs", ".kargo", ".amper").forEach { dirName ->
+                            val excludeUrl = VfsUtilCore.pathToUrl("$moduleRootPath/$dirName")
+                            if (!entry.excludeFolderUrls.contains(excludeUrl)) {
+                                entry.addExcludeFolder(excludeUrl)
+                            }
+                        }
+                        entry
                     } else null
                     
                     fragment.sourceRoots.forEach { sourceRoot ->

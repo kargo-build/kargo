@@ -25,6 +25,9 @@ dependencies:
 4. Dependency on a library from a built-in [Library Catalog](#library-catalogs)
    (in this case, the catalog brought by the Kotlin "toolchain").
 
+!!! info "Git/Source Dependencies"
+    Kargo also supports depending directly on Git repositories as source dependencies. These are typically declared in a `sources:` block. See the [Git Dependencies](git-dependencies.md) guide for more details.
+
 ### Module dependencies
 
 To depend on another module of your project, use the path to that module, relative to the current module's root

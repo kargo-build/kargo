@@ -1,5 +1,10 @@
 product: jvm/lib
 
+settings:
+  kotlin:
+    freeCompilerArgs:
+      - "-Xjvm-default=all"
+
 apply:
   - ../sources/common.module-template.yaml
   - ../sources/used-in-idea.module-template.yaml

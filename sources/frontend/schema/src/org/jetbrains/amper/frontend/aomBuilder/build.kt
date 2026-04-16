@@ -5,6 +5,7 @@
 package org.jetbrains.amper.frontend.aomBuilder
 
 import com.intellij.openapi.vfs.VirtualFile
+import build.kargo.frontend.schema.GitSourceCloner
 import org.jetbrains.amper.core.UsedInIdePlugin
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.BomDependency
@@ -241,6 +242,28 @@ private fun buildAmperModules(
             fragments = moduleFragments
             artifacts = createArtifacts(false, module.module.type, leaves) +
                     createArtifacts(true, module.module.type, testLeaves)
+        }
+        
+        // Inject Git sources as native local module dependencies
+        val gitDependencies = module.moduleCtxModule.sources?.mapNotNull { source ->
+            val cloner = GitSourceCloner()
+            val projectDir = runCatching { cloner.resolveSourcesDir(source) }.getOrNull() ?: return@mapNotNull null
+            
+            val targetModule = dir2module[projectDir]
+            if (targetModule != null) {
+                DefaultLocalModuleDependency(
+                    module = targetModule,
+                    path = projectDir,
+                    trace = source.trace,
+                    compile = true,
+                    runtime = true,
+                    exported = false
+                )
+            } else null
+        }.orEmpty()
+
+        if (gitDependencies.isNotEmpty()) {
+            moduleFragments.forEach { it.externalDependencies += gitDependencies }
         }
     }
 

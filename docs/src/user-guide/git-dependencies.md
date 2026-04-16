@@ -86,3 +86,28 @@ Because a branch can receive new commits at any time, Kargo needs to ensure you 
 If you are working offline (e.g., no internet connection) and are using a **mutable ref** like `main`, Kargo's remote check will fail. 
 
 Instead of failing your entire build, Kargo gracefully falls back to using the last known cached build for that branch. It will emit a warning letting you know it couldn't reach the network and is using a stale cache, allowing your local development workflow to continue uninterrupted.
+
+## How it Works: Source Dependencies
+
+Unlike standard Maven dependencies which resolve to pre-compiled binary artifacts (`.jar` or `.klib`), Git dependencies in Kargo are **Source Dependencies**. This means the source code of the dependency is fetched and integrated directly into your project's module graph.
+
+### The Pre-Scanner Phase
+
+Kargo-based build systems normally expect all modules and their `module.yaml` files to be present on the local filesystem before the build starts. To support Git-backed modules, Kargo introduces a specialized **Pre-Scanner** phase that runs before the main project model is built:
+
+1.  **Discovery**: Kargo performs a fast scan of your `module.yaml` files (and any discovered sub-modules) to find `sources:` or `dependencies:` blocks containing Git references.
+2.  **Cloning/Updating**: For each Git source found, Kargo checks its local cache (`~/.kargo/sources-cache`). If the requested version is missing or is a mutable branch that needs updating, Kargo clones or fetches the repository.
+3.  **Recursive Scan**: After a Git repository is cloned, Kargo immediately scans *its* `module.yaml` to see if it has transitive Git dependencies. This process repeats until the entire Git-source graph is resolved.
+4.  **Injection**: Once all Git sources are present on disk, Kargo "injects" them into the project context. The main Kargo engine then sees these directories as regular local modules, enabling top-tier features like cross-repository code navigation and refactoring in the IntelliJ IDE.
+
+### Git Sources in `dependencies:` block
+
+While the `sources:` block is the recommended way to declare Git-backed projects, Kargo also supports declaring them directly in the `dependencies:` block for convenience:
+
+```yaml title="module.yaml"
+dependencies:
+  - github: user/repo
+    version: main
+```
+
+When declared in the `dependencies:` block, the module is automatically treated as a source dependency by the Pre-Scanner, exactly like items in the `sources:` block.
