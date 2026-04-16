@@ -1,7 +1,7 @@
 ---
 description: |
   kotlinx.rpc is a Kotlin Multiplatform library providing tools to implement Remote Procedure Calls (RPC) easily. 
-  Amper provides support for it out of the box.
+  Kargo provides support for it out of the box.
 ---
 # :jetbrains-kotlinx-rpc: Kotlinx RPC
 

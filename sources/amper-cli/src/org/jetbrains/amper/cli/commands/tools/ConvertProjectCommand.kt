@@ -33,7 +33,7 @@ internal class ConvertProjectCommand : AmperSubcommand(name = "convert-project")
 
     val enableCompatibilityPlugins: Boolean by option(
         "--enable-compatibility-plugins",
-        help = "Enables compatibility plugins (which are not natively supported by Amper and are instead delegated " +
+        help = "Enables compatibility plugins (which are not natively supported by Kargo and are instead delegated " +
                 "to a Maven compatibility layer). By default, they are generated with \"enabled: false\" so that " +
                 "they can be reviewed and selectively enabled only when they are actually needed, avoiding potential " +
                 "issues from untested plugin configurations."
