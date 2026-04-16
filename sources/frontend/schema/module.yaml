@@ -6,6 +6,8 @@ apply:
 
 settings:
   kotlin:
+    freeCompilerArgs:
+      - -Xcontext-parameters
     serialization:
       enabled: true
       format: json
