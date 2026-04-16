@@ -116,20 +116,15 @@ class StandaloneAmperProjectContext(
                 // This means that the potential context (defined by the project file) is not our actual context,
                 // we're just a single module project.
                 val singleModuleFiles = listOf(result.startModuleFile)
-                val resolvedModuleFiles = try {
-                    GitSourcePreScanner.preScanAndResolveGitSources(
-                        singleModuleFiles,
-                        frontendPathResolver
-                    )
-                } catch (e: Exception) {
-                    singleModuleFiles
-                }
+                val amperModuleFiles = runCatching {
+                    GitSourcePreScanner.preScanAndResolveGitSources(singleModuleFiles, frontendPathResolver)
+                }.getOrDefault(singleModuleFiles)
 
                 return StandaloneAmperProjectContext(
                     frontendPathResolver = frontendPathResolver,
                     projectRootDir = result.startModuleFile.parent,
                     projectBuildDir = buildDir,
-                    amperModuleFiles = resolvedModuleFiles,
+                    amperModuleFiles = amperModuleFiles,
                     pluginsModuleFiles = emptyList(), // no plugins for the single-module project.
                     externalMavenPlugins = emptyList(), // no maven plugins for the single-module project.
                 )
