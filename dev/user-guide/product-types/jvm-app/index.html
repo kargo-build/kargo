@@ -1145,6 +1145,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#output-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#packaging" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2431,6 +2442,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#output-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Output configuration
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#packaging" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -2521,6 +2543,18 @@ top-level declarations to a class, and the name of that class is derived from th
 the name and turning the <code>.kt</code> extension into a <code>Kt</code> suffix.</p>
 <p>For example, the top-level declarations of <code>myMain.kt</code> will be in a class named <code>MyMainKt</code>.</p>
 </div>
+<h2 id="output-configuration">Output configuration<a class="headerlink" href="#output-configuration" title="Permanent link">&para;</a></h2>
+<p>By default, the artifacts produced by JVM applications are managed by Kargo's internal task graph. You can customize the destination of the final <a href="#packaging">Executable JAR</a> by providing an <code>output</code> directory or file name path in the <code>settings</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">product</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">jvm/app</span>
+
+<span class="nt">settings</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">jvm</span><span class="p">:</span>
+<span class="w">    </span><span class="nt">output</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">dist/application</span>
+</code></pre></div>
+<ul>
+<li>Any path ending with a <code>/</code> will be evaluated as a directory, and the JAR will be placed inside with its default name.</li>
+<li>Paths specifying a filename (like <code>dist/application.jar</code>) will be used as the exact destination.</li>
+</ul>
 <h2 id="packaging">Packaging<a class="headerlink" href="#packaging" title="Permanent link">&para;</a></h2>
 <p>You can use the <code>build</code> command to produce a regular JAR of your application's code, or the <code>package</code> 
 command to produce an <a href="https://docs.spring.io/spring-boot/specification/executable-jar/index.html">Executable JAR</a>.</p>
@@ -2562,7 +2596,7 @@ them and loads them on-demand.</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="December 18, 2025 23:49:05 UTC">December 18, 2025</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="April 16, 2026 23:38:24 UTC">April 16, 2026</span>
   </span>
 
     
