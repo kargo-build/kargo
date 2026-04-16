@@ -4,10 +4,8 @@
 
 package org.jetbrains.amper.frontend.aomBuilder
 
-import build.kargo.frontend.schema.GitSource
 import com.intellij.openapi.vfs.VirtualFile
 import build.kargo.frontend.schema.GitSourceCloner
-import build.kargo.frontend.schema.GitUrlSource
 import org.jetbrains.amper.core.UsedInIdePlugin
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.BomDependency
