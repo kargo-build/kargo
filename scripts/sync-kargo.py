@@ -16,6 +16,110 @@ def copy_and_rebrand_wrappers(repo_root):
         ('sources/amper-wrapper/resources/wrappers/amper.template.bat', 'sources/amper-wrapper/resources/wrappers/kargo.template.bat')
     ]
     
+    # Define Shell/POSIX Animation Blocks
+    amper_ascii = r'''      echo '        _____  Welcome to                                  '
+      echo '       /:::::|  ____   ___     ____      ____    __  ___   '
+      echo '      /::/|::| |::::\_|:::\   |:::::\   /::::\  |::|/:::|  '
+      echo '     /::/ |::| |::|\:::|\::\  |::|\::\ /:/__\:\ |:::/      '
+      echo '    /::/__|::| |::| |::| |::| |::| |::|:::::::/ |::|       '
+      echo '   /:::::::::| |::| |::| |::| |::|/::/ \::\__   |::|       '
+      echo '  /::/    |::| |::| |::| |::| |:::::/   \::::|  |::|       '
+      echo '                              |::|                         '
+      echo "                              |::|  v.$amper_version       "'''
+
+    kargo_ascii = r'''      tput civis >/dev/null 2>&1 || true
+      echo
+      echo '                                       Welcome to'
+      printf "%s" '██╗  ██╗ ';   sleep 0.01
+      printf "%s" ' █████╗ ';   sleep 0.01
+      printf "%s" '██████╗  ';  sleep 0.01
+      printf "%s" '██████╗   '; sleep 0.01
+      printf "%s\n" '██████╗  '; sleep 0.03
+
+      printf "%s" '██║ ██╔╝ ';  sleep 0.01
+      printf "%s" '██╔══██╗';   sleep 0.01
+      printf "%s" '██╔══██╗ ';  sleep 0.01
+      printf "%s" '██╔════╝  '; sleep 0.01
+      printf "%s\n" '██╔═══██╗'; sleep 0.03
+
+      printf "%s" '█████╔╝  ';  sleep 0.01
+      printf "%s" '███████║';   sleep 0.01
+      printf "%s" '██████╔╝ ';  sleep 0.01
+      printf "%s" '██║  ███╗ '; sleep 0.01
+      printf "%s\n" '██║   ██║'; sleep 0.03
+
+      printf "%s" '██╔═██╗  ';  sleep 0.01
+      printf "%s" '██╔══██║';   sleep 0.01
+      printf "%s" '██╔══██╗ ';  sleep 0.01
+      printf "%s" '██║   ██║ '; sleep 0.01
+      printf "%s\n" '██║   ██║'; sleep 0.03
+
+      printf "%s" '██║  ██╗ ';  sleep 0.01
+      printf "%s" '██║  ██║';   sleep 0.01
+      printf "%s" '██║  ██║ ';  sleep 0.01
+      printf "%s" '╚██████╔╝ '; sleep 0.01
+      printf "%s\n" '╚██████╔╝'; sleep 0.03
+
+      printf "%s" '╚═╝  ╚═╝ ';  sleep 0.01
+      printf "%s" '╚═╝  ╚═╝';   sleep 0.01
+      printf "%s" '╚═╝  ╚═╝ ';  sleep 0.01
+      printf "%s" ' ╚═════╝  '; sleep 0.01
+      printf "%s\n" ' ╚═════╝ '; sleep 0.2
+
+      tput cnorm >/dev/null 2>&1 || true
+      echo ""
+      echo "   v.$amper_version"'''
+
+    # Define Batch/Windows Animation Blocks
+    bat_banner_pattern = r"(?s) {4,12}if\s*\(+['\"]%show_banner_on_cache_miss%['\"].*?\{.*?Write-Host\s*['\"]['\"];\s*\^.*?\s+\}\s*\^"
+    
+    kargo_ascii_bat = r'''        if (('%show_banner_on_cache_miss%' -eq 'true') -and [string]::IsNullOrEmpty('%AMPER_NO_WELCOME_BANNER%')) { ^
+            Write-Host ''; ^
+            Write-Host '                                       Welcome to'; ^
+            Write-Host -NoNewline '██╗  ██╗ ';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline ' █████╗ ';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██████╗  ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██████╗   '; Start-Sleep -m 10; ^
+            Write-Host '██████╗  ';  Start-Sleep -m 30; ^
+ ^
+            Write-Host -NoNewline '██║ ██╔╝ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██╔══██╗';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██╔══██╗ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██╔════╝  '; Start-Sleep -m 10; ^
+            Write-Host '██╔═══██╗';  Start-Sleep -m 30; ^
+ ^
+            Write-Host -NoNewline '█████╔╝  ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '███████║';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██████╔╝ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██║  ███╗ '; Start-Sleep -m 10; ^
+            Write-Host '██║   ██║';  Start-Sleep -m 30; ^
+ ^
+            Write-Host -NoNewline '██╔═██╗  ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██╔══██║';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██╔══██╗ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██║   ██║ '; Start-Sleep -m 10; ^
+            Write-Host '██║   ██║';  Start-Sleep -m 30; ^
+ ^
+            Write-Host -NoNewline '██║  ██╗ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██║  ██║';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██║  ██║ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '╚██████╔╝ '; Start-Sleep -m 10; ^
+            Write-Host '╚██████╔╝';  Start-Sleep -m 30; ^
+ ^
+            Write-Host -NoNewline '╚═╝  ╚═╝ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '╚═╝  ╚═╝';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '╚═╝  ╚═╝ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline ' ╚═════╝  '; Start-Sleep -m 10; ^
+            Write-Host ' ╚═════╝ ';  Start-Sleep -m 200; ^
+ ^
+            Write-Host ''; ^
+            Write-Host '   v.%amper_version%'; ^
+            Write-Host ''; ^
+            Write-Host 'This is the first run of this version, so we need to download the actual Kargo distribution.'; ^
+            Write-Host 'Please give us a few seconds now, subsequent runs will be faster.'; ^
+            Write-Host ''; ^
+        } ^'''
+
     for amper_name, kargo_name in wrappers:
         amper_path = os.path.join(repo_root, amper_name)
         kargo_path = os.path.join(repo_root, kargo_name)
@@ -45,58 +149,10 @@ def copy_and_rebrand_wrappers(repo_root):
         content = content.replace("./amper", "./kargo")
         
         # ASCII Art Block Substitution
-        amper_ascii = r'''      echo '        _____  Welcome to                                  '
-      echo '       /:::::|  ____   ___     ____      ____    __  ___   '
-      echo '      /::/|::| |::::\_|:::\   |:::::\   /::::\  |::|/:::|  '
-      echo '     /::/ |::| |::|\:::|\::\  |::|\::\ /:/__\:\ |:::/      '
-      echo '    /::/__|::| |::| |::| |::| |::| |::|:::::::/ |::|       '
-      echo '   /:::::::::| |::| |::| |::| |::|/::/ \::\__   |::|       '
-      echo '  /::/    |::| |::| |::| |::| |:::::/   \::::|  |::|       '
-      echo '                              |::|                         '
-      echo "                              |::|  v.$amper_version       "'''
-
-        kargo_ascii = r'''      echo '                                       Welcome to'
-      echo -n '██╗  ██╗ '; sleep 0.01
-      echo -n '█████╗ '; sleep 0.01
-      echo -n '██████╗  '; sleep 0.01
-      echo -n '██████╗  '; sleep 0.01
-      echo '██████╗ '; sleep 0.03
-      
-      echo -n '██║ ██╔╝'; sleep 0.01
-      echo -n '██╔══██╗'; sleep 0.01
-      echo -n '██╔══██╗'; sleep 0.01
-      echo -n '██╔════╝ '; sleep 0.01
-      echo '██╔═══██╗'; sleep 0.03
-      
-      echo -n '█████╔╝ '; sleep 0.01
-      echo -n '███████║'; sleep 0.01
-      echo -n '██████╔╝'; sleep 0.01
-      echo -n '██║  ███╗'; sleep 0.01
-      echo '██║   ██║'; sleep 0.03
-      
-      echo -n '██╔═██╗ '; sleep 0.01
-      echo -n '██╔══██║'; sleep 0.01
-      echo -n '██╔══██╗'; sleep 0.01
-      echo -n '██║   ██║'; sleep 0.01
-      echo '██║   ██║'; sleep 0.03
-      
-      echo -n '██║  ██╗'; sleep 0.01
-      echo -n '██║  ██║'; sleep 0.01
-      echo -n '██║  ██║'; sleep 0.01
-      echo -n '╚██████╔╝'; sleep 0.01
-      echo '╚██████╔╝'; sleep 0.03
-      
-      echo -n '╚═╝  ╚═╝'; sleep 0.01
-      echo -n '╚═╝  ╚═╝'; sleep 0.01
-      echo -n '╚═╝  ╚═╝'; sleep 0.01
-      echo -n ' ╚═════╝ '; sleep 0.01
-      echo ' ╚═════╝ '; sleep 0.2
-      
-      echo ""
-      echo "   v.$amper_version"'''
-      
-        content = content.replace(amper_ascii, kargo_ascii)
-        
+        if kargo_name.endswith('.bat'):
+            content = re.sub(bat_banner_pattern, kargo_ascii_bat, content, flags=re.DOTALL)
+        else:
+            content = content.replace(amper_ascii, kargo_ascii)
         # GitHub Releases URL Rebranding
         content = content.replace("https://packages.jetbrains.team/maven/p/amper/amper", "https://github.com/kargo-build/kargo/releases/download")
         if kargo_name.endswith('.bat'):
