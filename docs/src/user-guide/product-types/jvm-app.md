@@ -39,6 +39,21 @@ settings:
     
     For example, the top-level declarations of `myMain.kt` will be in a class named `MyMainKt`.
 
+## Output configuration
+
+By default, the artifacts produced by JVM applications are managed by Kargo's internal task graph. You can customize the destination of the final [Executable JAR](#packaging) by providing an `output` directory or file name path in the `settings`:
+
+```yaml
+product: jvm/app
+
+settings:
+  jvm:
+    output: dist/application
+```
+
+*   Any path ending with a `/` will be evaluated as a directory, and the JAR will be placed inside with its default name.
+*   Paths specifying a filename (like `dist/application.jar`) will be used as the exact destination.
+
 ## Packaging
 
 You can use the `build` command to produce a regular JAR of your application's code, or the `package` 
