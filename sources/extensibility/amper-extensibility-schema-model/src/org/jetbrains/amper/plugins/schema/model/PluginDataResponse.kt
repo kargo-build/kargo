@@ -20,6 +20,7 @@ data class PluginDataResponse(
         val sourcePath: SerializablePath,
         val declarations: PluginData.Declarations,
         val diagnostics: List<Diagnostic> = emptyList(),
+        val pluginSettingsSearchResult: PluginSettingsSearchResult? = null,
     )
 
     @Serializable

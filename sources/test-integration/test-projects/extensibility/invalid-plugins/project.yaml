@@ -5,6 +5,7 @@ modules:
   - plugin-a
   - plugin-b
   - hello
+  - invalid-settings
 
 plugins:
   - ./plugin-empty-id
@@ -12,4 +13,5 @@ plugins:
   - ./not-a-plugin
   - ./plugin-a
   - ./plugin-b
-  - hello
+  - ./hello
+  - ./invalid-settings

@@ -18,6 +18,7 @@ import org.jetbrains.amper.frontend.helpers.testRefineModule
 import org.jetbrains.amper.frontend.helpers.testRefineModuleWithTemplates
 import org.jetbrains.amper.frontend.types.SchemaTypingContext
 import org.jetbrains.amper.plugins.schema.model.PluginData
+import org.jetbrains.amper.plugins.schema.model.PluginSettingsSearchResult
 import org.jetbrains.amper.plugins.schema.model.SourceLocation
 import org.junit.jupiter.api.Test
 import kotlin.io.path.Path
@@ -166,7 +167,9 @@ class TreeTests : FrontendTestCaseBase(Path(".") / "testResources" / "valueTree"
         return listOf(
             PluginData(
                 id = PluginData.Id("myPlugin"),
-                pluginSettingsSchemaName = PluginData.SchemaName("com.example", listOf("CustomPluginSchema")),
+                pluginSettingsSearchResult = PluginSettingsSearchResult.Success(
+                    name = PluginData.SchemaName("com.example", listOf("CustomPluginSchema"))
+                ),
                 source = PluginData.Source.Local(Path("/")),
                 declarations = PluginData.Declarations(
                     classes = listOf(

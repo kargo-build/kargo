@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import org.jetbrains.amper.plugins.schema.model.PluginData
 import org.jetbrains.amper.plugins.schema.model.PluginDataResponse
 import org.jetbrains.amper.plugins.schema.model.PluginDataResponse.DiagnosticKind.ErrorGeneric
+import org.jetbrains.amper.plugins.schema.model.PluginSettingsSearchResult
 import org.jetbrains.amper.stdlib.collections.distinctBy
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
@@ -39,7 +40,7 @@ fun KaSession.parsePluginDeclarations(
     diagnostics: MutableList<in PluginDataResponse.Diagnostic>,
     pluginSettingsClassName: String? = null,
     isParsingAmperApi: Boolean = false,
-): PluginData.Declarations {
+): Pair<PluginData.Declarations, PluginSettingsSearchResult?> {
     val options = ParsingOptions(
         isParsingAmperApi = isParsingAmperApi,
     )
@@ -69,6 +70,8 @@ fun KaSession.parsePluginDeclarations(
             builtinDeclarations.classes.forEach { seenNames += it.name }
             builtinDeclarations.variants.forEach { seenNames += it.name }
         }
+
+        override fun hasClassDeclarationFor(name: PluginData.SchemaName): Boolean = name in classes
 
         override fun onEnumReferenced(symbol: KaClassSymbol, name: PluginData.SchemaName) {
             require(symbol.classKind == KaClassKind.ENUM_CLASS)
@@ -145,10 +148,14 @@ fun KaSession.parsePluginDeclarations(
         )
     }
 
+    val pluginSettingsSearchResult = pluginSettingsClassName?.let {
+        context(resolver) { searchForPluginSettings(files, pluginSettingsClassName) }
+    }
+
     return PluginData.Declarations(
         enums = resolver.resolvedEnums(),
         classes = resolver.resolvedClasses(),
         variants = resolver.resolvedVariants(),
         tasks = tasks.sortedBy { it.syntheticType.name },
-    )
+    ) to pluginSettingsSearchResult
 }

@@ -8,6 +8,7 @@ import org.jetbrains.amper.frontend.FrontendPathResolver
 import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.aomBuilder.ModuleBuildCtx
 import org.jetbrains.amper.frontend.aomBuilder.plugins.diagnostics.PluginYamlMissing
+import org.jetbrains.amper.frontend.aomBuilder.plugins.diagnostics.diagnosePluginSettingsClass
 import org.jetbrains.amper.frontend.api.TraceableString
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.messages.extractKeyValuePsiElement
@@ -17,7 +18,6 @@ import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.frontend.types.SchemaTypingContext
 import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.plugins.schema.model.PluginData
-import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.FileBuildProblemSource
 import org.jetbrains.amper.problems.reporting.MultipleLocationsBuildProblemSource
 import org.jetbrains.amper.problems.reporting.ProblemReporter
@@ -48,7 +48,8 @@ internal fun readPlugins(
             return@mapPlugins null
         }
 
-        val pluginId = pluginModule.moduleCtxModule.pluginInfo!!.id // safe - default is always set
+        val pluginInfo = pluginModule.moduleCtxModule.pluginInfo!!
+        val pluginId = pluginInfo.id // safe - default is always set
         if (pluginId.value in seenPluginIds) {
             seenPluginIds[pluginId.value]!!.add(pluginId)
             return@mapPlugins null // Skip the duplicate
@@ -59,16 +60,7 @@ internal fun readPlugins(
         val pluginData = pluginData.find { it.id.value == pluginId.value }
             ?: return@mapPlugins null
 
-        pluginModule.moduleCtxModule.pluginInfo?.settingsClass?.let { settingsClass ->
-            if (pluginData.declarations.classes.none { it.name.qualifiedName == settingsClass.value }) {
-                problemReporter.reportBundleError(
-                    source = settingsClass.asBuildProblemSource(),
-                    diagnosticId = PluginDiagnosticId.PluginMissingSchemaClass,
-                    messageKey = "plugin.missing.schema.class", settingsClass,
-                    problemType = BuildProblemType.UnresolvedReference,
-                )
-            }
-        }
+        diagnosePluginSettingsClass(pluginData, pluginInfo)
 
         val pluginFile = run { // Locate plugin.yaml
             val pluginModuleRoot = pluginModule.moduleFile.parent

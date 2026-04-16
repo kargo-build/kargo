@@ -91,7 +91,7 @@ internal fun runSchemaProcessor(
         analyze(module) {
             val request = request.requests.first { it.sourceDir == sourceDir }
             val diagnostics = mutableListOf<PluginDataResponse.Diagnostic>()
-            val declarations = parsePluginDeclarations(
+            val (declarations, parsedPluginSettingsName) = parsePluginDeclarations(
                 files = session.modulesWithFiles[module]?.filterIsInstance<KtFile>().orEmpty(),
                 diagnostics = diagnostics,
                 isParsingAmperApi = request.isParsingAmperApi,
@@ -101,6 +101,7 @@ internal fun runSchemaProcessor(
                 sourcePath = request.sourceDir,
                 declarations = declarations,
                 diagnostics = diagnostics,
+                pluginSettingsSearchResult = parsedPluginSettingsName,
             )
         }
     }

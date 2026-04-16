@@ -388,8 +388,9 @@ class PluginsTest : AmperCliTestBase() {
                 """.trimIndent(),
                 "${projectDir / "not-a-plugin" / "module.yaml"}:1:10: Unexpected product type for plugin. Expected jvm/amper-plugin, got jvm/app",
                 "${projectDir / "plugin-empty-id" / "module.yaml"}:5:18: Plugin settings class `com.example.Settings` is not found",
+                "${projectDir / "invalid-settings" / "module.yaml"}:4:18: Plugin settings class `com.example.Foo` must be an interface annotated with the `@Configurable` annotation",
             )
-            assertLogContains("Processing local plugin schema for [plugin-empty-id, plugin-no-plugin-block, hello]...", level = Level.INFO)
+            assertLogContains("Processing local plugin schema for [plugin-empty-id, plugin-no-plugin-block, hello, invalid-settings]...", level = Level.INFO)
         }
     }
 

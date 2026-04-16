@@ -30,5 +30,5 @@ class PluginDeclarationSchema : SchemaNode() {
     @SchemaDoc("Fully qualified name of the @Configurable-annotated interface to be used as plugin configuration. " +
             "This interface can't come from a dependency, it must be declared in the source directory.")
     @StringSemantics(Semantics.PluginSettingsClass)
-    val settingsClass by nullableValue<TraceableString>()
+    val settingsClass by nullableValue<String>()
 }

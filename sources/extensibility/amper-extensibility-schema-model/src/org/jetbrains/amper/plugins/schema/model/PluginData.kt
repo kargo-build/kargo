@@ -13,13 +13,13 @@ import org.jetbrains.amper.serialization.paths.SerializablePath
  *
  * - This includes the general plugin information: [id], [description], [source]
  * - Information about the `module.yaml` schema extension for the plugin:
- *   [pluginSettingsSchemaName] (may be absent if plugin has no user configuration).
+ *   [pluginSettingsSearchResult] (may be `null` if plugin has no user configuration).
  * - Schema types/tasks descriptions: [declarations]
  */
 @Serializable
 data class PluginData(
     val id: Id,
-    val pluginSettingsSchemaName: SchemaName? = null,
+    val pluginSettingsSearchResult: PluginSettingsSearchResult? = null,
     val description: String? = null,
     val source: Source,
     val declarations: Declarations,

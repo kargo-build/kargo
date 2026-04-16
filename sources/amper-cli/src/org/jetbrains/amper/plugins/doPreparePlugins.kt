@@ -116,9 +116,7 @@ internal suspend fun doPreparePlugins(
             }
             PluginData(
                 id = PluginData.Id(plugin.id),
-                pluginSettingsSchemaName = result.declarations.classes.map { it.name }.find {
-                    it.qualifiedName == plugin.settingsClass
-                },
+                pluginSettingsSearchResult = result.pluginSettingsSearchResult,
                 description = plugin.description,
                 source = PluginData.Source.Local(pluginRootDir),
                 declarations = result.declarations,

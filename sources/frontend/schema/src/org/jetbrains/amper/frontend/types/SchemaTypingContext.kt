@@ -17,6 +17,7 @@ import org.jetbrains.amper.maven.MavenPluginXml
 import org.jetbrains.amper.plugins.schema.model.Defaults
 import org.jetbrains.amper.plugins.schema.model.PluginData
 import org.jetbrains.amper.plugins.schema.model.SourceLocation
+import org.jetbrains.amper.plugins.schema.model.asSuccessOrNull
 
 class SchemaTypingContext(
     pluginData: List<PluginData> = emptyList(),
@@ -133,13 +134,13 @@ private class PluginDeclarations(
         }
     }
 
-    val settingsClassDeclaration: SchemaObjectDeclaration = pluginData.pluginSettingsSchemaName?.let {
-        classDeclarationFor(it)
-    } ?: object : SchemaObjectDeclarationBase() {
-        override val properties = listOf(enabledProperty(pluginData.source.toOrigin()))
-        override fun createInstance() = ExtensionSchemaNode()
-        override val qualifiedName: String get() = "${pluginData.id.value}.Settings"
-    }
+    val settingsClassDeclaration: SchemaObjectDeclaration =
+        pluginData.pluginSettingsSearchResult.asSuccessOrNull()?.name?.let(::classDeclarationFor)
+            ?: object : SchemaObjectDeclarationBase() {
+                override val properties = listOf(enabledProperty(pluginData.source.toOrigin()))
+                override fun createInstance() = ExtensionSchemaNode()
+                override val qualifiedName: String get() = "${pluginData.id.value}.Settings"
+            }
 
     fun classDeclarationFor(name: PluginData.SchemaName): SchemaObjectDeclaration = classes.getOrPut(name) {
         ObjectDeclaration(pluginData.declarations.classes.first { it.name == name })
@@ -188,7 +189,7 @@ private class PluginDeclarations(
                         canBeReferenced = true,
                     )
                 }
-                if (schemaName == pluginData.pluginSettingsSchemaName) {
+                if (schemaName == pluginData.pluginSettingsSearchResult.asSuccessOrNull()?.name) {
                     // Add a synthetic `enabled` property if this is a plugin schema extension
                     this += enabledProperty(pluginData.source.toOrigin())
                 }
