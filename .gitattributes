@@ -3,13 +3,19 @@
 *.sh text eol=lf
 *.bat text eol=crlf
 
+# Amper wrappers that don't have an extension
 amper text eol=lf
 amper-from-sources text eol=lf
 
+# Docs generation script
 mkdocs text eol=lf
-
-gradlew text eol=lf
-
+# Docs images
 *.png binary
 
+# Binary compatibility validator
+*.api text eol=lf
+
+# Gradle metadata test files
 *.module text eol=lf
+# Gradle wrapper from BOM-generation project used for tests
+gradlew text eol=lf
