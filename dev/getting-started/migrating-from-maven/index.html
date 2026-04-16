@@ -2624,13 +2624,13 @@ for details.</p>
 </ul>
 <h3 id="maven-plugin-handling">Maven plugin handling<a class="headerlink" href="#maven-plugin-handling" title="Permanent link">&para;</a></h3>
 <p>The converter handles Maven plugins in two ways:</p>
-<p><strong>Handled natively</strong> — these plugins cover functionality that Amper provides out of the box.
-For some of them, the converter extracts the relevant configuration into Amper settings:</p>
+<p><strong>Handled natively</strong> — these plugins cover functionality that Kargo provides out of the box.
+For some of them, the converter extracts the relevant configuration into Kargo settings:</p>
 <table>
 <thead>
 <tr>
 <th>Maven plugin</th>
-<th>Amper settings</th>
+<th>Kargo settings</th>
 </tr>
 </thead>
 <tbody>
@@ -2653,7 +2653,7 @@ For some of them, the converter extracts the relevant configuration into Amper s
 </tbody>
 </table>
 <p>Others (<code>maven-jar-plugin</code>, <code>maven-clean-plugin</code>, <code>maven-install-plugin</code>, <code>maven-source-plugin</code>, etc.)
-don't require any conversion because Amper handles their functionality out of the box.</p>
+don't require any conversion because Kargo handles their functionality out of the box.</p>
 <p><strong>Unknown plugins</strong> — all other plugins are downloaded, their descriptors are parsed, and each goal is added to a
 <code>mavenPlugins</code> section with <code>enabled: false</code>. You can enable them selectively after the conversion.</p>
 <p>For example, a project using <code>maven-enforcer-plugin</code> and <code>jacoco-maven-plugin</code> would produce:</p>
@@ -2670,17 +2670,17 @@ don't require any conversion because Amper handles their functionality out of th
 <span class="w">  </span><span class="nt">jacoco-maven-plugin.prepare-agent</span><span class="p">:</span>
 <span class="w">    </span><span class="nt">enabled</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
 </code></pre></div>
-<p>The <code>mavenPlugins</code> section allows you to run third-party Maven plugins directly in your Amper project.
+<p>The <code>mavenPlugins</code> section allows you to run third-party Maven plugins directly in your Kargo project.
 However, not all plugins are guaranteed to work, so by default they are disabled. You can selectively enable
 plugins you need by setting <code>enabled: true</code> in their configuration after the conversion.
 Please refer to the <a href="../../user-guide/advanced/maven-plugins/">Maven plugins</a> section for more details.</p>
 <h2 id="dependency-mapping">Dependency mapping<a class="headerlink" href="#dependency-mapping" title="Permanent link">&para;</a></h2>
-<p>Maven dependency scopes map to Amper as follows:</p>
+<p>Maven dependency scopes map to Kargo as follows:</p>
 <table>
 <thead>
 <tr>
 <th>Maven scope</th>
-<th>Amper equivalent</th>
+<th>Kargo equivalent</th>
 <th>Config section</th>
 </tr>
 </thead>
@@ -2788,8 +2788,8 @@ See <a href="../../user-guide/dependencies/#when-to-use-exported">When to use ex
    See <a href="../../user-guide/dependencies/#library-catalogs">Library catalogs</a>.</p>
 </li>
 <li>
-<p><strong>Optional: switch to the standard Amper layout.</strong> The converter sets <code>layout: maven-like</code> to avoid moving files.
-   If you want to adopt the <a href="../../user-guide/basics/#project-layout">standard Amper layout</a> later, move files from
+<p><strong>Optional: switch to the standard Kargo layout.</strong> The converter sets <code>layout: maven-like</code> to avoid moving files.
+   If you want to adopt the <a href="../../user-guide/basics/#project-layout">standard Kargo layout</a> later, move files from
    <code>src/main/kotlin/</code> to <code>src/</code> and from <code>src/test/kotlin/</code> to <code>test/</code>, then remove the <code>layout: maven-like</code> line.
    See <a href="../../user-guide/advanced/maven-like-layout/">Maven-like layout</a>.</p>
 </li>
@@ -2797,7 +2797,7 @@ See <a href="../../user-guide/dependencies/#when-to-use-exported">When to use ex
 <h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link">&para;</a></h2>
 <p>The following Maven features are not handled by the converter and require manual migration:</p>
 <ul>
-<li><strong>Profiles</strong> — Amper does not have an equivalent of Maven profiles. Build configuration can only vary
+<li><strong>Profiles</strong> — Kargo does not have an equivalent of Maven profiles. Build configuration can only vary
   <a href="../../user-guide/multiplatform/">by platform</a>.</li>
 <li><strong>Extensions</strong></li>
 <li><strong>Dependency exclusions</strong></li>
@@ -2827,7 +2827,7 @@ See <a href="../../user-guide/dependencies/#when-to-use-exported">When to use ex
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="March 29, 2026 21:48:22 UTC">March 29, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="April 16, 2026 17:14:28 UTC">April 16, 2026</span>
   </span>
 
     
