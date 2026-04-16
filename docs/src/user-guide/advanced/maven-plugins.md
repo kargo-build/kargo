@@ -1,13 +1,13 @@
 ---
 description: |
-  Apply Maven plugins to your Amper project to run tests, generate sources, check code style, produce reports, and more.
+  Apply Maven plugins to your Kargo project to run tests, generate sources, check code style, produce reports, and more.
   Learn how to declare, enable, configure, and extend Maven plugins across single- and multi-module projects.
 ---
 
 # Maven plugins
 
 Maven plugins are tools in the JVM ecosystem that perform tasks during a project's build, such as running tests,
-generating source code, checking code style, or producing reports. Amper supports integrating Maven plugins into
+generating source code, checking code style, or producing reports. Kargo supports integrating Maven plugins into
 JVM modules (modules with either `jvm/app` or `jvm/lib` product type).
 
 !!! warning
@@ -67,14 +67,14 @@ mavenPlugins:
 ```
 
 The keys inside `configuration` directly correspond to the goal's parameters as documented by the respective plugin.
-Amper reads the plugin's descriptor to resolve parameter types, so IDE completion and validation are available for
+Kargo reads the plugin's descriptor to resolve parameter types, so IDE completion and validation are available for
 supported parameter types.
 
 !!! warning
 	
 	Currently, complex parameter types (POJOs) are not supported.
 
-For configuration parameters with `PlexusConfiguration` type, Amper supports passing raw XML:
+For configuration parameters with `PlexusConfiguration` type, Kargo supports passing raw XML:
 
 ```yaml title="module.yaml"
 product: jvm/app
@@ -111,7 +111,7 @@ mavenPlugins:
 
 # Source generation capability
 
-Maven plugins that generate sources integrate with Amper's compilation pipeline automatically.
+Maven plugins that generate sources integrate with Kargo's compilation pipeline automatically.
 
 Example of using a protobuf code generator:
 
@@ -140,16 +140,16 @@ mavenPlugins:
 
 # Executing Maven goals
 
-Each enabled goal becomes an Amper task named `pluginArtifactId.goal`, scoped to its module.
+Each enabled goal becomes an Kargo task named `pluginArtifactId.goal`, scoped to its module.
 
 ### Lifecycle integration
 
-Mojo goals with a default Maven phase are automatically wired into the Amper build lifecycle on a best-effort basis.
-For instance, the `generate-sources` phase and respective `protobuf-maven-plugin.generate` task will be run before Amper calls the compiler.
+Mojo goals with a default Maven phase are automatically wired into the Kargo build lifecycle on a best-effort basis.
+For instance, the `generate-sources` phase and respective `protobuf-maven-plugin.generate` task will be run before Kargo calls the compiler.
 
 !!! warning
 	
-	Mojos that do not have a default phase defined are not automatically wired into the Amper lifecycle.
+	Mojos that do not have a default phase defined are not automatically wired into the Kargo lifecycle.
 
 ### Running a mojo explicitly
 
@@ -165,7 +165,7 @@ Use the `task` command with the fully qualified maven mojo goal task name `:modu
 
 ### Output files
 
-All files produced by mojos should be written into a `maven-target/` subdirectory inside Amper's build output.
+All files produced by mojos should be written into a `maven-target/` subdirectory inside Kargo's build output.
 Report mojos (those implementing the Maven reporting API) additionally generate an HTML file under
 `maven-target/reports/`. Example output tree:
 
@@ -186,9 +186,9 @@ build/
 # Known limitations
 - **JVM only**: Maven plugins can only be used in JVM platform modules.
 - **No general guarantees**: Maven plugin mojos are executed on a best-effort basis, 
-but some plugins may rely on Maven APIs or capabilities that Amper does not support.
-- **Single execution per mojo only**: Currently, only a single mojo execution will be performed per Amper module. 
+but some plugins may rely on Maven APIs or capabilities that Kargo does not support.
+- **Single execution per mojo only**: Currently, only a single mojo execution will be performed per Kargo module. 
   There is no support for configuring multiple executions.
-- **No Maven extensions**: Maven extensions modify the Maven build lifecycle, which is not suitable for Amper projects.
+- **No Maven extensions**: Maven extensions modify the Maven build lifecycle, which is not suitable for Kargo projects.
 - **No custom dependency resolution**: Plugins that override or extend Maven's dependency resolution mechanism are not supported.
 - **No report aggregation**: Currently, the only supported way to produce a report is to run the mojo directly.
