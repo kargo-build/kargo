@@ -56,7 +56,7 @@ settings@android:
 
 ## Customizing the KSP version
 
-Amper only supports KSP2 (the standalone tool), not the deprecated KSP1 implementation based compiler plugin.
+Kargo only supports KSP2 (the standalone tool), not the deprecated KSP1 implementation based compiler plugin.
 
 That said, you can use any version of KSP2 as follows:
 
