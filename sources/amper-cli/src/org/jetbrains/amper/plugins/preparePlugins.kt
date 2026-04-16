@@ -47,7 +47,6 @@ suspend fun preparePlugins(
                 doPreparePlugins(
                     terminal = context.terminal,
                     projectRoot = context.projectRoot,
-                    jdkProvider = context.jdkProvider,
                     incrementalCache = context.incrementalCache,
                     plugins = pluginInfos,
                     processRunner = context.processRunner,

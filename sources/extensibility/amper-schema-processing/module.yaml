@@ -28,5 +28,6 @@ dependencies:
 test-dependencies:
   - ../amper-schema-processor
   - ../amper-extensibility-api
+  - ../amper-extensibility-sdk-stub: runtime-only
   - ../../test-base
   - $libs.kotlin.poet

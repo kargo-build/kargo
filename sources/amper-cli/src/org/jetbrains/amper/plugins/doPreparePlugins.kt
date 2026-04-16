@@ -19,8 +19,7 @@ import org.jetbrains.amper.frontend.messages.FileWithRangesBuildProblemSource
 import org.jetbrains.amper.frontend.plugins.PluginManifest
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.incrementalcache.executeForSerializable
-import org.jetbrains.amper.jdk.provisioning.JdkProvider
-import org.jetbrains.amper.jvm.getDefaultJdk
+import org.jetbrains.amper.jdk.provisioning.Jdk
 import org.jetbrains.amper.plugins.schema.model.PluginData
 import org.jetbrains.amper.plugins.schema.model.PluginDataResponse
 import org.jetbrains.amper.plugins.schema.model.PluginDataResponse.DiagnosticKind
@@ -44,7 +43,6 @@ import kotlin.io.path.relativeTo
 internal suspend fun doPreparePlugins(
     terminal: Terminal,
     projectRoot: AmperProjectRoot,
-    jdkProvider: JdkProvider,
     incrementalCache: IncrementalCache,
     plugins: Map<Path, PluginManifest>,
     processRunner: ProcessRunner,
@@ -58,13 +56,10 @@ internal suspend fun doPreparePlugins(
         ),
         inputFiles = plugins.keys.toList(),
     ) {
-        // TODO maybe force plugin modules to use a JDK aligned with Amper's runtime instead, and use it here
-        val jdk = jdkProvider.getDefaultJdk()
         val toolClasspath = ExtraClasspath.PLUGINS_PROCESSOR.findJarsInDistribution()
         val apiClasspath = ExtraClasspath.EXTENSIBILITY_API.findJarsInDistribution()
         val outputCaptor = ProcessOutputListener.InMemoryCapture()
         val request = PluginDeclarationsRequest(
-            jdkPath = jdk.homeDir,
             librariesPaths = apiClasspath,
             requests = plugins.map { (pluginRootPath, pluginInfo) ->
                 PluginDeclarationsRequest.Request(
@@ -82,7 +77,7 @@ internal suspend fun doPreparePlugins(
 
         val result = try {
             processRunner.runJava(
-                jdk = jdk,
+                jdk = AmperJre,
                 workingDir = Path("."),
                 mainClass = "org.jetbrains.amper.schema.processing.MainKt",
                 programArgs = emptyList(),
@@ -121,9 +116,7 @@ internal suspend fun doPreparePlugins(
             }
             PluginData(
                 id = PluginData.Id(plugin.id),
-                pluginSettingsSchemaName = result.declarations.classes.map { it.name }.find {
-                    it.qualifiedName == plugin.settingsClass
-                },
+                pluginSettingsSearchResult = result.pluginSettingsSearchResult,
                 description = plugin.description,
                 source = PluginData.Source.Local(pluginRootDir),
                 declarations = result.declarations,
@@ -158,3 +151,14 @@ private class SchemaDiagnostic(
 }
 
 private val logger = LoggerFactory.getLogger("preparePlugins")
+
+/**
+ * A current JRE that Amper process runs on.
+ * Guaranteed only to have a `java` executable and to be able to run other Amper worker processes.
+ */
+private val AmperJre = Jdk(
+    homeDir = Path(System.getProperty("java.home")!!),
+    version = System.getProperty("java.version")!!,
+    distribution = null,
+    source = "Amper runtime",
+)

@@ -66,11 +66,7 @@ internal fun runSchemaProcessor(
         val myPlatform = JvmPlatforms.defaultJvmPlatform
         buildKtModuleProvider {
             platform = myPlatform
-            val jdkModule = buildKtSdkModule {
-                platform = myPlatform
-                libraryName = "[JDK]"
-                addBinaryRootsFromJdkHome(request.jdkPath, isJre = false)
-            }
+            // We do not set the JDK here, as we need very small API surface and have a stub library for that.
             val libraryModules = request.librariesPaths.map { libraryPath ->
                 buildKtLibraryModule {
                     platform = myPlatform
@@ -83,7 +79,6 @@ internal fun runSchemaProcessor(
                     platform = myPlatform
                     moduleName = pluginHeader.moduleName
                     addSourceRoot(pluginHeader.sourceDir)
-                    addRegularDependency(jdkModule)
                     libraryModules.forEach(::addRegularDependency)
                 }
                 modules[pluginHeader.sourceDir] = module
@@ -96,7 +91,7 @@ internal fun runSchemaProcessor(
         analyze(module) {
             val request = request.requests.first { it.sourceDir == sourceDir }
             val diagnostics = mutableListOf<PluginDataResponse.Diagnostic>()
-            val declarations = parsePluginDeclarations(
+            val (declarations, parsedPluginSettingsName) = parsePluginDeclarations(
                 files = session.modulesWithFiles[module]?.filterIsInstance<KtFile>().orEmpty(),
                 diagnostics = diagnostics,
                 isParsingAmperApi = request.isParsingAmperApi,
@@ -106,6 +101,7 @@ internal fun runSchemaProcessor(
                 sourcePath = request.sourceDir,
                 declarations = declarations,
                 diagnostics = diagnostics,
+                pluginSettingsSearchResult = parsedPluginSettingsName,
             )
         }
     }

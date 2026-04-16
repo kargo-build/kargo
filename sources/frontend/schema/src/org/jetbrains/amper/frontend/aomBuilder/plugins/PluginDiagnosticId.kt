@@ -20,6 +20,7 @@ enum class PluginDiagnosticId : DiagnosticId {
     PluginDoesntRegisterAnyTasks,
     PluginDuplicateId,
     PluginMissingSchemaClass,
+    PluginInvalidSchemaClass,
     PluginNotEnabledButConfigured,
     PluginYamlMissing,
     TaskDependencyLoop,

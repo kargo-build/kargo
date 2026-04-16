@@ -51,7 +51,7 @@ fun parsePluginManifestFromModuleFile(
             override val id: String = moduleHeader.pluginInfo.id?.value ?: moduleFile.parent.name
             @Suppress("DEPRECATION") // we fall back to the deprecated location for a transition period
             override val description: String? = moduleHeader.description ?: moduleHeader.pluginInfo.description
-            override val settingsClass: String? = moduleHeader.pluginInfo.settingsClass?.value
+            override val settingsClass: String? = moduleHeader.pluginInfo.settingsClass
 
             override fun toString(): String {
                 return "{schema='${moduleHeader.pluginInfo.toStableJsonLikeString()}', moduleFile='${moduleFile.path}'}"

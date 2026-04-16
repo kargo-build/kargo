@@ -10,7 +10,23 @@ import java.nio.file.Path
 @Configurable
 interface DistributionSettings {
     val extraClasspaths: Map<String, Classpath> get() = emptyMap()
+    val extraFilteredClasspaths: Map<String, FilteredClasspath> get() = emptyMap()
     val embedClasspathAsResources: EmbedClasspathAsResources
+}
+
+@Configurable
+interface FilteredClasspath {
+    /**
+     * Classpath to include
+     */
+    // Ah, shorthand would be nice here
+    val classpath: Classpath
+
+    /**
+     * Include jars, whose name contains any string from this list.
+     * If this list is empty (default), all jars are included.
+     */
+    val includeIfFileNameContains: List<String> get() = emptyList()
 }
 
 @Configurable

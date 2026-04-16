@@ -17,7 +17,6 @@ import kotlin.io.path.Path
 @Serializable
 data class PluginDeclarationsRequest(
     val requests: List<Request>,
-    val jdkPath: SerializablePath,
     val librariesPaths: List<SerializablePath>,
 ) {
     @Serializable
@@ -56,9 +55,8 @@ fun PluginDeclarationsRequest(
     val classpath = System.getProperty("java.class.path")!!.split(File.pathSeparator)
     return PluginDeclarationsRequest(
         requests = requests,
-        jdkPath = Path(System.getProperty("java.home")!!),
         librariesPaths = buildList {
-            add(Path(classpath.first { "kotlin-stdlib-" in it }))
+            add(Path(classpath.first { "amper-extensibility-sdk-stub" in it }))
             if (includeFoundExtensibilityApi) {
                 add(Path(classpath.first { "amper-extensibility-api" in it }))
             }

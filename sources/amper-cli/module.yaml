@@ -93,10 +93,15 @@ plugins:
     enabled: true
     extraClasspaths:
       "plugins-processor": [ ../extensibility/amper-schema-processor ]
-      "extensibility-api": [ ../extensibility/amper-extensibility-api ]
       "recompiler-extension": [ ../amper-compose-hot-reload-recompiler-extension ]
       "amper-jic-runner": [ ../java-incremental-compilation/amper-jic-runner ]
       "kotlin-build-tools-compat": [ $libs.kotlin.buildToolsCompat ]
+    extraFilteredClasspaths:
+      "extensibility-api":
+        classpath:
+          - ../extensibility/amper-extensibility-api
+          - ../extensibility/amper-extensibility-sdk-stub
+        includeIfFileNameContains: [ amper-extensibility ]
     embedClasspathAsResources:
       classpath: [ ../amper-junit-listeners ]
       resourceDirName: "junit-listeners"

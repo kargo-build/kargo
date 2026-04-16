@@ -30,13 +30,15 @@ fun buildDist(
     @Output distribution: Distribution,
     @Input cliRuntimeClasspath: Classpath,
     @Input extraClasspaths: Map<String, Classpath>,
+    @Input extraFilteredClasspaths: Map<String, FilteredClasspath>,
 ) {
     val cliTgz = distribution.cliTgz.createParentDirectories()
 
     println("Writing CLI distribution to $cliTgz")
     cliTgz.writeDistTarGz(
         cliRuntimeClasspath = cliRuntimeClasspath.resolvedFiles,
-        extraClasspaths = extraClasspaths.mapValues { (_, classpath) -> classpath.resolvedFiles },
+        extraClasspaths = extraClasspaths.mapValues { (_, classpath) -> classpath.resolvedFiles } +
+            extraFilteredClasspaths.mapValues { (_, classpath) -> classpath.resolvedFiles },
     )
 
     AmperWrappers.generate(

@@ -27,5 +27,5 @@ class MinimalPluginDeclarationSchema : SchemaNode() {
     @Deprecated("Use the description from the plugin's module instead")
     val description by nullableValue<String>()
     @StringSemantics(SchemaType.StringType.Semantics.PluginSettingsClass)
-    val settingsClass by nullableValue<TraceableString>()
+    val settingsClass by nullableValue<String>()
 }

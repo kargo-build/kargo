@@ -18,3 +18,4 @@ dependencies:
 test-dependencies:
   - ../../test-base
   - ../amper-extensibility-api
+  - ../amper-extensibility-sdk-stub: runtime-only

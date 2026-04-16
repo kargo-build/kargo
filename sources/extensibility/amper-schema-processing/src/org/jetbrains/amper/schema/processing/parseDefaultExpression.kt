@@ -9,9 +9,10 @@ import org.jetbrains.amper.plugins.schema.model.PluginData
 import org.jetbrains.amper.plugins.schema.model.PluginDataResponse.DiagnosticKind.WarningRedundant
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.base.KaConstantValue
-import org.jetbrains.kotlin.analysis.api.resolution.KaSimpleFunctionCall
-import org.jetbrains.kotlin.analysis.api.resolution.KaSimpleVariableAccessCall
+import org.jetbrains.kotlin.analysis.api.resolution.KaErrorCallInfo
+import org.jetbrains.kotlin.analysis.api.resolution.KaFunctionCall
 import org.jetbrains.kotlin.analysis.api.resolution.KaSuccessCallInfo
+import org.jetbrains.kotlin.analysis.api.resolution.KaVariableAccessCall
 import org.jetbrains.kotlin.analysis.api.resolution.symbol
 import org.jetbrains.kotlin.analysis.api.symbols.KaEnumEntrySymbol
 import org.jetbrains.kotlin.psi.KtExpression
@@ -24,7 +25,22 @@ internal fun parseDefaultExpression(
 ): Defaults? {
     val constant by lazy { with(session) { expression.evaluate() } }
 
-    val call by lazy { with(session) { expression.resolveToCall() as? KaSuccessCallInfo }?.call }
+    val call by lazy {
+        with(session) {
+            when (val info = expression.resolveToCall()) {
+                is KaSuccessCallInfo -> info.call
+                /*
+                 If there is a single candidate call, we roll with that too.
+                 This covers cases where the `listOf(foo)` call is unable to deduce the return type
+                  due to `foo` being some unresolved expression.
+                 We allow the algo to go one step further and actually reach `foo` and report it specifically,
+                  rather than just complaining about the whole `listOf(foo)` call.
+                */
+                is KaErrorCallInfo -> info.candidateCalls.singleOrNull()
+                null -> null
+            }
+        }
+    }
 
     if (type.isNullable && constant is KaConstantValue.NullValue) {
         if (!nestedExpression) {
@@ -42,13 +58,13 @@ internal fun parseDefaultExpression(
         is PluginData.Type.StringType -> (constant as? KaConstantValue.StringValue)
             ?.let { Defaults.StringDefault(it.value) }
             ?: run { reportError(expression, "schema.defaults.invalid.constant"); null }
-        is PluginData.Type.EnumType -> when (val symbol = (call as? KaSimpleVariableAccessCall)?.symbol) {
+        is PluginData.Type.EnumType -> when (val symbol = (call as? KaVariableAccessCall)?.symbol) {
             is KaEnumEntrySymbol -> Defaults.EnumDefault(symbol.name.identifier)
             else -> {
                 reportError(expression, "schema.defaults.invalid.enum"); null
             }
         }
-        is PluginData.Type.ListType -> (call as? KaSimpleFunctionCall)?.let { call ->
+        is PluginData.Type.ListType -> (call as? KaFunctionCall<*>)?.let { call ->
             when (call.symbol.callableId) {
                 EMPTY_LIST -> Defaults.ListDefault(emptyList())
                 LIST_OF -> Defaults.ListDefault(call.argumentMapping.mapNotNull { (e, _) ->
@@ -57,7 +73,7 @@ internal fun parseDefaultExpression(
                 else -> null
             }
         } ?: run{ reportError(expression, "schema.defaults.invalid.list"); null }
-        is PluginData.Type.MapType -> (call as? KaSimpleFunctionCall)?.let { call ->
+        is PluginData.Type.MapType -> (call as? KaFunctionCall<*>)?.let { call ->
             when (call.symbol.callableId) {
                 EMPTY_MAP -> Defaults.MapDefault(emptyMap())
                 // TODO: MAP_OF

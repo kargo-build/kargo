@@ -8,6 +8,7 @@ import org.jetbrains.amper.plugins.schema.model.PluginData
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassSymbol
 
 interface DeclarationsProvider {
+    fun hasClassDeclarationFor(name: PluginData.SchemaName): Boolean
     fun declarationFor(type: PluginData.Type.ObjectType): PluginData.ClassData
     fun declarationFor(type: PluginData.Type.VariantType): PluginData.VariantData
 }

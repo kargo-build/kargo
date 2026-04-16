@@ -23,20 +23,26 @@ fun buildUnpackedClasspath(
     @Output outputDir: Path,
     @Input baseClasspath: Classpath,
     @Input extraClasspaths: Map<String, Classpath> = emptyMap(),
+    @Input extraFilteredClasspaths: Map<String, FilteredClasspath> = emptyMap(),
     subdirectoryName: String?,
     jarListFileName: String?,
 ) {
     val targetDir = subdirectoryName?.let { outputDir / it } ?: outputDir
     cleanDirectory(targetDir)
     val classpaths = buildMap {
-        put("lib", baseClasspath)
-        putAll(extraClasspaths)
+        put("lib", baseClasspath.resolvedFiles)
+        extraClasspaths.forEach { (key, classpath) ->
+            put(key, classpath.resolvedFiles)
+        }
+        extraFilteredClasspaths.forEach { (key, classpath) ->
+            put(key, classpath.resolvedFiles)
+        }
     }
     classpaths.forEach { (name, paths) ->
         val dir = (targetDir / name).createDirectory()
         // some jars have the exact same filename even though they don't come from the same artifact
         val alreadySeenFilenames = mutableSetOf<String>()
-        for (path in paths.resolvedFiles) {
+        for (path in paths) {
             val alreadyExists = !alreadySeenFilenames.add(path.name)
             val filename = if (alreadyExists) {
                 "${path.nameWithoutExtension}-${path.pathString.sha256String().take(8)}.${path.extension}"

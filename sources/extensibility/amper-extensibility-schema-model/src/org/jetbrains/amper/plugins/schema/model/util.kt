@@ -5,6 +5,7 @@
 package org.jetbrains.amper.plugins.schema.model
 
 import org.jetbrains.amper.plugins.schema.model.PluginData.Declarations
+import kotlin.contracts.contract
 
 operator fun Declarations.plus(other: Declarations): Declarations {
     return Declarations(
@@ -32,6 +33,11 @@ fun Declarations.withoutOrigin(): Declarations {
             )
         },
     )
+}
+
+fun PluginSettingsSearchResult?.asSuccessOrNull(): PluginSettingsSearchResult.Success? {
+    contract { returnsNotNull() implies (this@asSuccessOrNull != null) }
+    return this as? PluginSettingsSearchResult.Success
 }
 
 private fun PluginData.ClassData.withoutOrigin() = copy(
