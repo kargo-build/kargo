@@ -26,7 +26,7 @@
       
       
       <link rel="icon" href="../../images/kargo-icon.svg">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.4">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.6">
     
     
   
@@ -963,6 +963,45 @@
     <span class="md-ellipsis">
       
         Offline Fallback
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#how-it-works-source-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it Works: Source Dependencies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How it Works: Source Dependencies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-pre-scanner-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Pre-Scanner Phase
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#git-sources-in-dependencies-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Git Sources in dependencies: block
       
     </span>
   </a>
@@ -2518,6 +2557,45 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#how-it-works-source-dependencies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        How it Works: Source Dependencies
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="How it Works: Source Dependencies">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#the-pre-scanner-phase" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        The Pre-Scanner Phase
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#git-sources-in-dependencies-block" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Git Sources in dependencies: block
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2639,6 +2717,23 @@ Because a branch can receive new commits at any time, Kargo needs to ensure you 
 <h3 id="offline-fallback">Offline Fallback<a class="headerlink" href="#offline-fallback" title="Permanent link">&para;</a></h3>
 <p>If you are working offline (e.g., no internet connection) and are using a <strong>mutable ref</strong> like <code>main</code>, Kargo's remote check will fail. </p>
 <p>Instead of failing your entire build, Kargo gracefully falls back to using the last known cached build for that branch. It will emit a warning letting you know it couldn't reach the network and is using a stale cache, allowing your local development workflow to continue uninterrupted.</p>
+<h2 id="how-it-works-source-dependencies">How it Works: Source Dependencies<a class="headerlink" href="#how-it-works-source-dependencies" title="Permanent link">&para;</a></h2>
+<p>Unlike standard Maven dependencies which resolve to pre-compiled binary artifacts (<code>.jar</code> or <code>.klib</code>), Git dependencies in Kargo are <strong>Source Dependencies</strong>. This means the source code of the dependency is fetched and integrated directly into your project's module graph.</p>
+<h3 id="the-pre-scanner-phase">The Pre-Scanner Phase<a class="headerlink" href="#the-pre-scanner-phase" title="Permanent link">&para;</a></h3>
+<p>Kargo-based build systems normally expect all modules and their <code>module.yaml</code> files to be present on the local filesystem before the build starts. To support Git-backed modules, Kargo introduces a specialized <strong>Pre-Scanner</strong> phase that runs before the main project model is built:</p>
+<ol>
+<li><strong>Discovery</strong>: Kargo performs a fast scan of your <code>module.yaml</code> files (and any discovered sub-modules) to find <code>sources:</code> or <code>dependencies:</code> blocks containing Git references.</li>
+<li><strong>Cloning/Updating</strong>: For each Git source found, Kargo checks its local cache (<code>~/.kargo/sources-cache</code>). If the requested version is missing or is a mutable branch that needs updating, Kargo clones or fetches the repository.</li>
+<li><strong>Recursive Scan</strong>: After a Git repository is cloned, Kargo immediately scans <em>its</em> <code>module.yaml</code> to see if it has transitive Git dependencies. This process repeats until the entire Git-source graph is resolved.</li>
+<li><strong>Injection</strong>: Once all Git sources are present on disk, Kargo "injects" them into the project context. The main Kargo engine then sees these directories as regular local modules, enabling top-tier features like cross-repository code navigation and refactoring in the IntelliJ IDE.</li>
+</ol>
+<h3 id="git-sources-in-dependencies-block">Git Sources in <code>dependencies:</code> block<a class="headerlink" href="#git-sources-in-dependencies-block" title="Permanent link">&para;</a></h3>
+<p>While the <code>sources:</code> block is the recommended way to declare Git-backed projects, Kargo also supports declaring them directly in the <code>dependencies:</code> block for convenience:</p>
+<div class="highlight"><span class="filename">module.yaml</span><pre><span></span><code><span class="nt">dependencies</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">github</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">user/repo</span>
+<span class="w">    </span><span class="nt">version</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">main</span>
+</code></pre></div>
+<p>When declared in the <code>dependencies:</code> block, the module is automatically treated as a source dependency by the Pre-Scanner, exactly like items in the <code>sources:</code> block.</p>
 
 
 
@@ -2659,7 +2754,7 @@ Because a branch can receive new commits at any time, Kargo needs to ensure you 
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="February 25, 2026 23:19:31 UTC">February 25, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="April 16, 2026 02:55:07 UTC">April 16, 2026</span>
   </span>
 
     
