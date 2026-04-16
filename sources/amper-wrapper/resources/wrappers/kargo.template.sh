@@ -85,43 +85,46 @@ download_and_extract() {
 
   if [ "$show_banner_on_cache_miss" = "true" ] && [ -z "${AMPER_NO_WELCOME_BANNER:-}" ]; then
       echo
+      tput civis >/dev/null 2>&1 || true
+      echo
       echo '                                       Welcome to'
-      echo -n '██╗  ██╗ '; sleep 0.01
-      echo -n '█████╗ '; sleep 0.01
-      echo -n '██████╗  '; sleep 0.01
-      echo -n '██████╗  '; sleep 0.01
-      echo '██████╗ '; sleep 0.03
-      
-      echo -n '██║ ██╔╝'; sleep 0.01
-      echo -n '██╔══██╗'; sleep 0.01
-      echo -n '██╔══██╗'; sleep 0.01
-      echo -n '██╔════╝ '; sleep 0.01
-      echo '██╔═══██╗'; sleep 0.03
-      
-      echo -n '█████╔╝ '; sleep 0.01
-      echo -n '███████║'; sleep 0.01
-      echo -n '██████╔╝'; sleep 0.01
-      echo -n '██║  ███╗'; sleep 0.01
-      echo '██║   ██║'; sleep 0.03
-      
-      echo -n '██╔═██╗ '; sleep 0.01
-      echo -n '██╔══██║'; sleep 0.01
-      echo -n '██╔══██╗'; sleep 0.01
-      echo -n '██║   ██║'; sleep 0.01
-      echo '██║   ██║'; sleep 0.03
-      
-      echo -n '██║  ██╗'; sleep 0.01
-      echo -n '██║  ██║'; sleep 0.01
-      echo -n '██║  ██║'; sleep 0.01
-      echo -n '╚██████╔╝'; sleep 0.01
-      echo '╚██████╔╝'; sleep 0.03
-      
-      echo -n '╚═╝  ╚═╝'; sleep 0.01
-      echo -n '╚═╝  ╚═╝'; sleep 0.01
-      echo -n '╚═╝  ╚═╝'; sleep 0.01
-      echo -n ' ╚═════╝ '; sleep 0.01
-      echo ' ╚═════╝ '; sleep 0.2
-      
+      printf "%s" '██╗  ██╗ ';   sleep 0.01
+      printf "%s" ' █████╗ ';   sleep 0.01
+      printf "%s" '██████╗  ';  sleep 0.01
+      printf "%s" '██████╗   '; sleep 0.01
+      printf "%s\n" '██████╗  '; sleep 0.03
+
+      printf "%s" '██║ ██╔╝ ';  sleep 0.01
+      printf "%s" '██╔══██╗';   sleep 0.01
+      printf "%s" '██╔══██╗ ';  sleep 0.01
+      printf "%s" '██╔════╝  '; sleep 0.01
+      printf "%s\n" '██╔═══██╗'; sleep 0.03
+
+      printf "%s" '█████╔╝  ';  sleep 0.01
+      printf "%s" '███████║';   sleep 0.01
+      printf "%s" '██████╔╝ ';  sleep 0.01
+      printf "%s" '██║  ███╗ '; sleep 0.01
+      printf "%s\n" '██║   ██║'; sleep 0.03
+
+      printf "%s" '██╔═██╗  ';  sleep 0.01
+      printf "%s" '██╔══██║';   sleep 0.01
+      printf "%s" '██╔══██╗ ';  sleep 0.01
+      printf "%s" '██║   ██║ '; sleep 0.01
+      printf "%s\n" '██║   ██║'; sleep 0.03
+
+      printf "%s" '██║  ██╗ ';  sleep 0.01
+      printf "%s" '██║  ██║';   sleep 0.01
+      printf "%s" '██║  ██║ ';  sleep 0.01
+      printf "%s" '╚██████╔╝ '; sleep 0.01
+      printf "%s\n" '╚██████╔╝'; sleep 0.03
+
+      printf "%s" '╚═╝  ╚═╝ ';  sleep 0.01
+      printf "%s" '╚═╝  ╚═╝';   sleep 0.01
+      printf "%s" '╚═╝  ╚═╝ ';  sleep 0.01
+      printf "%s" ' ╚═════╝  '; sleep 0.01
+      printf "%s\n" ' ╚═════╝ '; sleep 0.2
+
+      tput cnorm >/dev/null 2>&1 || true
       echo ""
       echo "   v.$amper_version"
       echo
