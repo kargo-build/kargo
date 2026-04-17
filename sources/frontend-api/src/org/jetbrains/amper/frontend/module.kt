@@ -162,15 +162,20 @@ fun AmperModule.fragmentsTargeting(platform: Platform, includeTestFragments: Boo
 /**
  * Returns whether maven publishing is enabled for this module.
  */
-// We don't have to go through all fragments, the InconsistentPublishingSettings factory already checked
-// that all fragments have the same publishing settings.
-fun AmperModule.isPublishingEnabled() = fragments.first().settings.publishing.enabled
+// We don't have to go through all fragments because this setting is platform-agnostic
+fun AmperModule.isPublishingEnabled() = fragments.first { !it.isTest }.settings.publishing.enabled
 
 /**
  * Returns whether JARs with sources for each platform should be published (as extra artifacts).
  */
 // We don't have to go through all fragments, settings.publishing.publishSources is platform-agnostic.
 fun AmperModule.shouldPublishSourcesJars() = fragments.first { !it.isTest }.settings.publishing.publishSources
+
+/**
+ * Returns whether published artifacts should be signed, and their signatures published alongside them.
+ */
+// We don't have to go through all fragments because this setting is platform-agnostic
+fun AmperModule.isArtifactSigningEnabled() = fragments.first { !it.isTest }.settings.publishing.signArtifacts
 
 /**
  * Returns the JDK settings for this module's production code.

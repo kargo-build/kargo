@@ -185,6 +185,7 @@ internal abstract class WebCompileKlibTask(
             module = module,
             isTest = isTest,
             taskName = taskName,
+            platform = platform,
         )
     }
 
@@ -266,6 +267,7 @@ internal abstract class WebCompileKlibTask(
         val module: AmperModule,
         val isTest: Boolean,
         val taskName: TaskName,
+        val platform: Platform,
     ) : TaskResult
 
     private val logger = LoggerFactory.getLogger(javaClass)

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.tasks
@@ -44,8 +44,7 @@ class SourcesJarTask(
 
     override fun jarConfig(): JarConfig = JarConfig()
 
-    override fun createResult(jarPath: Path): AbstractJarTask.Result =
-        Result(jarPath)
+    override fun createResult(jarPath: Path): AbstractJarTask.Result = Result(jarPath, platform)
 
-    class Result(jarPath: Path) : AbstractJarTask.Result(jarPath)
+    class Result(jarPath: Path, val platform: Platform) : AbstractJarTask.Result(jarPath)
 }

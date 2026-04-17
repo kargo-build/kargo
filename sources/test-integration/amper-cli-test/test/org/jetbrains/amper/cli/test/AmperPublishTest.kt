@@ -51,6 +51,7 @@ class AmperPublishTest : AmperCliTestBase() {
             projectDir = testProject("jvm-publish"),
             "publish", "mavenLocal",
             amperJvmArgs = listOf(mavenRepoLocalJvmArg(mavenLocalForTest)),
+            configureAndroidHome = true,
         )
 
         groupDir.assertContainsRelativeFiles(
@@ -263,7 +264,7 @@ class AmperPublishTest : AmperCliTestBase() {
     }
 
     @Test
-    fun `publish to maven local (jvm multi-module)`() = runSlowTest {
+    fun `publish to maven local (jvm and kmp multi-module)`() = runSlowTest {
         val mavenLocalForTest = createTempMavenLocalDir()
         val groupDir = mavenLocalForTest.resolve("amper/test/jvm-publish-multimodule")
 
@@ -271,6 +272,7 @@ class AmperPublishTest : AmperCliTestBase() {
             projectDir = testProject("jvm-publish-multimodule"),
             "publish", "mavenLocal", "--modules=main-lib",
             amperJvmArgs = listOf(mavenRepoLocalJvmArg(mavenLocalForTest)),
+            configureAndroidHome = true,
         )
 
         // note that publishing of main-lib module triggers all other modules (by design)
@@ -279,11 +281,43 @@ class AmperPublishTest : AmperCliTestBase() {
             "jvm-lib/1.2.3/jvm-lib-1.2.3.jar",
             "jvm-lib/1.2.3/jvm-lib-1.2.3.pom",
             "jvm-lib/maven-metadata-local.xml",
+            "kmp-lib-android/1.2.3/_remote.repositories",
+            "kmp-lib-android/1.2.3/kmp-lib-android-1.2.3-sources.jar",
+            "kmp-lib-android/1.2.3/kmp-lib-android-1.2.3.pom",
+            "kmp-lib-android/maven-metadata-local.xml",
+            "kmp-lib-iosarm64/1.2.3/_remote.repositories",
+            "kmp-lib-iosarm64/1.2.3/kmp-lib-iosarm64-1.2.3-sources.jar",
+            "kmp-lib-iosarm64/1.2.3/kmp-lib-iosarm64-1.2.3.klib",
+            "kmp-lib-iosarm64/1.2.3/kmp-lib-iosarm64-1.2.3.pom",
+            "kmp-lib-iosarm64/maven-metadata-local.xml",
+            "kmp-lib-js/1.2.3/_remote.repositories",
+            "kmp-lib-js/1.2.3/kmp-lib-js-1.2.3-sources.jar",
+            "kmp-lib-js/1.2.3/kmp-lib-js-1.2.3.klib",
+            "kmp-lib-js/1.2.3/kmp-lib-js-1.2.3.pom",
+            "kmp-lib-js/maven-metadata-local.xml",
             "kmp-lib-jvm/1.2.3/_remote.repositories",
             "kmp-lib-jvm/1.2.3/kmp-lib-jvm-1.2.3-sources.jar",
             "kmp-lib-jvm/1.2.3/kmp-lib-jvm-1.2.3.jar",
             "kmp-lib-jvm/1.2.3/kmp-lib-jvm-1.2.3.pom",
             "kmp-lib-jvm/maven-metadata-local.xml",
+            "kmp-lib-linuxx64/1.2.3/_remote.repositories",
+            "kmp-lib-linuxx64/1.2.3/kmp-lib-linuxx64-1.2.3-sources.jar",
+            "kmp-lib-linuxx64/1.2.3/kmp-lib-linuxx64-1.2.3.klib",
+            "kmp-lib-linuxx64/1.2.3/kmp-lib-linuxx64-1.2.3.pom",
+            "kmp-lib-linuxx64/maven-metadata-local.xml",
+            "kmp-lib-wasmjs/1.2.3/_remote.repositories",
+            "kmp-lib-wasmjs/1.2.3/kmp-lib-wasmjs-1.2.3-sources.jar",
+            "kmp-lib-wasmjs/1.2.3/kmp-lib-wasmjs-1.2.3.klib",
+            "kmp-lib-wasmjs/1.2.3/kmp-lib-wasmjs-1.2.3.pom",
+            "kmp-lib-wasmjs/maven-metadata-local.xml",
+            "kmp-lib-wasmwasi/1.2.3/_remote.repositories",
+            "kmp-lib-wasmwasi/1.2.3/kmp-lib-wasmwasi-1.2.3-sources.jar",
+            "kmp-lib-wasmwasi/1.2.3/kmp-lib-wasmwasi-1.2.3.klib",
+            "kmp-lib-wasmwasi/1.2.3/kmp-lib-wasmwasi-1.2.3.pom",
+            "kmp-lib-wasmwasi/maven-metadata-local.xml",
+            "kmp-lib/1.2.3/_remote.repositories",
+            "kmp-lib/1.2.3/kmp-lib-1.2.3.pom",
+            "kmp-lib/maven-metadata-local.xml",
             "main-lib/1.2.3/_remote.repositories",
             "main-lib/1.2.3/main-lib-1.2.3-sources.jar",
             "main-lib/1.2.3/main-lib-1.2.3.jar",
@@ -334,6 +368,7 @@ class AmperPublishTest : AmperCliTestBase() {
             projectDir = testProject("jvm-publish-multimodule"),
             "publish", "mavenLocal", "--modules=main-lib",
             amperJvmArgs = listOf(mavenRepoLocalJvmArg(mavenLocalForTest)),
+            configureAndroidHome = true,
         )
 
         // Consume 'main-lib' from mavenLocal in project `jvm-consume-mavenLocal`
@@ -381,6 +416,7 @@ class AmperPublishTest : AmperCliTestBase() {
             projectDir = publishedProject,
             "publish", "mavenLocal", "--modules=main-lib",
             amperJvmArgs = listOf(mavenRepoLocalJvmArg(mavenLocalForTest)),
+            configureAndroidHome = true,
         )
         assertTrue { result.stdout.contains("1.0-SNAPSHOT") }
 
@@ -397,6 +433,7 @@ class AmperPublishTest : AmperCliTestBase() {
             projectDir = publishedProject,
             "publish", "mavenLocal", "--modules=main-lib",
             amperJvmArgs = listOf(mavenRepoLocalJvmArg(mavenLocalForTest)),
+            configureAndroidHome = true,
         )
         // 'main-lib' is resolved from mavenLocal again
         runCli(
@@ -571,13 +608,13 @@ class AmperPublishTest : AmperCliTestBase() {
                         <updated>TIMESTAMP</updated>
                       </snapshotVersion>
                       <snapshotVersion>
-                        <classifier>sources</classifier>
-                        <extension>jar</extension>
+                        <extension>pom</extension>
                         <value>$lastVersion</value>
                         <updated>TIMESTAMP</updated>
                       </snapshotVersion>
                       <snapshotVersion>
-                        <extension>pom</extension>
+                        <classifier>sources</classifier>
+                        <extension>jar</extension>
                         <value>$lastVersion</value>
                         <updated>TIMESTAMP</updated>
                       </snapshotVersion>

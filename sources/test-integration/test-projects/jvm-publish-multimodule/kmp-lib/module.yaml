@@ -2,6 +2,11 @@ product:
   type: lib
   platforms:
     - jvm
+    - js
+    - wasmJs
+    - wasmWasi
+    - android
+    - iosArm64
     - linuxX64
 
 apply:

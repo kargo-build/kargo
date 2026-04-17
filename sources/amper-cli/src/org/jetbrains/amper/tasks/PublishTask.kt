@@ -9,40 +9,21 @@ import org.eclipse.aether.artifact.Artifact
 import org.eclipse.aether.artifact.DefaultArtifact
 import org.eclipse.aether.repository.RemoteRepository
 import org.eclipse.aether.util.repository.AuthenticationBuilder
-import org.jetbrains.amper.cli.AmperProjectTempRoot
 import org.jetbrains.amper.cli.userReadableError
-import org.jetbrains.amper.compilation.singleLeafFragment
-import org.jetbrains.amper.crypto.pgp.AsciiArmoredPgpKey
-import org.jetbrains.amper.crypto.pgp.PgpSigner
-import org.jetbrains.amper.crypto.pgp.PgpKeyParsingException
-import org.jetbrains.amper.crypto.pgp.PgpSigningException
-import org.jetbrains.amper.dependency.resolution.MavenCoordinates
 import org.jetbrains.amper.dependency.resolution.MavenLocalRepository
 import org.jetbrains.amper.engine.Task
 import org.jetbrains.amper.engine.TaskGraphExecutionContext
 import org.jetbrains.amper.frontend.AmperModule
-import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.RepositoriesModulePart
 import org.jetbrains.amper.frontend.TaskName
-import org.jetbrains.amper.frontend.fragmentsTargeting
-import org.jetbrains.amper.incrementalcache.getDynamicInputs
-import org.jetbrains.amper.maven.publish.PublicationCoordinatesOverrides
 import org.jetbrains.amper.maven.publish.createPlexusContainer
 import org.jetbrains.amper.maven.publish.deployToRemoteRepo
 import org.jetbrains.amper.maven.publish.installToMavenLocal
-import org.jetbrains.amper.maven.publish.merge
-import org.jetbrains.amper.maven.publish.publicationCoordinates
-import org.jetbrains.amper.maven.publish.writePomFor
-import org.jetbrains.amper.tasks.jvm.JvmClassesJarTask
 import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.use
 import org.jetbrains.amper.telemetry.useWithoutCoroutines
 import org.slf4j.LoggerFactory
-import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.io.path.createDirectories
-import kotlin.io.path.createTempFile
-import kotlin.io.path.extension
 
 private val mavenLocalRepository by lazy {
     spanBuilder("Initialize maven local repository").useWithoutCoroutines {
@@ -50,11 +31,20 @@ private val mavenLocalRepository by lazy {
     }
 }
 
+/**
+ * A comparator to sort artifacts for publication, just to have some reproducible order.
+ */
+private val artifactComparator = compareBy<Artifact>(
+    { it.groupId },
+    { it.artifactId },
+    { it.classifier },
+    { it.extension },
+)
+
 class PublishTask(
     override val taskName: TaskName,
     val module: AmperModule,
     val targetRepository: RepositoriesModulePart.Repository,
-    private val tempRoot: AmperProjectTempRoot,
 ) : Task {
 
     override suspend fun run(dependenciesResult: List<TaskResult>, executionContext: TaskGraphExecutionContext): TaskResult {
@@ -67,7 +57,11 @@ class PublishTask(
         }
 
         val localRepositoryPath = mavenLocalRepository.repository
-        val artifacts = createArtifactsToDeploy(dependenciesResult)
+        val artifacts = dependenciesResult.filterIsInstance<PrepareMavenPublishablesTask.Result>()
+            .flatMap { it.mavenArtifacts() }
+            // We sort for reproducibility, because the artifact order matters for the Eclipse Aether library
+            // (it determines the order in maven-metadata.xml, at least when using SNAPSHOTs)
+            .sortedWith(artifactComparator)
 
         /**
          * Publish uses a different code to publish to maven local and to any other remote
@@ -104,101 +98,16 @@ class PublishTask(
         return Result()
     }
 
-    private suspend fun createArtifactsToDeploy(dependenciesResult: List<TaskResult>): List<Artifact> {
-        val artifacts = createOrFindMeaningfulArtifacts(dependenciesResult)
-        val productionJvmFragment = module.fragmentsTargeting(Platform.JVM, includeTestFragments = false)
-            .singleLeafFragment()
-        if (productionJvmFragment.settings.publishing.signArtifacts) {
-            val artifactSigner = createSignerFromEnvConfig()
-            return artifacts + artifacts.map { artifactSigner.signArtifact(it) }
-        }
-        return artifacts
-    }
+    private fun PrepareMavenPublishablesTask.Result.mavenArtifacts(): List<Artifact> =
+        publishables.map { it.toMavenArtifact() }
 
-    private fun createOrFindMeaningfulArtifacts(dependenciesResult: List<TaskResult>): List<Artifact> {
-        val overrides = dependenciesResult
-            .filterIsInstance<ResolveExternalDependenciesTask.Result>()
-            .map { it.coordinateOverridesForPublishing }
-            .merge()
-
-        // we only publish JVM for now
-        val coords = module.publicationCoordinates(Platform.JVM)
-        val pomPath = generatePomFile(module, Platform.JVM, overrides)
-
-        // Note: this will break if we have multiple dependency tasks with the same type, because we'll try to publish
-        //  different files with identical artifact coordinates (including classifier).
-        return dependenciesResult.flatMap { it.toMavenArtifact(coords) } + pomPath.toMavenArtifact(coords)
-    }
-
-    private fun generatePomFile(
-        module: AmperModule,
-        platform: Platform,
-        overrides: PublicationCoordinatesOverrides,
-    ): Path {
-        val tempPath = createTempFile(tempRoot.path, "maven-deploy", ".pom")
-        // TODO extract the extra artifacts generation (pom and signatures) as a separate task and cache this as output
-        tempPath.toFile().deleteOnExit()
-
-        // TODO publish Gradle metadata
-        tempPath.writePomFor(module, platform, overrides, gradleMetadataComment = false)
-        return tempPath
-    }
-
-    private fun TaskResult.toMavenArtifact(coords: MavenCoordinates) = when (this) {
-        is JvmClassesJarTask.Result -> listOf(jarPath.toMavenArtifact(coords))
-        is SourcesJarTask.Result -> listOf(jarPath.toMavenArtifact(coords, classifier = "sources"))
-        is ResolveExternalDependenciesTask.Result, // this is just for coords overrides, not extra artifacts
-        is Result -> emptyList()
-        else -> error("Unsupported dependency result: ${javaClass.name}")
-    }
-
-    private fun Path.toMavenArtifact(
-        coords: MavenCoordinates,
-        classifier: String = "",
-        artifactId: String? = null,
-        extension: String = this.extension,
-    ): Artifact = DefaultArtifact(
-        coords.groupId,
-        artifactId ?: coords.artifactId,
-        classifier,
-        extension,
-        coords.version,
-    ).setFile(toFile())
-
-    // We currently only support providing the signing key via environment variables.
-    // We will later add a mechanism that will allow defining custom properties or env vars, and thus specify the key
-    // on a per-module basis.
-    private suspend fun createSignerFromEnvConfig(): PgpSigner = try {
-        PgpSigner.bouncyCastle(
-            signingKey = getDynamicInputs().readEnv("AMPER_SIGNING_KEY")?.let(::AsciiArmoredPgpKey)
-                ?: userReadableError(
-                    "Artifact signing is enabled, but the AMPER_SIGNING_KEY environment variable is not provided. " +
-                            "Please set this variable to a valid PGP private key in ASCII-armored format."
-                ),
-            keyPassphrase = getDynamicInputs().readEnv("AMPER_SIGNING_KEY_PASSPHRASE")?.toCharArray(),
-        )
-    } catch (e: PgpKeyParsingException) {
-        userReadableError("Cannot sign artifacts, failed to parse signing key from the AMPER_SIGNING_KEY environment " +
-                "variable: ${e.message}")
-    }
-
-    private suspend fun PgpSigner.signArtifact(artifact: Artifact): Artifact {
-        val signatureFilePath = tempRoot.path.resolve(artifact.file.name + ".asc")
-        // TODO extract the extra artifacts generation (pom and signatures) as a separate task and cache this as output
-        signatureFilePath.toFile().deleteOnExit()
-        try {
-            sign(artifact.file.toPath(), outputSignatureFile = signatureFilePath)
-        } catch (e: PgpSigningException) {
-            userReadableError("PGP signing failed for artifact '${artifact.file.name}': ${e.message}")
-        }
-        return DefaultArtifact(
-            artifact.groupId,
-            artifact.artifactId,
-            artifact.classifier,
-            artifact.extension + ".asc",
-            artifact.version,
-        ).setFile(signatureFilePath.toFile())
-    }
+    private fun MavenPublishable.toMavenArtifact(): Artifact = DefaultArtifact(
+        coordinates.groupId,
+        coordinates.artifactId,
+        coordinates.classifier,
+        mavenArtifactExtension,
+        coordinates.version,
+    ).setFile(path.toFile())
 
     private fun RepositoriesModulePart.Repository.toMavenRemoteRepository(): RemoteRepository {
         val builder = RemoteRepository.Builder(id, "default", url)

@@ -19,6 +19,10 @@ import org.jetbrains.amper.frontend.isPublishingEnabled
 import org.jetbrains.amper.frontend.mavenRepositories
 import org.jetbrains.amper.frontend.shouldPublishSourcesJars
 import org.jetbrains.amper.tasks.ProjectTasksBuilder.Companion.getTaskOutputPath
+import org.jetbrains.amper.tasks.js.JsTaskType
+import org.jetbrains.amper.tasks.native.NativeTaskType
+import org.jetbrains.amper.tasks.wasm.WasmTaskType
+import org.jetbrains.amper.util.BuildType
 
 internal enum class CommonTaskType(override val prefix: String) : PlatformTaskType {
     Compile("compile"),
@@ -115,6 +119,26 @@ fun ProjectTasksBuilder.setupCommonTasks() {
     allModules()
         .withEach {
             if (module.isPublishingEnabled()) {
+                val prepareMavenPublishablesTaskName = TaskName.moduleTask(module, "prepareMavenPublishables")
+                tasks.registerTask(
+                    PrepareMavenPublishablesTask(
+                        taskName = prepareMavenPublishablesTaskName,
+                        module = module,
+                        taskOutputRoot = context.getTaskOutputPath(prepareMavenPublishablesTaskName),
+                        incrementalCache = context.incrementalCache,
+                    ),
+                    dependsOn = buildList {
+                        module.leafPlatforms.forEach { platform ->
+                            addAll(tasksWithPlatformSpecificPublishablesFor(platform))
+                            if (module.shouldPublishSourcesJars()) {
+                                add(CommonTaskType.SourcesJar.getTaskName(module, platform))
+                            }
+                            // we need dependencies to get publication coordinate overrides (e.g. -jvm variant)
+                            add(CommonTaskType.Dependencies.getTaskName(module, platform, isTest = false))
+                        }
+                    },
+                )
+
                 val publishRepositories = module.mavenRepositories.filter { it.publish }
                 for (repository in publishRepositories) {
                     val publishTaskName = publishTaskNameFor(module, repository)
@@ -123,19 +147,8 @@ fun ProjectTasksBuilder.setupCommonTasks() {
                             taskName = publishTaskName,
                             module = module,
                             targetRepository = repository,
-                            tempRoot = context.projectTempRoot,
                         ),
-                        dependsOn = buildList {
-                            // TODO add tasks that create the artifacts of other platforms
-                            add(CommonTaskType.Jar.getTaskName(module, Platform.JVM, isTest = false))
-                            module.leafPlatforms.forEach { platform ->
-                                if (module.shouldPublishSourcesJars()) {
-                                    add(CommonTaskType.SourcesJar.getTaskName(module, platform))
-                                }
-                                // we need dependencies to get publication coordinate overrides (e.g. -jvm variant)
-                                add(CommonTaskType.Dependencies.getTaskName(module, platform, isTest = false))
-                            }
-                        }
+                        dependsOn = listOf(prepareMavenPublishablesTaskName),
                     )
 
                     // Publish task should depend on publishing of modules which this module depends on
@@ -154,6 +167,50 @@ fun ProjectTasksBuilder.setupCommonTasks() {
                 }
             }
         }
+}
+
+// TODO We should probably use some task artifact type to represent publishables and avoid having to list them here
+private fun ModuleSequenceCtx.tasksWithPlatformSpecificPublishablesFor(platform: Platform): List<TaskName> = buildList {
+    when (platform) {
+        Platform.JVM -> add(CommonTaskType.Jar.getTaskName(module, platform, isTest = false))
+        Platform.ANDROID -> add(CommonTaskType.Jar.getTaskName(module, platform, isTest = false, BuildType.Release))
+        Platform.JS -> add(JsTaskType.CompileKLib.getTaskName(module, platform, isTest = false))
+        Platform.WASM_JS,
+        Platform.WASM_WASI,
+            -> add(WasmTaskType.CompileKLib.getTaskName(module, platform, isTest = false))
+        Platform.LINUX_X64,
+        Platform.LINUX_ARM64,
+        Platform.TVOS_ARM64,
+        Platform.TVOS_X64,
+        Platform.TVOS_SIMULATOR_ARM64,
+        Platform.MACOS_X64,
+        Platform.MACOS_ARM64,
+        Platform.IOS_ARM64,
+        Platform.IOS_SIMULATOR_ARM64,
+        Platform.IOS_X64,
+        Platform.WATCHOS_ARM64,
+        Platform.WATCHOS_ARM32,
+        Platform.WATCHOS_DEVICE_ARM64,
+        Platform.WATCHOS_SIMULATOR_ARM64,
+        Platform.MINGW_X64,
+        Platform.ANDROID_NATIVE_ARM32,
+        Platform.ANDROID_NATIVE_ARM64,
+        Platform.ANDROID_NATIVE_X64,
+        Platform.ANDROID_NATIVE_X86,
+            -> add(NativeTaskType.CompileKLib.getTaskName(module, platform, isTest = false, BuildType.Release))
+        Platform.COMMON,
+        Platform.WEB,
+        Platform.NATIVE,
+        Platform.LINUX,
+        Platform.APPLE,
+        Platform.TVOS,
+        Platform.MACOS,
+        Platform.IOS,
+        Platform.WATCHOS,
+        Platform.MINGW,
+        Platform.ANDROID_NATIVE,
+            -> error("Platform $platform is not a leaf, yet appeared in leafPlatforms")
+    }
 }
 
 internal fun publishTaskNameFor(module: AmperModule, repository: RepositoriesModulePart.Repository): TaskName =

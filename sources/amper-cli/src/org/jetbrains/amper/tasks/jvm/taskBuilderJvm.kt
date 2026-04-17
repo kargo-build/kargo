@@ -6,6 +6,7 @@ package org.jetbrains.amper.tasks.jvm
 
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.frontend.Platform
+import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.doCapitalize
 import org.jetbrains.amper.frontend.isPublishingEnabled
 import org.jetbrains.amper.frontend.mavenRepositories
@@ -15,6 +16,7 @@ import org.jetbrains.amper.tasks.CommonTaskType
 import org.jetbrains.amper.tasks.FragmentTaskType
 import org.jetbrains.amper.tasks.NoopTask
 import org.jetbrains.amper.tasks.PlatformTaskType
+import org.jetbrains.amper.tasks.PrepareMavenPublishablesTask
 import org.jetbrains.amper.tasks.ProjectTasksBuilder
 import org.jetbrains.amper.tasks.ProjectTasksBuilder.Companion.getTaskOutputPath
 import org.jetbrains.amper.tasks.compose.isComposeEnabledFor

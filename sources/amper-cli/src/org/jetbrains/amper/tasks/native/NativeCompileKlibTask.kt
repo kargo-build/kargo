@@ -168,6 +168,7 @@ internal class NativeCompileKlibTask(
             compiledKlib = artifact,
             dependencyKlibs = libraryPaths,
             taskName = taskName,
+            platform = platform,
         )
     }
 
@@ -175,6 +176,7 @@ internal class NativeCompileKlibTask(
         val compiledKlib: Path?,
         val dependencyKlibs: List<Path>,
         val taskName: TaskName,
+        val platform: Platform,
     ) : TaskResult
 
     private val logger = LoggerFactory.getLogger(javaClass)
