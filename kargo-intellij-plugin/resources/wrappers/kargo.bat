@@ -17,9 +17,9 @@
 setlocal
 
 @rem The version of the Kargo distribution to provision and use
-set amper_version=0.1.2
+set amper_version=0.2.0
 @rem Establish chain of trust from here by specifying exact checksum of Kargo distribution to be run
-set amper_sha256=4a8f22e1db110efb3946f851ee155333b4589f3d30bf1aa4c9e5d65ffdab6156
+set amper_sha256=5f0055ad27039090dab9ec074f579ca1b049d05bd99c1ab2c58254aff46769a7
 
 if not defined AMPER_DOWNLOAD_ROOT set AMPER_DOWNLOAD_ROOT=https://github.com/kargo-build/kargo/releases/download
 if not defined AMPER_JRE_DOWNLOAD_ROOT set AMPER_JRE_DOWNLOAD_ROOT=https:/
@@ -69,7 +69,46 @@ if (-not $createdNew) { ^
 try { ^
     if ((Get-Content '%flag_file%' -ErrorAction Ignore) -ne '%sha%') { ^
         if (('%show_banner_on_cache_miss%' -eq 'true') -and [string]::IsNullOrEmpty('%AMPER_NO_WELCOME_BANNER%')) { ^
-            Write-Host '*** Welcome to Kargo v.%amper_version%! ***'; ^
+            Write-Host ''; ^
+            Write-Host '                                       Welcome to'; ^
+            Write-Host -NoNewline '██╗  ██╗ ';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline ' █████╗ ';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██████╗  ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██████╗   '; Start-Sleep -m 10; ^
+            Write-Host '██████╗  ';  Start-Sleep -m 30; ^
+ ^
+            Write-Host -NoNewline '██║ ██╔╝ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██╔══██╗';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██╔══██╗ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██╔════╝  '; Start-Sleep -m 10; ^
+            Write-Host '██╔═══██╗';  Start-Sleep -m 30; ^
+ ^
+            Write-Host -NoNewline '█████╔╝  ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '███████║';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██████╔╝ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██║  ███╗ '; Start-Sleep -m 10; ^
+            Write-Host '██║   ██║';  Start-Sleep -m 30; ^
+ ^
+            Write-Host -NoNewline '██╔═██╗  ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██╔══██║';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██╔══██╗ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██║   ██║ '; Start-Sleep -m 10; ^
+            Write-Host '██║   ██║';  Start-Sleep -m 30; ^
+ ^
+            Write-Host -NoNewline '██║  ██╗ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██║  ██║';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '██║  ██║ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '╚██████╔╝ '; Start-Sleep -m 10; ^
+            Write-Host '╚██████╔╝';  Start-Sleep -m 30; ^
+ ^
+            Write-Host -NoNewline '╚═╝  ╚═╝ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline '╚═╝  ╚═╝';   Start-Sleep -m 10; ^
+            Write-Host -NoNewline '╚═╝  ╚═╝ ';  Start-Sleep -m 10; ^
+            Write-Host -NoNewline ' ╚═════╝  '; Start-Sleep -m 10; ^
+            Write-Host ' ╚═════╝ ';  Start-Sleep -m 200; ^
+ ^
+            Write-Host ''; ^
+            Write-Host '   v.%amper_version%'; ^
             Write-Host ''; ^
             Write-Host 'This is the first run of this version, so we need to download the actual Kargo distribution.'; ^
             Write-Host 'Please give us a few seconds now, subsequent runs will be faster.'; ^

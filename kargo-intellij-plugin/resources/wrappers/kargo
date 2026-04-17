@@ -17,9 +17,9 @@
 set -e -u
 
 # The version of the Kargo distribution to provision and use
-amper_version=0.1.2
+amper_version=0.2.0
 # Establish chain of trust from here by specifying exact checksum of Kargo distribution to be run
-amper_sha256=4a8f22e1db110efb3946f851ee155333b4589f3d30bf1aa4c9e5d65ffdab6156
+amper_sha256=5f0055ad27039090dab9ec074f579ca1b049d05bd99c1ab2c58254aff46769a7
 
 AMPER_DOWNLOAD_ROOT="${AMPER_DOWNLOAD_ROOT:-https://github.com/kargo-build/kargo/releases/download}"
 AMPER_JRE_DOWNLOAD_ROOT="${AMPER_JRE_DOWNLOAD_ROOT:-https:/}"
@@ -85,43 +85,46 @@ download_and_extract() {
 
   if [ "$show_banner_on_cache_miss" = "true" ] && [ -z "${AMPER_NO_WELCOME_BANNER:-}" ]; then
       echo
+      tput civis >/dev/null 2>&1 || true
+      echo
       echo '                                       Welcome to'
-      echo -n '██╗  ██╗ '; sleep 0.01
-      echo -n '█████╗ '; sleep 0.01
-      echo -n '██████╗  '; sleep 0.01
-      echo -n '██████╗  '; sleep 0.01
-      echo '██████╗ '; sleep 0.03
-      
-      echo -n '██║ ██╔╝'; sleep 0.01
-      echo -n '██╔══██╗'; sleep 0.01
-      echo -n '██╔══██╗'; sleep 0.01
-      echo -n '██╔════╝ '; sleep 0.01
-      echo '██╔═══██╗'; sleep 0.03
-      
-      echo -n '█████╔╝ '; sleep 0.01
-      echo -n '███████║'; sleep 0.01
-      echo -n '██████╔╝'; sleep 0.01
-      echo -n '██║  ███╗'; sleep 0.01
-      echo '██║   ██║'; sleep 0.03
-      
-      echo -n '██╔═██╗ '; sleep 0.01
-      echo -n '██╔══██║'; sleep 0.01
-      echo -n '██╔══██╗'; sleep 0.01
-      echo -n '██║   ██║'; sleep 0.01
-      echo '██║   ██║'; sleep 0.03
-      
-      echo -n '██║  ██╗'; sleep 0.01
-      echo -n '██║  ██║'; sleep 0.01
-      echo -n '██║  ██║'; sleep 0.01
-      echo -n '╚██████╔╝'; sleep 0.01
-      echo '╚██████╔╝'; sleep 0.03
-      
-      echo -n '╚═╝  ╚═╝'; sleep 0.01
-      echo -n '╚═╝  ╚═╝'; sleep 0.01
-      echo -n '╚═╝  ╚═╝'; sleep 0.01
-      echo -n ' ╚═════╝ '; sleep 0.01
-      echo ' ╚═════╝ '; sleep 0.2
-      
+      printf "%s" '██╗  ██╗ ';   sleep 0.01
+      printf "%s" ' █████╗ ';   sleep 0.01
+      printf "%s" '██████╗  ';  sleep 0.01
+      printf "%s" '██████╗   '; sleep 0.01
+      printf "%s\n" '██████╗  '; sleep 0.03
+
+      printf "%s" '██║ ██╔╝ ';  sleep 0.01
+      printf "%s" '██╔══██╗';   sleep 0.01
+      printf "%s" '██╔══██╗ ';  sleep 0.01
+      printf "%s" '██╔════╝  '; sleep 0.01
+      printf "%s\n" '██╔═══██╗'; sleep 0.03
+
+      printf "%s" '█████╔╝  ';  sleep 0.01
+      printf "%s" '███████║';   sleep 0.01
+      printf "%s" '██████╔╝ ';  sleep 0.01
+      printf "%s" '██║  ███╗ '; sleep 0.01
+      printf "%s\n" '██║   ██║'; sleep 0.03
+
+      printf "%s" '██╔═██╗  ';  sleep 0.01
+      printf "%s" '██╔══██║';   sleep 0.01
+      printf "%s" '██╔══██╗ ';  sleep 0.01
+      printf "%s" '██║   ██║ '; sleep 0.01
+      printf "%s\n" '██║   ██║'; sleep 0.03
+
+      printf "%s" '██║  ██╗ ';  sleep 0.01
+      printf "%s" '██║  ██║';   sleep 0.01
+      printf "%s" '██║  ██║ ';  sleep 0.01
+      printf "%s" '╚██████╔╝ '; sleep 0.01
+      printf "%s\n" '╚██████╔╝'; sleep 0.03
+
+      printf "%s" '╚═╝  ╚═╝ ';  sleep 0.01
+      printf "%s" '╚═╝  ╚═╝';   sleep 0.01
+      printf "%s" '╚═╝  ╚═╝ ';  sleep 0.01
+      printf "%s" ' ╚═════╝  '; sleep 0.01
+      printf "%s\n" ' ╚═════╝ '; sleep 0.2
+
+      tput cnorm >/dev/null 2>&1 || true
       echo ""
       echo "   v.$amper_version"
       echo
