@@ -71,7 +71,10 @@ class PgpKeyParsingException(cause: Throwable) : Exception(cause.message, cause)
 /**
  * Thrown when signing fails.
  */
-class PgpSigningException(cause: Throwable) : Exception(cause.message, cause)
+class PgpSigningException(cause: Throwable) : Exception(
+    cause.toString(),
+    cause
+)
 
 private class BouncyCastlePgpSigner(
     /**
