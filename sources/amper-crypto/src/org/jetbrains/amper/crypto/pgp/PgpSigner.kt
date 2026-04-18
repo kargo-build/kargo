@@ -26,7 +26,7 @@ interface PgpSigner {
      *
      * @throws PgpSigningException if signing fails
      */
-    fun sign(inputFile: Path, outputSignatureFile: Path)
+    suspend fun sign(inputFile: Path, outputSignatureFile: Path)
 
     companion object {
         /**
@@ -90,7 +90,7 @@ private class BouncyCastlePgpSigner(
 
     private val openPgpApi = BcOpenPGPApi()
 
-    override fun sign(inputFile: Path, outputSignatureFile: Path) {
+    override suspend fun sign(inputFile: Path, outputSignatureFile: Path) {
         val signature = sign(inputFile)
         outputSignatureFile.writeText(signature.toAsciiArmoredString())
     }

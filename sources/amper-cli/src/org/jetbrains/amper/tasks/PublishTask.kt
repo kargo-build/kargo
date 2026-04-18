@@ -182,7 +182,7 @@ class PublishTask(
                 "variable: ${e.message}")
     }
 
-    private fun PgpSigner.signArtifact(artifact: Artifact): Artifact {
+    private suspend fun PgpSigner.signArtifact(artifact: Artifact): Artifact {
         val signatureFilePath = tempRoot.path.resolve(artifact.file.name + ".asc")
         // TODO extract the extra artifacts generation (pom and signatures) as a separate task and cache this as output
         signatureFilePath.toFile().deleteOnExit()
