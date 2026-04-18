@@ -1,42 +1,79 @@
 package build.kargo.intellij.project
 
+import com.intellij.icons.AllIcons
 import com.intellij.ide.projectView.PresentationData
 import com.intellij.ide.projectView.ProjectViewNode
 import com.intellij.ide.projectView.ProjectViewNodeDecorator
+import com.intellij.openapi.module.ModuleManager
 import com.intellij.openapi.module.ModuleUtilCore
+import com.intellij.openapi.roots.ModuleRootManager
 import com.intellij.ui.SimpleTextAttributes
+import com.intellij.util.PlatformIcons
 
 /**
- * Removes the bracketed module name suffixes (e.g., "[kargo-demo-app.common]") 
- * from the Project View, ensuring a clean folder structure identical to Gradle/Amper.
+ * Cleans up the Project View for Kargo projects:
+ * - Project root: bold name
+ * - Source roots (src/, src@linux/, etc.): blue source folder icon
+ * - Vendor module content roots (git source repos): library icon + clean repo name
+ * - Other module dirs: strips bracketed suffixes
  */
 class KargoProjectViewNodeDecorator : ProjectViewNodeDecorator {
+
     override fun decorate(node: ProjectViewNode<*>, data: PresentationData) {
         val file = node.virtualFile ?: return
         if (!file.isDirectory) return
         val project = node.project ?: return
 
-        // We only want to touch the UI if this is actually a Kargo-managed project.
-        // Kargo fragments always contain '.' in their module names (e.g., project.common).
-        val isKargoProject = com.intellij.openapi.module.ModuleManager.getInstance(project).modules.any { it.name.contains(".") }
-        if (!isKargoProject) return
-        
-        // The file must belong to SOME module in the workspace to be decorated by us.
-        ModuleUtilCore.findModuleForFile(file, project) ?: return
+        if (!isKargoProject(project)) return
 
-        // IntelliJ often groups modules at the root or shared directories as "directory-name [module1, module2]"
-        val hasBrackets = data.coloredText.any { it.text.contains("[") && it.text.contains("]") }
-        val hasLocationText = data.locationString != null
-
-        if (hasBrackets || hasLocationText) {
-            // Unconditionally strip the suffix and location string, leaving only the clean directory name.
+        // --- Project root: bold ---
+        if (file.path == project.basePath) {
             data.clearText()
-            
-            // To emulate Amper/Gradle native behavior, if the folder is the project root, make it bold
-            val isRoot = file.path == project.basePath
-            val attrs = if (isRoot) SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES else SimpleTextAttributes.REGULAR_ATTRIBUTES
-            
-            data.addText(file.name, attrs)
+            data.addText(file.name, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
+            data.locationString = null
+            return
+        }
+
+        val moduleManager = ModuleManager.getInstance(project)
+
+        // --- Vendor content roots: "External Sources" style ---
+        // The content root of a vendor module is the repo root (parent of src/)
+        val vendorModule = moduleManager.modules.firstOrNull { module ->
+            module.name.startsWith("vendor.") &&
+                ModuleRootManager.getInstance(module).contentRoots.any { it.path == file.path }
+        }
+        if (vendorModule != null) {
+            // Clean name: strip "vendor." prefix and fragment suffix (.common, .linuxX64, etc.)
+            // "vendor.kargo-build-kargo-native-git-lib.common" → "kargo-native-git-lib"
+            val repoSlug = vendorModule.name
+                .removePrefix("vendor.")
+                .substringBeforeLast(".")   // remove fragment name
+            // Further clean: if slug is "org-repo-name", keep as-is; looks good enough
+            data.clearText()
+            data.addText(repoSlug, SimpleTextAttributes.REGULAR_ATTRIBUTES)
+            data.locationString = null
+            data.setIcon(AllIcons.Nodes.PpLibFolder)
+            return
+        }
+
+        // --- Source roots: blue source folder icon ---
+        val isSourceRoot = moduleManager.modules.any { module ->
+            ModuleRootManager.getInstance(module).sourceRoots.any { it.path == file.path }
+        }
+        if (isSourceRoot) {
+            data.clearText()
+            data.addText(file.name, SimpleTextAttributes.REGULAR_ATTRIBUTES)
+            data.locationString = null
+            data.setIcon(PlatformIcons.MODULES_SOURCE_FOLDERS_ICON)
+            return
+        }
+
+        // --- Other module-owned dirs: strip bracketed suffixes ---
+        ModuleUtilCore.findModuleForFile(file, project) ?: return
+        val hasBrackets = data.coloredText.any { it.text.contains("[") && it.text.contains("]") }
+        if (hasBrackets || data.locationString != null) {
+            data.clearText()
+            data.addText(file.name, SimpleTextAttributes.REGULAR_ATTRIBUTES)
             data.locationString = null
         }
     }

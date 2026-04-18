@@ -77,6 +77,7 @@
     <!-- 7. UI Enhancements -->
     <iconProvider implementation="build.kargo.intellij.project.KargoIconProvider" />
     <projectViewNodeDecorator implementation="build.kargo.intellij.project.KargoProjectViewNodeDecorator" />
+    <treeStructureProvider implementation="build.kargo.intellij.project.KargoExternalSourcesTreeStructureProvider" order="last" />
 
 
     <!-- 8. Project Wizard -->

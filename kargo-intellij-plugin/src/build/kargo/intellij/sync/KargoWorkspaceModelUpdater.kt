@@ -24,6 +24,7 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTable
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
+import com.intellij.openapi.roots.libraries.PersistentLibraryKind
 import com.intellij.openapi.vfs.VfsUtilCore
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.amper.core.AmperUserCacheRoot
@@ -31,6 +32,7 @@ import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.Key
 import org.jetbrains.amper.dependency.resolution.diagnostics.Severity
 import org.jetbrains.amper.dependency.resolution.diagnostics.detailedMessage
+import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.dependency.resolution.ResolutionLevel
 import org.jetbrains.amper.dependency.resolution.diagnostics.PlatformsAreNotSupported
 import org.jetbrains.amper.frontend.Fragment
@@ -129,41 +131,29 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     nameToModule[moduleName] = ideModule
 
                     val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
-                    
-                    // Derive the module root directory from the fragment's source root parent
-                    // This prevents IntelliJ from rendering visual grouping brackets in the Project View
-                    val firstSourceRoot = fragment.sourceRoots.firstOrNull()?.toString()
-                    val moduleRootPath = firstSourceRoot?.let { Paths.get(it).parent?.toString() }
-                    
-                    val contentEntry = if (moduleRootPath != null) {
-                        val moduleBaseUrl = VfsUtilCore.pathToUrl(moduleRootPath)
-                        val entry = if (modifiableModel.contentEntries.none { it.url == moduleBaseUrl }) {
-                            modifiableModel.addContentEntry(moduleBaseUrl)
-                        } else {
-                            modifiableModel.contentEntries.first { it.url == moduleBaseUrl }
-                        }
-                        
-                        // Exclude commonly generated directories to speed up IDE search and indexing
-                        listOf("build", "logs", ".kargo", ".amper").forEach { dirName ->
-                            val excludeUrl = VfsUtilCore.pathToUrl("$moduleRootPath/$dirName")
-                            if (!entry.excludeFolderUrls.contains(excludeUrl)) {
-                                entry.addExcludeFolder(excludeUrl)
-                            }
-                        }
-                        entry
-                    } else null
-                    
+                    val isVendor = kargoModule.userReadableName.startsWith("vendor.")
+
                     fragment.sourceRoots.forEach { sourceRoot ->
                         val rootPath = sourceRoot.toString()
-                        val url = VfsUtilCore.pathToUrl(rootPath)
-                        
-                        val entryToUse = contentEntry ?: if (modifiableModel.contentEntries.none { it.url == url }) {
-                            modifiableModel.addContentEntry(url)
+                        val sourceUrl = VfsUtilCore.pathToUrl(rootPath)
+
+                        // For vendor (git source) modules, use the repo root as content root so the
+                        // full repo is visible in the Project View. For project modules, use the
+                        // source root directly to avoid duplicating the project root folder.
+                        val contentRootPath = if (isVendor) {
+                            Paths.get(rootPath).parent?.toString() ?: rootPath
                         } else {
-                            modifiableModel.contentEntries.first { it.url == url }
+                            rootPath
                         }
-                        
-                        entryToUse.addSourceFolder(url, fragment.isTest)
+                        val contentUrl = VfsUtilCore.pathToUrl(contentRootPath)
+
+                        val entry = if (modifiableModel.contentEntries.none { it.url == contentUrl }) {
+                            modifiableModel.addContentEntry(contentUrl)
+                        } else {
+                            modifiableModel.contentEntries.first { it.url == contentUrl }
+                        }
+
+                        entry.addSourceFolder(sourceUrl, fragment.isTest)
                     }
                     
                     modifiableModel.inheritSdk()
@@ -541,8 +531,8 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                             // BFS from the direct dependency node, matching resolved nodes by key.
                             // For KMP libraries (e.g. kermit), the actual .klib is on a child node
                             // (e.g. kermit-linuxx64), not on the umbrella node itself.
-                            val queue = ArrayDeque<org.jetbrains.amper.dependency.resolution.DependencyNode>()
-                            val visited = mutableSetOf<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                            val queue = ArrayDeque<DependencyNode>()
+                            val visited = mutableSetOf<DependencyNode>()
                             queue.add(fragmentNode.dependencyNode)
                             while (queue.isNotEmpty()) {
                                 val current = queue.removeFirst()
@@ -577,10 +567,10 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         val prebuiltDirs = konanDir.listFiles { f -> f.isDirectory && f.name.startsWith("kotlin-native-prebuilt-") }
         val latestPrebuilt = prebuiltDirs?.maxByOrNull { it.name } ?: return
 
-        val kotlinNativeLibraryKind: com.intellij.openapi.roots.libraries.PersistentLibraryKind<*>? = try {
+        val kotlinNativeLibraryKind: PersistentLibraryKind<*>? = try {
             @Suppress("UNCHECKED_CAST")
             Class.forName("org.jetbrains.kotlin.idea.base.platforms.KotlinNativeLibraryKind")
-                .getField("INSTANCE").get(null) as? com.intellij.openapi.roots.libraries.PersistentLibraryKind<*>
+                .getField("INSTANCE").get(null) as? PersistentLibraryKind<*>
         } catch (_: Exception) { null }
 
         val nativeLibMap = mutableMapOf<String, Library>()
