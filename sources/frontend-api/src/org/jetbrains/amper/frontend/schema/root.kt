@@ -23,15 +23,10 @@ import org.jetbrains.amper.frontend.plugins.PluginDeclarationSchema
 import org.jetbrains.amper.frontend.userGuideUrl
 import java.nio.file.Path
 
-abstract class Base : SchemaNode() {
-
-    @Misnomers("templates")
-    @SchemaDoc("Lists the templates applied to the module. [Read more]($userGuideUrl/templates/)")
-    val apply by nullableValue<List<TraceablePath>>()
-
-    @SchemaDoc("The list of repositories used to look up and download external dependencies. [Read more]($userGuideUrl/dependencies/#managing-maven-repositories)")
-    val repositories by nullableValue<List<Repository>>()
-
+/**
+ * Everything that is context-aware (per-fragment) should go here.
+ */
+open class FragmentBase : SchemaNode() {
     @ModifierAware
     @SchemaDoc("The list of modules and libraries necessary to build the Module. [Read more]($userGuideUrl/dependencies)")
     val dependencies by nullableValue<List<Dependency>>()
@@ -39,6 +34,16 @@ abstract class Base : SchemaNode() {
     @ModifierAware
     @SchemaDoc("Configures the toolchains used in the build process. [Read more]($userGuideUrl/basics/#settings)")
     val settings: Settings by nested()
+}
+
+abstract class Base : FragmentBase() {
+
+    @Misnomers("templates")
+    @SchemaDoc("Lists the templates applied to the module. [Read more]($userGuideUrl/templates/)")
+    val apply by nullableValue<List<TraceablePath>>()
+
+    @SchemaDoc("The list of repositories used to look up and download external dependencies. [Read more]($userGuideUrl/dependencies/#managing-maven-repositories)")
+    val repositories by nullableValue<List<Repository>>()
 
     @PlatformAgnostic
     @SchemaDoc("Plugins applied in `project.yaml` can be enabled and configured here")

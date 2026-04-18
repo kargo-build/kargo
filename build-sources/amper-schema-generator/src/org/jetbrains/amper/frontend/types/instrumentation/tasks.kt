@@ -8,6 +8,7 @@ import com.squareup.kotlinpoet.MemberName
 import org.jetbrains.amper.frontend.contexts.MinimalModule
 import org.jetbrains.amper.frontend.plugins.MinimalPluginModule
 import org.jetbrains.amper.frontend.plugins.PluginYamlRoot
+import org.jetbrains.amper.frontend.schema.FragmentBase
 import org.jetbrains.amper.frontend.schema.Module
 import org.jetbrains.amper.frontend.schema.Project
 import org.jetbrains.amper.frontend.schema.Template
@@ -22,6 +23,7 @@ import kotlin.reflect.KClass
  * Declarations will be generated for these types and all those reachable from them.
  */
 internal val RootTypes: List<KClass<*>> = listOf(
+    FragmentBase::class,
     Module::class,
     Template::class,
     Project::class,

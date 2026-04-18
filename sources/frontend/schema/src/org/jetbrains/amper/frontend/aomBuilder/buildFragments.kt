@@ -12,19 +12,19 @@ import org.jetbrains.amper.frontend.FragmentLink
 import org.jetbrains.amper.frontend.Layout
 import org.jetbrains.amper.frontend.LeafFragment
 import org.jetbrains.amper.frontend.Notation
-import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.contexts.EmptyContexts
 import org.jetbrains.amper.frontend.contexts.PathCtx
 import org.jetbrains.amper.frontend.contexts.PlatformCtx
 import org.jetbrains.amper.frontend.contexts.TestCtx
 import org.jetbrains.amper.frontend.schema.Dependency
-import org.jetbrains.amper.frontend.schema.Module
+import org.jetbrains.amper.frontend.schema.FragmentBase
 import org.jetbrains.amper.frontend.schema.Settings
 import org.jetbrains.amper.frontend.schema.enabled
-import org.jetbrains.amper.frontend.tree.MissingPropertiesHandler
 import org.jetbrains.amper.frontend.tree.completeTree
 import org.jetbrains.amper.frontend.tree.instance
+import org.jetbrains.amper.frontend.tree.truncateTree
 import org.jetbrains.amper.frontend.types.SchemaTypingContext
+import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 import java.nio.file.Path
 import kotlin.io.path.div
@@ -217,26 +217,19 @@ internal fun createFragments(
         val selectedContexts = testCtx +
                 platforms.map { PlatformCtx(it.pretty) } +
                 PathCtx(ctx.moduleFile.toNioPath())
-        val refinedTree = ctx.refiner.refineTree(ctx.mergedTree, selectedContexts)
-        val handler = object : MissingPropertiesHandler.Default(problemReporter) {
-            override fun onMissingRequiredPropertyValue(
-                trace: Trace,
-                valuePath: List<String>,
-                relativeValuePath: List<String>,
-            ) = when (valuePath[0]) {
-                "settings", "dependencies" -> super.onMissingRequiredPropertyValue(trace, valuePath, relativeValuePath)
-                else -> Unit  // ignoring; was already reported in the `ctx.moduleCtxModule`.
-            }
-        }
-        val refinedModule = refinedTree.completeTree(handler)?.instance<Module>()
+        val fragmentBase = ctx.refiner.refineTree(
+            // We are only interested in a subset of a `Module` properties that is a `FragmentBase`.
+            tree = truncateTree(ctx.mergedTree, DeclarationOfFragmentBase),
+            selectedContexts = selectedContexts,
+        ).completeTree()?.instance<FragmentBase>()
             ?: return null
         val fragmentCtor = if (isLeaf) ::DefaultLeafFragment else ::DefaultFragment
         return fragmentCtor(
             this,
             ctx.module,
             isTest,
-            refinedModule.dependencies.orEmpty().mapNotNull { resolveDependency(it) },
-            refinedModule.settings,
+            fragmentBase.dependencies.orEmpty().mapNotNull { resolveDependency(it) },
+            fragmentBase.settings,
             ctx.moduleFile,
         )
     }

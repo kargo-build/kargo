@@ -7,9 +7,12 @@ package org.jetbrains.amper.frontend.tree
 import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.api.isDefault
 import org.jetbrains.amper.frontend.asBuildProblemSource
+import org.jetbrains.amper.frontend.contexts.MinimalModule
+import org.jetbrains.amper.frontend.diagnostics.FrontendDiagnosticId
 import org.jetbrains.amper.frontend.reportBundleError
+import org.jetbrains.amper.frontend.schema.ModuleProduct
 import org.jetbrains.amper.frontend.types.SchemaObjectDeclaration
-import org.jetbrains.amper.frontend.types.SchemaType
+import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 
 /**
@@ -24,24 +27,13 @@ private typealias ValuePath = List<Pair<String, Trace>>
  * Incomplete (invalid, unresolved, etc.) nodes are skipped as list/map elements.
  * If encountered in an object, they lead to the whole object being skipped because it'd no longer be complete.
  * If this leads to the root node being skipped, then this routine returns `null`.
- *
- * If some properties are missing in an object node, they are reported via the [problemReporter] context parameter.
  */
-context(problemReporter: ProblemReporter)
+context(_: ProblemReporter)
 fun RefinedMappingNode.completeTree(): CompleteObjectNode? {
-    return completeTree(MissingPropertiesHandler.Default(problemReporter))
+    return ensureCompleteTreeNode(this, emptyList()) as CompleteObjectNode?
 }
 
-/**
- * Same as `completeTree()`, but allows specifying a more flexible custom [missingPropertiesHandler].
- */
-fun RefinedMappingNode.completeTree(
-    missingPropertiesHandler: MissingPropertiesHandler,
-): CompleteObjectNode? = context(missingPropertiesHandler) {
-    ensureCompleteTreeNode(this, emptyList()) as CompleteObjectNode?
-}
-
-context(missingPropertiesHandler: MissingPropertiesHandler)
+context(_: ProblemReporter)
 private fun ensureCompleteTreeNode(
     node: RefinedTreeNode,
     valuePath: ValuePath,
@@ -87,6 +79,7 @@ private fun ensureCompleteTreeNode(
 
                 val completeKeyValues = mutableMapOf<String, CompletePropertyKeyValue>()
                 var hasMissingRequiredProps = false
+                val missingProperties = mutableListOf<MissingPropertyInfo>()
                 for (property in declaration.properties) {
                     val propertyValuePath = valuePath + (property.name to node.trace)
                     val mapLikePropertyValue = node.refinedChildren[property.name]
@@ -97,10 +90,11 @@ private fun ensureCompleteTreeNode(
                             // Find the last non-default trace in the path - that's the *base* trace for our missing value
                             val baseTraceIndex = propertyValuePath.indexOfLast { (_, trace) -> !trace.isDefault }
                             val baseTrace = propertyValuePath[baseTraceIndex].second
-                            missingPropertiesHandler.onMissingRequiredPropertyValue(
+                            missingProperties += MissingPropertyInfo(
                                 trace = baseTrace,
                                 valuePath = propertyValuePath.map { (name, _) -> name },
                                 relativeValuePath = propertyValuePath.drop(baseTraceIndex).map { (name, _) -> name },
+                                propertyDeclaration = property,
                             )
                         }
                         hasMissingRequiredProps = true
@@ -117,6 +111,10 @@ private fun ensureCompleteTreeNode(
                     }
                     completeKeyValues[property.name] = mapLikePropertyValue.asCompleteForObject(completeChild)
                 }
+                // Group missing properties by trace and report once per group
+                missingProperties.groupBy { it.trace }.values.forEach { group ->
+                    reportMissingProperties(group, declaration)
+                }
                 if (hasMissingRequiredProps) {
                     // We don't allow incomplete objects
                     null
@@ -128,53 +126,66 @@ private fun ensureCompleteTreeNode(
     }
 }
 
-/**
- * See [onMissingRequiredPropertyValue].
- */
-interface MissingPropertiesHandler {
-    /**
-     * Called when a value is missing for a "required" property.
-     *
-     * @param trace a trace of the outermost explicitly present (non-default) construct.
-     * @param valuePath a path (from the document root) for which the value is missing.
-     *   E.g., `["product", "type"]` or `["repositories", "[]", "url"]"`
-     * @param relativeValuePath a path relative to the construct with the [trace].
-     *   E.g., when the [valuePath] is `["tasks", "myTask", "action", "classpath", "dependencies"]`,
-     *   and the [trace] points to the `"action"` object,
-     *   then the `relativeValuePath` is `["classpath", "dependencies"]`.
-     */
-    fun onMissingRequiredPropertyValue(
-        trace: Trace,
-        valuePath: List<String>,
-        relativeValuePath: List<String>,
-    )
-
-    /**
-     * Default [MissingPropertiesHandler] implementation that does non-specific reporting.
-     */
-    open class Default(val problemReporter: ProblemReporter) : MissingPropertiesHandler {
-        override fun onMissingRequiredPropertyValue(
-            trace: Trace,
-            valuePath: List<String>,
-            relativeValuePath: List<String>,
-        ) {
-            problemReporter.reportBundleError(
-                source = trace.asBuildProblemSource(),
-                diagnosticId = TreeDiagnosticId.NoValueForRequiredProperty,
-                messageKey = "validation.missing.value",
-                relativeValuePath.joinToString("."),
-            )
+context(reporter: ProblemReporter)
+private fun reportMissingProperties(
+    properties: List<MissingPropertyInfo>,
+    inside: SchemaObjectDeclaration,
+) {
+    val reportedIndividually = mutableSetOf<MissingPropertyInfo>()
+    when (inside) {
+        is DeclarationOfMinimalModule -> for (info in properties) {
+            if (info.valuePath == listOf(MinimalModule::product.name)) {
+                reporter.reportBundleError(
+                    source = info.trace.asBuildProblemSource(),
+                    diagnosticId = FrontendDiagnosticId.ProductNotDefined,
+                    messageKey = "product.not.defined.empty",
+                )
+                reportedIndividually += info
+            }
+        }
+        is DeclarationOfModuleProduct -> for (info in properties) {
+            if (info.valuePath == listOf(ModuleProduct::type.name)) {
+                reporter.reportBundleError(
+                    source = info.trace.asBuildProblemSource(),
+                    diagnosticId = FrontendDiagnosticId.ProductNotDefined,
+                    messageKey = "product.not.defined",
+                )
+                reportedIndividually += info
+            }
         }
     }
-
-    object Noop : MissingPropertiesHandler {
-        override fun onMissingRequiredPropertyValue(
-            trace: Trace,
-            valuePath: List<String>,
-            relativeValuePath: List<String>,
-        )  = Unit // nothing here
+    val remainingBatch = properties - reportedIndividually
+    if (remainingBatch.isNotEmpty()) {
+        reporter.reportMessage(MissingPropertiesProblem(remainingBatch, inside))
     }
 }
+
+/**
+ * Information about a single missing required property.
+ * @see MissingPropertiesProblem
+ */
+class MissingPropertyInfo(
+    /**
+     * The trace of the outermost explicitly present (non-default) construct.
+     */
+    val trace: Trace,
+    /**
+     * The path (from the document root) for which the value is missing.
+     * E.g., `["product", "type"]` or `["repositories", "[]", "url"]"`
+     */
+    val valuePath: List<String>,
+    /**
+     * a path relative to the construct with the [trace].
+     * E.g., when the [valuePath] is `["tasks", "myTask", "action", "classpath", "dependencies"]`,
+     * and the [trace] points to the `"action"` object,
+     * then the `relativeValuePath` is `["classpath", "dependencies"]`.
+     */
+    val relativeValuePath: List<String>,
+    /**
+     * the declaration of the missing property.
+     */
+    val propertyDeclaration: SchemaObjectDeclaration.Property,
+)
 
 private fun propertyCheckDefaultIntegrity(
     propertyDeclaration: SchemaObjectDeclaration.Property,

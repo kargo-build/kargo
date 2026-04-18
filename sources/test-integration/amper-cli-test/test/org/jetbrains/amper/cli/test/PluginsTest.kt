@@ -667,9 +667,7 @@ class PluginsTest : AmperCliTestBase() {
             assertEmptyStdErr = false,
             expectedExitCode = 1,
         ).assertErrors(
-            "${pluginYaml}:3:13: No value for required task action parameter 'booleanProp'.",
-            "${pluginYaml}:3:13: No value for required task action parameter 'enumProp'.",
-            "${pluginYaml}:3:13: No value for required task action parameter 'intProp'.",
+            "${pluginYaml}:3:13: No value for required task action parameters: 'booleanProp', 'intProp', 'enumProp'.",
         )
     }
 

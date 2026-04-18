@@ -26,7 +26,6 @@ import org.jetbrains.amper.frontend.project.getTaskOutputRoot
 import org.jetbrains.amper.frontend.reportBundleError
 import org.jetbrains.amper.frontend.tree.BooleanNode
 import org.jetbrains.amper.frontend.tree.ErrorNode
-import org.jetbrains.amper.frontend.tree.MissingPropertiesHandler
 import org.jetbrains.amper.frontend.tree.RefinedMappingNode
 import org.jetbrains.amper.frontend.tree.TreeRefiner
 import org.jetbrains.amper.frontend.tree.add
@@ -143,7 +142,7 @@ class AmperPluginImpl(
         val mergedTree = mergeTrees(pluginTree, referenceValuesTree)
             .substituteCatalogDependencies(pluginModule.usedCatalog)
         TreeRefiner().refineTree(mergedTree, EmptyContexts)
-            .completeTree(MissingPropertiesHandler.Noop)?.instance<PluginYamlRoot>()
+            .completeTree()?.instance<PluginYamlRoot>()
     }
 
     fun taskNameFor(module: AmperModule, name: String) =

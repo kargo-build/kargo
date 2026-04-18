@@ -9,6 +9,7 @@ import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.api.isDefault
 import org.jetbrains.amper.frontend.api.withPrecedingValue
 import org.jetbrains.amper.frontend.contexts.EmptyContexts
+import org.jetbrains.amper.frontend.types.SchemaObjectDeclaration
 
 /**
  * Merges all the trees from the argument list.
@@ -43,3 +44,18 @@ fun mergeTrees(trees: List<MappingNode>): MappingNode {
         contexts = EmptyContexts,
     )
 }
+
+/**
+ * Truncates the type of the given [tree] to a "sub"-type ([truncateAs]).
+ * All the [MappingNode.children] that are not present in the new type declaration are filtered out.
+ */
+fun truncateTree(
+    tree: MappingNode,
+    truncateAs: SchemaObjectDeclaration,
+): MappingNode = tree.copy(
+    declaration = truncateAs,
+    children = tree.children.filter {
+        // Include those properties that have matching `propertyDeclaration`s in the "new" type.
+        truncateAs.getProperty(it.key) == it.propertyDeclaration
+    },
+)

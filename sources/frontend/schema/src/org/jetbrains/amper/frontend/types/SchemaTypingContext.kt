@@ -35,12 +35,7 @@ class SchemaTypingContext(
                 taskActionDeclaration = TaskActionVariantDeclaration(
                     qualifiedName = "org.jetbrains.amper.frontend.plugins.TaskAction",
                     variants = declarations.pluginData.declarations.tasks.map { taskInfo ->
-                        declarations.ObjectDeclaration(
-                            data = taskInfo.syntheticType,
-                            instantiationStrategy = {
-                                TaskAction(taskInfo)
-                            },
-                        )
+                        declarations.TaskActionDeclarationImpl(taskInfo)
                     }
                 )
             ),
@@ -78,9 +73,12 @@ class SchemaTypingContext(
     }
 }
 
+/**
+ * Synthetic variant that includes all available [task action types][TaskActionDeclaration].
+ */
 internal class TaskActionVariantDeclaration(
     override val qualifiedName: String,
-    override val variants: List<SchemaObjectDeclaration>,
+    override val variants: List<TaskActionDeclaration>,
 ) : SchemaVariantDeclaration {
     override val origin get() = SchemaOrigin.Builtin
     override val variantTree: List<SchemaVariantDeclaration.Variant> =
@@ -88,6 +86,12 @@ internal class TaskActionVariantDeclaration(
 
     override fun toString() = qualifiedName
 }
+
+/**
+ * A declaration corresponding to a concrete `@TaskAction` function in the plugin code.
+ * A member of a [TaskActionVariantDeclaration].
+ */
+internal interface TaskActionDeclaration : SchemaObjectDeclaration
 
 private class PluginDeclarations(
     val pluginData: PluginData,
@@ -150,7 +154,7 @@ private class PluginDeclarations(
         EnumDeclaration(pluginData.declarations.enums.first { it.schemaName == name })
     }
 
-    inner class ObjectDeclaration(
+    open inner class ObjectDeclaration(
         override val schemaName: PluginData.SchemaName,
         properties: List<PluginData.ClassData.Property>,
         override val origin: SchemaOrigin,
@@ -199,6 +203,9 @@ private class PluginDeclarations(
         override fun createInstance(): SchemaNode = instantiationStrategy()
         override fun toString() = qualifiedName
     }
+
+    inner class TaskActionDeclarationImpl(taskInfo: PluginData.TaskInfo)
+        : ObjectDeclaration(taskInfo.syntheticType, { TaskAction(taskInfo) }), TaskActionDeclaration
 
     private fun enabledProperty(origin: SchemaOrigin) = Property(
         name = "enabled",

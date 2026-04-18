@@ -7,7 +7,6 @@ package org.jetbrains.amper.frontend.contexts
 import com.intellij.openapi.vfs.VirtualFile
 import org.jetbrains.amper.frontend.FrontendPathResolver
 import org.jetbrains.amper.frontend.Platform
-import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.api.TraceableEnum
 import org.jetbrains.amper.frontend.api.isExplicitlySet
 import org.jetbrains.amper.frontend.asBuildProblemSource
@@ -18,7 +17,6 @@ import org.jetbrains.amper.frontend.messages.extractPsiElementOrNull
 import org.jetbrains.amper.frontend.reportBundleError
 import org.jetbrains.amper.frontend.schema.ModuleProduct
 import org.jetbrains.amper.frontend.schema.ProductType
-import org.jetbrains.amper.frontend.tree.MissingPropertiesHandler
 import org.jetbrains.amper.frontend.tree.TreeRefiner
 import org.jetbrains.amper.frontend.tree.completeTree
 import org.jetbrains.amper.frontend.tree.instance
@@ -49,29 +47,7 @@ internal fun tryReadMinimalModule(moduleFilePath: VirtualFile): MinimalModuleHol
             reportUnknowns = false,
         )
 
-        val refined = TreeRefiner().refineTree(moduleTree, EmptyContexts)
-        val delegate = object : MissingPropertiesHandler.Default(collectingReporter) {
-            override fun onMissingRequiredPropertyValue(
-                trace: Trace,
-                valuePath: List<String>,
-                relativeValuePath: List<String>,
-            ) {
-                when (valuePath) {
-                    listOf("product") -> collectingReporter.reportBundleError(
-                        source = trace.asBuildProblemSource(),
-                        diagnosticId = FrontendDiagnosticId.ProductNotDefined,
-                        messageKey = "product.not.defined.empty",
-                    )
-                    listOf("product", "type") -> collectingReporter.reportBundleError(
-                        source = trace.asBuildProblemSource(),
-                        diagnosticId = FrontendDiagnosticId.ProductNotDefined,
-                        messageKey = "product.not.defined",
-                    )
-                    else -> super.onMissingRequiredPropertyValue(trace, valuePath, relativeValuePath)
-                }
-            }
-        }
-        refined.completeTree(delegate)?.instance<MinimalModule>()
+        TreeRefiner().refineTree(moduleTree, EmptyContexts).completeTree()?.instance<MinimalModule>()
     }
     if (minimalModule == null) {
         // Replay errors to the original reporter if we couldn't even create the minimal module.
