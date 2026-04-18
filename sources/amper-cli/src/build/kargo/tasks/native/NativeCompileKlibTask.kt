@@ -70,8 +70,8 @@ internal class NativeCompileKlibTask(
 
         // In Kargo, we support an 'output' configuration for native products
         // Only libraries (and not tests) should have their klib output copied
-        if (delegate.module.type.isLibrary() && !isTest) {
-            val outputSetting = delegate.module.fragments.firstNotNullOfOrNull { it.settings.native?.output } ?: "dist/"
+        val outputSetting = delegate.module.fragments.firstNotNullOfOrNull { it.settings.native?.output }
+        if (delegate.module.type.isLibrary() && !isTest && outputSetting != null) {
             val moduleRoot = delegate.module.source.moduleDir
 
             val destination = if (outputSetting.endsWith("/")) {
