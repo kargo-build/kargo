@@ -31,7 +31,6 @@ import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.diagnostics.Severity
 import org.jetbrains.amper.dependency.resolution.diagnostics.detailedMessage
 import org.jetbrains.amper.dependency.resolution.ResolutionLevel
-import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.dependency.resolution.diagnostics.PlatformsAreNotSupported
 import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.FragmentDependencyType
@@ -39,30 +38,18 @@ import org.jetbrains.amper.frontend.LocalModuleDependency
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.fragmentsTargeting
 import org.jetbrains.amper.frontend.Platform
-import org.jetbrains.amper.frontend.GitSourcesModulePart
-import org.jetbrains.amper.frontend.dr.resolver.DependenciesFlowType
+import org.jetbrains.amper.frontend.dr.resolver.AmperResolutionSettings
 import org.jetbrains.amper.frontend.dr.resolver.DirectFragmentDependencyNode
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies.Companion.resolveProjectDependencies
 import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencyNode
 import org.jetbrains.amper.frontend.dr.resolver.ResolutionDepth
-import org.jetbrains.amper.frontend.dr.resolver.ResolutionInput
-import org.jetbrains.amper.frontend.dr.resolver.getAmperFileCacheBuilder
-import org.jetbrains.amper.frontend.dr.resolver.moduleDependenciesResolver
+import org.jetbrains.amper.frontend.dr.resolver.ResolutionRunSettings
 import org.jetbrains.amper.frontend.isDescendantOf
 import java.io.File
 import java.lang.reflect.Array
 import java.nio.file.Files
 import java.nio.file.Paths
-import build.kargo.frontend.dr.resolver.GitSourcesExtension
-import build.kargo.frontend.schema.BitbucketSource
-import build.kargo.frontend.schema.GitHubSource
-import build.kargo.frontend.schema.GitLabSource
-import build.kargo.frontend.schema.GitSource
-import build.kargo.frontend.schema.GitSourceException
-import build.kargo.frontend.schema.GitUrlSource
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
-import com.intellij.openapi.wm.ToolWindowManager
-import build.kargo.intellij.sync.KargoSyncErrorCollector
 
 /**
  * Updates the IntelliJ WorkspaceModel based on the Kargo project model.
@@ -73,40 +60,14 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
     fun updateWorkspaceModel(model: Model, errorCollector: KargoSyncErrorCollector) {
         val app = ApplicationManager.getApplication()
         logger.info("Kargo: Scheduling WorkspaceModel update with ${model.modules.size} modules")
-        
-        // 1. Process Git Sources synchronously on background thread
-        // We do this BEFORE invokeLater to prevent blocking the UI/EDT
-        // Clear stale cache so removed/added Git deps are detected on every sync
-        GitSourcesExtension.clearCache()
-        model.modules.forEach { kargoModule ->
-            val allPlatforms = kargoModule.fragments.flatMap { it.platforms.toList() }.distinct()
-            
-            GitSourcesExtension.processModuleGitSources(kargoModule, allPlatforms) { source, exception ->
-                val repoRef = when (source) {
-                    is GitHubSource -> "github:${source.github}:${source.version.value}"
-                    is GitLabSource -> "gitlab:${source.gitlab}:${source.version.value}"
-                    is BitbucketSource -> "bitbucket:${source.bitbucket}:${source.version.value}"
-                    is GitUrlSource -> "${source.git}:${source.version.value}"
-                }
-                val cleanMessage = if (exception is GitSourceException) {
-                    val msg = exception.rawMessage.replace("\n", "<br>")
-                    val details = exception.details?.trim()?.replace("\n", "<br>")
-                    if (details != null) "$msg<br>$details" else msg
-                } else {
-                    exception.message?.replace("\n", "<br>") ?: "Unknown error"
-                }
-                
-                errorCollector.reportError("<b>Git Dependency:</b> Unable to resolve dependency $repoRef<br>$cleanMessage")
-            }
-        }
-        
-        // 2. Resolve External Dependencies (Maven) on background thread
+
+        // Git sources are now resolved by the frontend as LocalModuleDependency entries
+        // injected into each fragment's externalDependencies. No separate processing needed here.
+
+        // Resolve External Dependencies (Maven) on background thread.
         // This is a heavy operation (uses runBlocking) so it MUST NOT be on EDT.
         val fragmentToExternalDeps = resolveAllDependencies(model, errorCollector)
 
-        // Errors are now collected via errorCollector and handled by KargoSyncManager
-
-        
         app.invokeLater {
             if (project.isDisposed) return@invokeLater
             
@@ -298,82 +259,6 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             }
         }
         
-        // Inject Git Sources Dependencies
-        // Clean up old Kargo Git libraries from the LibraryTable
-        val gitLibraryModel = libraryTable.modifiableModel
-        val gitLibsToRemove = libraryTable.libraries.filter { it.name?.startsWith("Kargo Git:") == true || it.name?.startsWith("Kargo Local Git:") == true }
-
-        gitLibsToRemove.forEach { lib ->
-            gitLibraryModel.removeLibrary(lib)
-        }
-        gitLibraryModel.commit()
-        // 1. Create all Git libraries and commit the project library model
-        val gitLibMap = mutableMapOf<String, Library>()
-        val gitLibraryModelNew = libraryTable.modifiableModel
-        
-        model.modules.forEach { kargoModule ->
-            val gitArtifacts = GitSourcesExtension.getArtifacts(kargoModule)
-            gitArtifacts.forEach { artifact ->
-                val absPath = artifact.artifactPath.toAbsolutePath().toString()
-                val source = artifact.source
-                val repoName = when (source) {
-                    is GitHubSource -> source.github
-                    is GitLabSource -> source.gitlab
-                    is BitbucketSource -> source.bitbucket
-                    is GitUrlSource -> source.git.substringAfterLast("/").removeSuffix(".git")
-                }
-                val version = source.version.value
-                val libraryName = "Kargo Git: $repoName:$version"
-                
-                var library = gitLibMap[libraryName] ?: libraryTable.getLibraryByName(libraryName)
-                if (library == null) {
-                    library = gitLibraryModelNew.createLibrary(libraryName)
-                    val libModifiableModel = library.modifiableModel
-                    
-                    val url = VfsUtilCore.pathToUrl(absPath)
-                    val finalUrl = if (absPath.endsWith(".klib")) "jar://${absPath}!/" else url
-                    libModifiableModel.addRoot(finalUrl, OrderRootType.CLASSES)
-                    
-                    libModifiableModel.commit()
-                    gitLibMap[libraryName] = library
-                }
-            }
-        }
-        gitLibraryModelNew.commit()
-
-        // 2. Assign the created libraries to their respective modules
-        model.modules.forEach { kargoModule ->
-            val gitArtifacts = GitSourcesExtension.getArtifacts(kargoModule)
-            logger.info("Kargo: Module ${kargoModule.userReadableName} has ${gitArtifacts.size} Git artifacts to inject")
-            kargoModule.fragments.forEach { fragment ->
-                val moduleName = "${kargoModule.userReadableName}.${fragment.name}"
-                val ideModule = nameToModule[moduleName] ?: return@forEach
-                
-                val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
-                var changed = false
-                gitArtifacts.forEach { artifact ->
-                    val source = artifact.source
-                    val repoName = when (source) {
-                        is GitHubSource -> source.github
-                        is GitLabSource -> source.gitlab
-                        is BitbucketSource -> source.bitbucket
-                        is GitUrlSource -> source.git.substringAfterLast("/").removeSuffix(".git")
-                    }
-                    val version = source.version.value
-                    val libraryName = "Kargo Git: $repoName:$version"
-                    
-                    val library = gitLibMap[libraryName] ?: libraryTable.getLibraryByName(libraryName)
-                    val existingEntry = modifiableModel.orderEntries.find { it is LibraryOrderEntry && it.libraryName == libraryName }
-                    if (existingEntry == null && library != null) {
-                        modifiableModel.addLibraryEntry(library)
-                        changed = true
-                    }
-                }
-                
-                if (changed) modifiableModel.commit() else modifiableModel.dispose()
-            }
-        }
-        
         // Inject Native default KLIBs
         injectNativeLibraries(model, nameToModule, libraryTable)
 
@@ -535,70 +420,85 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
 
     private fun resolveAllDependencies(model: Model, errorCollector: KargoSyncErrorCollector): Map<Fragment, Set<MavenDependencyNode>> {
         val fragmentToDeps = mutableMapOf<Fragment, MutableSet<MavenDependencyNode>>()
-        
+
         val userCacheRootResult = AmperUserCacheRoot.fromCurrentUserResult()
         val userCacheRoot = if (userCacheRootResult is AmperUserCacheRoot) userCacheRootResult else null
-        
+
         if (userCacheRoot == null) {
             logger.warn("Kargo: Could not initialize Amper user cache root. External dependencies resolution skipped.")
             return emptyMap()
         }
 
-        val resolutionInput = ResolutionInput(
-            dependenciesFlowType = DependenciesFlowType.IdeSyncType(model),
+        val resolutionSettings = AmperResolutionSettings(
+            userCacheRoot = userCacheRoot,
+            includeNonExportedNative = false,
+        )
+        val resolutionRunSettings = ResolutionRunSettings(
             resolutionDepth = ResolutionDepth.GRAPH_FULL,
             resolutionLevel = ResolutionLevel.NETWORK,
-            fileCacheBuilder = getAmperFileCacheBuilder(userCacheRoot)
         )
 
         try {
             runBlocking {
-                val rootNode = moduleDependenciesResolver.run { model.modules.resolveDependencies(resolutionInput) }
-                
-                // Collect errors from all nodes in the resolution graph
-                rootNode.distinctBfsSequence().forEach { node ->
+                val resolvedGraph = model.resolveProjectDependencies(resolutionSettings, resolutionRunSettings)
+                val rootNode = resolvedGraph.root
+
+                // Collect diagnostics from all nodes via BFS
+                val diagQueue = ArrayDeque<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                val diagVisited = mutableSetOf<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                diagQueue.add(rootNode)
+                while (diagQueue.isNotEmpty()) {
+                    val node = diagQueue.removeFirst()
+                    if (!diagVisited.add(node)) continue
+                    diagQueue.addAll(node.children)
+
                     node.messages.forEach { message ->
                         if (message.severity >= Severity.WARNING) {
                             val isPlatformMismatch = message.id == PlatformsAreNotSupported.ID
-                            
+
                             val isDirect = node in rootNode.children
                             val isRoot = node == rootNode
                             val isTransitive = !isDirect && !isRoot
-                            
+
                             // Align with CLI: only report transitive diagnostics if allowed
                             if (isTransitive && !message.reportTransitive) return@forEach
 
                             val label = if (isPlatformMismatch) "Platform Compatibility" else "Maven Dependency"
-                            
+
                             val parent = node.parents.firstOrNull { it.graphEntryName.isNotBlank() }
                             val transitiveInfo = if (isTransitive && parent != null && parent != rootNode) {
                                 " (transitive from ${parent.graphEntryName})"
                             } else ""
-                            
+
                             // Force platform mismatch to WARNING, otherwise follow message severity
-                            val severity = if (isPlatformMismatch) SyncSeverity.WARNING 
-                                           else if (message.severity == Severity.ERROR) SyncSeverity.ERROR 
+                            val severity = if (isPlatformMismatch) SyncSeverity.WARNING
+                                           else if (message.severity == Severity.ERROR) SyncSeverity.ERROR
                                            else SyncSeverity.WARNING
-                            
+
                             val content = message.detailedMessage.trim().replace("\n", "<br>")
                             errorCollector.reportError("<b>$label:</b> $content$transitiveInfo", severity)
                         }
                     }
                 }
 
+                // Map resolved Maven deps back to their fragments
                 rootNode.children.filterIsInstance<ModuleDependencyNode>().forEach { moduleNode ->
                     val kargoModule = model.modules.find { it.userReadableName == moduleNode.moduleName }
                     moduleNode.children.filterIsInstance<DirectFragmentDependencyNode>().forEach { fragmentNode ->
                         val fragment = kargoModule?.fragments?.find { it.name == fragmentNode.fragmentName }
                         if (fragment != null) {
                             val deps = fragmentToDeps.getOrPut(fragment) { mutableSetOf() }
-                            val bfs = fragmentNode.dependencyNode.distinctBfsSequence().toList()
-                            val mavenDeps = bfs.filterIsInstance<MavenDependencyNode>()
-                            
-                            mavenDeps.forEach { 
-                                if (it.dependency.files(false).isNotEmpty()) {
-                                    deps.add(it)
+                            // Collect the direct maven node and its transitive children
+                            val queue = ArrayDeque<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                            val visited = mutableSetOf<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                            queue.add(fragmentNode.dependencyNode)
+                            while (queue.isNotEmpty()) {
+                                val current = queue.removeFirst()
+                                if (!visited.add(current)) continue
+                                if (current is MavenDependencyNode && current.dependency.files(false).isNotEmpty()) {
+                                    deps.add(current)
                                 }
+                                queue.addAll(current.children)
                             }
                         }
                     }
@@ -608,7 +508,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             logger.error("Kargo: Failed to resolve external dependencies", e)
             errorCollector.reportException(e)
         }
-        
+
         return fragmentToDeps
     }
     
