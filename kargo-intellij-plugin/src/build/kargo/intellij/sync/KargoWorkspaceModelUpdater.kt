@@ -28,6 +28,7 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
+import org.jetbrains.amper.dependency.resolution.Key
 import org.jetbrains.amper.dependency.resolution.diagnostics.Severity
 import org.jetbrains.amper.dependency.resolution.diagnostics.detailedMessage
 import org.jetbrains.amper.dependency.resolution.ResolutionLevel
@@ -36,6 +37,7 @@ import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.FragmentDependencyType
 import org.jetbrains.amper.frontend.LocalModuleDependency
 import org.jetbrains.amper.frontend.Model
+import org.jetbrains.amper.frontend.ancestralPath
 import org.jetbrains.amper.frontend.fragmentsTargeting
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.dr.resolver.AmperResolutionSettings
@@ -177,35 +179,51 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
 
         // External Dependencies (Maven)
         val allMavenNodes = fragmentToExternalDeps.values.flatten().toSet()
-        
+
+        // Detect if any maven node has klib files — those need KotlinNativeLibraryKind
+        val kotlinNativeLibraryKind: com.intellij.openapi.roots.libraries.PersistentLibraryKind<*>? = try {
+            @Suppress("UNCHECKED_CAST")
+            Class.forName("org.jetbrains.kotlin.idea.base.platforms.KotlinNativeLibraryKind")
+                .getField("INSTANCE").get(null) as? com.intellij.openapi.roots.libraries.PersistentLibraryKind<*>
+        } catch (_: Exception) { null }
+
         val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
         val projectLibraryModel = libraryTable.modifiableModel
         val libraryMap = mutableMapOf<String, Library>()
-        
+
         allMavenNodes.forEach { mavenNode ->
             val coords = mavenNode.dependency.coordinates
             val libraryName = "Kargo: ${coords.groupId}:${coords.artifactId}:${coords.version}"
-            
+            val hasKlib = mavenNode.dependency.files(false).any { it.path?.toString()?.endsWith(".klib") == true }
+
+            // Always recreate the library roots to ensure stale entries from previous syncs are cleared.
             var library = libraryTable.getLibraryByName(libraryName)
             if (library == null) {
-                library = projectLibraryModel.createLibrary(libraryName)
-                val libModifiableModel = library.modifiableModel
-                
-                mavenNode.dependency.files(withSources = true).forEach { depFile ->
-                    val path = depFile.path
-                    if (path != null && Files.exists(path)) {
-                        val absPath = path.toAbsolutePath().toString()
-                        val url = VfsUtilCore.pathToUrl(absPath)
-                        val finalUrl = when {
-                            absPath.endsWith(".jar") || absPath.endsWith(".zip") || absPath.endsWith(".klib") -> "jar://${absPath}!/"
-                            else -> url
-                        }
-                        val rootType = if (depFile.isDocumentation) OrderRootType.SOURCES else OrderRootType.CLASSES
-                        libModifiableModel.addRoot(finalUrl, rootType)
-                    }
+                library = if (hasKlib && kotlinNativeLibraryKind != null) {
+                    projectLibraryModel.createLibrary(libraryName, kotlinNativeLibraryKind)
+                } else {
+                    projectLibraryModel.createLibrary(libraryName)
                 }
-                libModifiableModel.commit()
             }
+            val libModifiableModel = library.modifiableModel
+            // Clear existing roots before re-adding to avoid duplicates from previous syncs
+            libModifiableModel.getUrls(OrderRootType.CLASSES).forEach { libModifiableModel.removeRoot(it, OrderRootType.CLASSES) }
+            libModifiableModel.getUrls(OrderRootType.SOURCES).forEach { libModifiableModel.removeRoot(it, OrderRootType.SOURCES) }
+
+            mavenNode.dependency.files(withSources = true).forEach { depFile ->
+                val path = depFile.path
+                if (path != null && Files.exists(path)) {
+                    val absPath = path.toAbsolutePath().toString()
+                    val url = VfsUtilCore.pathToUrl(absPath)
+                    val finalUrl = when {
+                        absPath.endsWith(".jar") || absPath.endsWith(".zip") || absPath.endsWith(".klib") -> "jar://${absPath}!/"
+                        else -> url
+                    }
+                    val rootType = if (depFile.isDocumentation) OrderRootType.SOURCES else OrderRootType.CLASSES
+                    libModifiableModel.addRoot(finalUrl, rootType)
+                }
+            }
+            libModifiableModel.commit()
             libraryMap[libraryName] = library
         }
         projectLibraryModel.commit()
@@ -236,13 +254,23 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             }
         }
 
-        // Apply external dependencies to modules
+        // Apply external dependencies to modules.
+        // For each fragment that has resolved deps, also propagate to all ancestor fragments
+        // (e.g. kermit resolved for linuxX64 must also be visible in linux, native, common).
+        // This ensures source files in parent fragments can resolve symbols from leaf dependencies.
+        val fragmentToExternalDepsExpanded = mutableMapOf<Fragment, MutableSet<MavenDependencyNode>>()
+        fragmentToExternalDeps.forEach { (fragment, deps) ->
+            fragment.ancestralPath().forEach { ancestor ->
+                fragmentToExternalDepsExpanded.getOrPut(ancestor) { mutableSetOf() }.addAll(deps)
+            }
+        }
+
         model.modules.forEach { kargoModule ->
             kargoModule.fragments.forEach { fragment ->
                 val moduleName = "${kargoModule.userReadableName}.${fragment.name}"
                 val ideModule = nameToModule[moduleName] ?: return@forEach
-                val externalDeps = fragmentToExternalDeps[fragment] ?: return@forEach
-                
+                val externalDeps = fragmentToExternalDepsExpanded[fragment] ?: return@forEach
+
                 val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
                 externalDeps.forEach { mavenNode ->
                     val coords = mavenNode.dependency.coordinates
@@ -330,7 +358,11 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
     private fun setupKotlinFacet(ideModule: Module, moduleName: String, fragment: Fragment) {
         try {
             val facetManager = FacetManager.getInstance(ideModule)
-            val facetType = FacetTypeRegistry.getInstance().findFacetType("kotlin-language") ?: return
+            val facetType = FacetTypeRegistry.getInstance().findFacetType("kotlin-language")
+            if (facetType == null) {
+                logger.warn("Kargo: kotlin-language facet type not found for $moduleName")
+                return
+            }
 
             val modifiableFacetModel = facetManager.createModifiableModel()
             modifiableFacetModel.getFacetByType(facetType.id)?.let { modifiableFacetModel.removeFacet(it) }
@@ -403,16 +435,18 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
 
                     if (nativePlatform != null) {
                         settings.javaClass.methods.find { it.name == "setTargetPlatform" }?.invoke(settings, nativePlatform)
+                        logger.info("Kargo: Set native target platform for $moduleName: $nativePlatform")
                     } else {
-                        logger.warn("Kargo: Failed to obtain nativePlatform instance for Kotlin Facet")
+                        logger.warn("Kargo: Failed to obtain nativePlatform instance for Kotlin Facet on $moduleName")
                     }
                 } catch (e: Exception) {
-                    logger.warn("Kargo: Failed to set target platform in Kotlin Facet", e)
+                    logger.warn("Kargo: Failed to set target platform in Kotlin Facet for $moduleName", e)
                 }
             }
 
             modifiableFacetModel.addFacet(facet)
             modifiableFacetModel.commit()
+            logger.info("Kargo: Kotlin facet committed for $moduleName isNative=$isNative")
         } catch (e: Exception) {
             logger.warn("Kargo: Failed to setup Kotlin facet for $moduleName", e)
         }
@@ -481,22 +515,41 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     }
                 }
 
-                // Map resolved Maven deps back to their fragments
+                // Map resolved Maven deps back to their fragments.
+                // First, collect ALL resolved MavenDependencyNodes from the full graph (BFS from root),
+                // indexed by key. This ensures we capture KMP variant nodes (e.g. kermit-linuxx64)
+                // that are children of the KMP umbrella node (kermit) and have the actual .klib files.
+                val allMavenNodesByKey = mutableMapOf<org.jetbrains.amper.dependency.resolution.Key<*>, MavenDependencyNode>()
+                val globalQueue = ArrayDeque<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                val globalVisited = mutableSetOf<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                globalQueue.add(rootNode)
+                while (globalQueue.isNotEmpty()) {
+                    val current = globalQueue.removeFirst()
+                    if (!globalVisited.add(current)) continue
+                    if (current is MavenDependencyNode && current.dependency.files(false).isNotEmpty()) {
+                        allMavenNodesByKey[current.key] = current
+                    }
+                    globalQueue.addAll(current.children)
+                }
+
                 rootNode.children.filterIsInstance<ModuleDependencyNode>().forEach { moduleNode ->
                     val kargoModule = model.modules.find { it.userReadableName == moduleNode.moduleName }
                     moduleNode.children.filterIsInstance<DirectFragmentDependencyNode>().forEach { fragmentNode ->
                         val fragment = kargoModule?.fragments?.find { it.name == fragmentNode.fragmentName }
                         if (fragment != null) {
                             val deps = fragmentToDeps.getOrPut(fragment) { mutableSetOf() }
-                            // Collect the direct maven node and its transitive children
+                            // BFS from the direct dependency node, matching resolved nodes by key.
+                            // For KMP libraries (e.g. kermit), the actual .klib is on a child node
+                            // (e.g. kermit-linuxx64), not on the umbrella node itself.
                             val queue = ArrayDeque<org.jetbrains.amper.dependency.resolution.DependencyNode>()
                             val visited = mutableSetOf<org.jetbrains.amper.dependency.resolution.DependencyNode>()
                             queue.add(fragmentNode.dependencyNode)
                             while (queue.isNotEmpty()) {
                                 val current = queue.removeFirst()
                                 if (!visited.add(current)) continue
-                                if (current is MavenDependencyNode && current.dependency.files(false).isNotEmpty()) {
-                                    deps.add(current)
+                                val resolved = allMavenNodesByKey[current.key]
+                                if (resolved != null) {
+                                    deps.add(resolved)
                                 }
                                 queue.addAll(current.children)
                             }
@@ -513,7 +566,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
     }
     
     private fun injectNativeLibraries(
-        model: Model, 
+        model: Model,
         nameToModule: Map<String, Module>,
         libraryTable: LibraryTable
     ) {
@@ -523,7 +576,13 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
 
         val prebuiltDirs = konanDir.listFiles { f -> f.isDirectory && f.name.startsWith("kotlin-native-prebuilt-") }
         val latestPrebuilt = prebuiltDirs?.maxByOrNull { it.name } ?: return
-        
+
+        val kotlinNativeLibraryKind: com.intellij.openapi.roots.libraries.PersistentLibraryKind<*>? = try {
+            @Suppress("UNCHECKED_CAST")
+            Class.forName("org.jetbrains.kotlin.idea.base.platforms.KotlinNativeLibraryKind")
+                .getField("INSTANCE").get(null) as? com.intellij.openapi.roots.libraries.PersistentLibraryKind<*>
+        } catch (_: Exception) { null }
+
         val nativeLibMap = mutableMapOf<String, Library>()
         val projectLibraryModel = libraryTable.modifiableModel
         
@@ -550,19 +609,23 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     
                     for (klibDir in klibsToAttach) {
                         val libraryName = "Kargo Native: ${klibDir.name} [$platformFolder]"
-                        
+
                         var library = nativeLibMap[libraryName] ?: libraryTable.getLibraryByName(libraryName)
                         if (library == null) {
-                            library = projectLibraryModel.createLibrary(libraryName)
+                            library = if (kotlinNativeLibraryKind != null) {
+                                projectLibraryModel.createLibrary(libraryName, kotlinNativeLibraryKind)
+                            } else {
+                                projectLibraryModel.createLibrary(libraryName)
+                            }
                             val libModifiableModel = library.modifiableModel
-                            
+
                             val url = VfsUtilCore.pathToUrl(klibDir.absolutePath)
                             libModifiableModel.addRoot(url, OrderRootType.CLASSES)
-                            
+
                             libModifiableModel.commit()
                             nativeLibMap[libraryName] = library
                         }
-                        
+
                         val existingEntry = modifiableModel.orderEntries.find { it is LibraryOrderEntry && it.libraryName == libraryName }
                         if (existingEntry == null) {
                             modifiableModel.addLibraryEntry(library)
