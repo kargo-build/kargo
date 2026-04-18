@@ -19,6 +19,7 @@ dependencies:
 test-dependencies:
   - ../core-intellij
   - ../frontend/plain/yaml-psi
+  - ../test-base
   - $libs.intellij.platform.coreImpl
 
 settings:

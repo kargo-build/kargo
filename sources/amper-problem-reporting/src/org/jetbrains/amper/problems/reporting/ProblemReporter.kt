@@ -4,9 +4,6 @@
 
 package org.jetbrains.amper.problems.reporting
 
-import org.jetbrains.amper.stdlib.collections.forEachEndAware
-import org.jetbrains.annotations.Nls
-
 interface ProblemReporter {
 
     fun reportMessage(message: BuildProblem)
@@ -39,44 +36,3 @@ class CollectingProblemReporter : ProblemReporter {
  */
 fun CollectingProblemReporter.replayProblemsTo(other: ProblemReporter) =
     problems.forEach { other.reportMessage(it) }
-
-@OptIn(NonIdealDiagnostic::class)
-fun renderMessage(problem: BuildProblem): @Nls String = buildString {
-    fun appendSource(source: BuildProblemSource) {
-        when (source) {
-            is FileBuildProblemSource -> {
-                appendFileSource(source)
-                append(": ").append(problem.message)
-            }
-            is MultipleLocationsBuildProblemSource -> {
-                appendLine(problem.message)
-                appendLine("╰─ ${source.groupingMessage}")
-                appendMultipleSources(source.sources, indent = 3)
-            }
-            GlobalBuildProblemSource -> append(problem.message)
-        }
-    }
-
-    appendSource(problem.source)
-}
-
-fun StringBuilder.appendMultipleSources(sources: List<FileBuildProblemSource>, indent: Int = 0) {
-    sources.forEachEndAware { isLast, source ->
-        repeat(indent) { append(' ') }
-        if (isLast) {
-            append("╰─ ")
-        } else {
-            append("├─ ")
-        }
-        appendFileSource(source)
-        if (!isLast) appendLine()
-    }
-}
-
-fun StringBuilder.appendFileSource(source: FileBuildProblemSource) {
-    append(source.file.normalize())
-    if (source is FileWithRangesBuildProblemSource) {
-        val start = source.range.start
-        append(':').append(start.line).append(':').append(start.column)
-    }
-}

@@ -8,7 +8,10 @@ import org.jetbrains.amper.CliBundle
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.catalogs.ComposeMaterial3UnknownVersionMappingProblem
 import org.jetbrains.amper.frontend.messages.PsiBuildProblemSource
+import org.jetbrains.amper.frontend.messages.appendFileSource
+import org.jetbrains.amper.frontend.messages.appendMultipleSources
 import org.jetbrains.amper.frontend.messages.extractPsiElement
+import org.jetbrains.amper.frontend.messages.renderMessage
 import org.jetbrains.amper.frontend.tree.BooleanNode
 import org.jetbrains.amper.frontend.tree.ConflictingProperties
 import org.jetbrains.amper.frontend.tree.EnumNode
@@ -27,9 +30,6 @@ import org.jetbrains.amper.problems.reporting.BuildProblem
 import org.jetbrains.amper.problems.reporting.FileBuildProblemSource
 import org.jetbrains.amper.problems.reporting.Level
 import org.jetbrains.amper.problems.reporting.ProblemReporter
-import org.jetbrains.amper.problems.reporting.appendFileSource
-import org.jetbrains.amper.problems.reporting.appendMultipleSources
-import org.jetbrains.amper.problems.reporting.renderMessage
 import org.jetbrains.amper.stdlib.collections.forEachEndAware
 import org.slf4j.LoggerFactory
 import java.util.concurrent.atomic.AtomicBoolean

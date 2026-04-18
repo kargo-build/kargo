@@ -50,12 +50,6 @@ interface FileBuildProblemSource : BuildProblemSource {
 class WholeFileBuildProblemSource(override val file: Path) : FileBuildProblemSource
 
 interface FileWithRangesBuildProblemSource : FileBuildProblemSource {
-    /**
-     * Range of problematic code expressed in terms of lines and columns.
-     * Can be used by clients to render the links to the exact location in the file or display an erroneous part of the
-     * code.
-     */
-    val range: LineAndColumnRange
 
     /**
      * Range of problematic code expressed in terms of character offsets inside the file.

@@ -32,9 +32,6 @@ sealed interface PsiBuildProblemSource : FileBuildProblemSource {
     data class FileSystemLike internal constructor(override val psiElement: PsiFileSystemItem) : PsiBuildProblemSource
 
     data class Element internal constructor(override val psiElement: PsiElement) : PsiBuildProblemSource, FileWithRangesBuildProblemSource {
-        override val range: LineAndColumnRange
-            get() = getLineAndColumnRangeInPsiFile(psiElement)
-
         override val offsetRange: IntRange
             get() {
                 val range = psiElement.textRange

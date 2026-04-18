@@ -15,6 +15,7 @@ import org.jetbrains.amper.dependency.resolution.version
 import org.jetbrains.amper.frontend.dr.resolver.diagnostics.collectBuildProblems
 import org.jetbrains.amper.frontend.dr.resolver.diagnostics.reporters.DependencyBuildProblem
 import org.jetbrains.amper.frontend.dr.resolver.diagnostics.reporters.ModuleDependencyWithOverriddenVersion
+import org.jetbrains.amper.frontend.messages.computeRange
 import org.jetbrains.amper.frontend.schema.DefaultVersions
 import org.jetbrains.amper.problems.reporting.BuildProblem
 import org.jetbrains.amper.problems.reporting.CollectingProblemReporter
@@ -410,7 +411,7 @@ class DiagnosticsTest : BaseModuleDrTest() {
                 LineAndColumn(7, 14, "    version: 2.1.10"),
                 LineAndColumn(7, 20, "    version: 2.1.10"),
             ),
-            source.range,
+            source.computeRange(),
             "Unexpected source range for build problem. The Kotlin version value should be highlighted."
         )
     }
