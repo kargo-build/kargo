@@ -78,6 +78,7 @@
     <iconProvider implementation="build.kargo.intellij.project.KargoIconProvider" />
     <projectViewNodeDecorator implementation="build.kargo.intellij.project.KargoProjectViewNodeDecorator" />
     <treeStructureProvider implementation="build.kargo.intellij.project.KargoExternalSourcesTreeStructureProvider" order="last" />
+    <writingAccessProvider implementation="build.kargo.intellij.project.KargoVendorReadonlyPolicy" />
 
 
     <!-- 8. Project Wizard -->
