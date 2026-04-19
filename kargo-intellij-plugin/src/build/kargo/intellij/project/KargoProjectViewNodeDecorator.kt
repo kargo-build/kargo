@@ -30,6 +30,7 @@ class KargoProjectViewNodeDecorator : ProjectViewNodeDecorator {
         if (file.path == project.basePath) {
             data.clearText()
             data.addText(file.name, SimpleTextAttributes.REGULAR_BOLD_ATTRIBUTES)
+            data.setIcon(AllIcons.Nodes.Module)
             data.locationString = null
             return
         }
@@ -39,8 +40,7 @@ class KargoProjectViewNodeDecorator : ProjectViewNodeDecorator {
         // --- Vendor content roots: "External Sources" style ---
         // The content root of a vendor module is the repo root (parent of src/)
         val vendorModule = moduleManager.modules.firstOrNull { module ->
-            module.name.startsWith("vendor.") &&
-                ModuleRootManager.getInstance(module).contentRoots.any { it.path == file.path }
+            module.name.startsWith("vendor.") && ModuleRootManager.getInstance(module).contentRoots.any { it.path == file.path }
         }
         if (vendorModule != null) {
             // Clean name: strip "vendor." prefix and fragment suffix (.common, .linuxX64, etc.)
@@ -56,15 +56,26 @@ class KargoProjectViewNodeDecorator : ProjectViewNodeDecorator {
             return
         }
 
-        // --- Source roots: blue source folder icon ---
-        val isSourceRoot = moduleManager.modules.any { module ->
-            ModuleRootManager.getInstance(module).sourceRoots.any { it.path == file.path }
+        // --- Source roots: blue for main, green for test ---
+        data class SourceRootKind(val isTest: Boolean)
+        val sourceRootKind = moduleManager.modules.firstNotNullOfOrNull { module ->
+            val rootManager = ModuleRootManager.getInstance(module)
+            val mainRoots = rootManager.getSourceRoots(false).map { it.path }.toSet()
+            val allRoots  = rootManager.getSourceRoots(true).map { it.path }.toSet()
+            when (file.path) {
+                in mainRoots -> SourceRootKind(isTest = false)
+                in allRoots  -> SourceRootKind(isTest = true)
+                else -> null
+            }
         }
-        if (isSourceRoot) {
+        if (sourceRootKind != null) {
             data.clearText()
             data.addText(file.name, SimpleTextAttributes.REGULAR_ATTRIBUTES)
             data.locationString = null
-            data.setIcon(PlatformIcons.MODULES_SOURCE_FOLDERS_ICON)
+            if (sourceRootKind.isTest)
+                data.setIcon(PlatformIcons.TEST_SOURCE_FOLDER)
+            else
+                data.setIcon(PlatformIcons.MODULES_SOURCE_FOLDERS_ICON)
             return
         }
 
