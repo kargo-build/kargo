@@ -8,6 +8,7 @@ import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.frontend.LocalModuleDependency
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.doCapitalize
+import org.jetbrains.amper.frontend.isPublishingEnabled
 import org.jetbrains.amper.frontend.mavenRepositories
 import org.jetbrains.amper.frontend.schema.DependencyMode
 import org.jetbrains.amper.frontend.schema.enabled
@@ -244,7 +245,7 @@ fun ProjectTasksBuilder.setupJvmTasks() {
                 )
             }
 
-            if (module.fragments.any { it.settings.publishing.enabled }) {
+            if (module.isPublishingEnabled()) {
                 val publishRepositories = module.mavenRepositories.filter { it.publish }
                 for (repository in publishRepositories) {
                     val publishTaskSuffix = "To${repository.id.doCapitalize()}"

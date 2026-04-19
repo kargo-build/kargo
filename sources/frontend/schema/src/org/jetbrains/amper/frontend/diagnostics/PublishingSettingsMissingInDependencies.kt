@@ -10,7 +10,7 @@ import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.LocalModuleDependency
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.SchemaBundle
-import org.jetbrains.amper.frontend.hasPublishingConfigured
+import org.jetbrains.amper.frontend.isPublishingEnabled
 import org.jetbrains.amper.frontend.messages.PsiBuildProblem
 import org.jetbrains.amper.frontend.messages.extractPsiElement
 import org.jetbrains.amper.problems.reporting.BuildProblemType
@@ -23,12 +23,12 @@ object PublishingSettingsMissingInDependencies : AomModelDiagnosticFactory {
 
     override fun analyze(model: Model, problemReporter: ProblemReporter) {
         model.modules.forEach { module ->
-            if (module.hasPublishingConfigured()) {
+            if (module.isPublishingEnabled()) {
                 module.fragments
                     .filterNot { it.isTest }
                     .flatMap { it.externalDependencies }
                     .filterIsInstance<LocalModuleDependency>()
-                    .filterNot { it.module.hasPublishingConfigured() }
+                    .filterNot { it.module.isPublishingEnabled() }
                     .forEach { dep ->
                         problemReporter.reportMessage(PublishingSettingsMissingInDependency(module, dep))
                     }

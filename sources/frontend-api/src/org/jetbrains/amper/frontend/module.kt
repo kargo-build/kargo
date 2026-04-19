@@ -164,7 +164,7 @@ fun AmperModule.fragmentsTargeting(platform: Platform, includeTestFragments: Boo
  */
 // We don't have to go through all fragments, the InconsistentPublishingSettings factory already checked
 // that all fragments have the same publishing settings.
-fun AmperModule.hasPublishingConfigured() = fragments.first().settings.publishing.enabled
+fun AmperModule.isPublishingEnabled() = fragments.first().settings.publishing.enabled
 
 /**
  * Returns the JDK settings for this module's production code.
