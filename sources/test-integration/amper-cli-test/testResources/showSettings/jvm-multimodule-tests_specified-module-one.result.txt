@@ -92,6 +92,7 @@ settings@jvm:
         developerConnection: null  # default, based on ${url}: SCM developer connection URL from repo URL
         url: null  # default
       url: null  # default
+    publishSources: false  # default
     signArtifacts: false  # default
     version: null  # default
   springBoot:

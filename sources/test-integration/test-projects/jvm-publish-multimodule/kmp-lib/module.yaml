@@ -6,3 +6,7 @@ product:
 
 apply:
   - ../common.module-template.yaml
+
+settings:
+  publishing:
+    publishSources: true

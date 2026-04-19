@@ -9,3 +9,8 @@ apply:
 dependencies:
   - ../jvm-lib: exported
   - ../kmp-lib
+
+settings:
+  publishing:
+    publishSources: true
+

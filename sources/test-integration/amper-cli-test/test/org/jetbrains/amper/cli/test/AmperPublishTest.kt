@@ -208,7 +208,6 @@ class AmperPublishTest : AmperCliTestBase() {
 
         groupDir.assertContainsRelativeFiles(
             "artifactName/2.2/_remote.repositories",
-            "artifactName/2.2/artifactName-2.2-sources.jar",
             "artifactName/2.2/artifactName-2.2.jar",
             "artifactName/2.2/artifactName-2.2.pom",
             "artifactName/maven-metadata-local.xml",
@@ -277,7 +276,6 @@ class AmperPublishTest : AmperCliTestBase() {
         // note that publishing of main-lib module triggers all other modules (by design)
         groupDir.assertContainsRelativeFiles(
             "jvm-lib/1.2.3/_remote.repositories",
-            "jvm-lib/1.2.3/jvm-lib-1.2.3-sources.jar",
             "jvm-lib/1.2.3/jvm-lib-1.2.3.jar",
             "jvm-lib/1.2.3/jvm-lib-1.2.3.pom",
             "jvm-lib/maven-metadata-local.xml",

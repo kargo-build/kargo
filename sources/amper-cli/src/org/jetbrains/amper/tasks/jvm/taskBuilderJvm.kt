@@ -12,6 +12,7 @@ import org.jetbrains.amper.frontend.isPublishingEnabled
 import org.jetbrains.amper.frontend.mavenRepositories
 import org.jetbrains.amper.frontend.schema.DependencyMode
 import org.jetbrains.amper.frontend.schema.enabled
+import org.jetbrains.amper.frontend.shouldPublishSourcesJars
 import org.jetbrains.amper.tasks.CommonTaskType
 import org.jetbrains.amper.tasks.FragmentTaskType
 import org.jetbrains.amper.tasks.PlatformTaskType
@@ -257,13 +258,14 @@ fun ProjectTasksBuilder.setupJvmTasks() {
                             targetRepository = repository,
                             tempRoot = context.projectTempRoot,
                         ),
-                        dependsOn = listOf(
-                            CommonTaskType.Jar.getTaskName(module, platform, isTest = false),
-                            // TODO make it configurable to publish sources or not
-                            CommonTaskType.SourcesJar.getTaskName(module, platform),
+                        dependsOn = buildList {
+                            add(CommonTaskType.Jar.getTaskName(module, platform, isTest = false))
+                            if (module.shouldPublishSourcesJars()) {
+                                add(CommonTaskType.SourcesJar.getTaskName(module, platform))
+                            }
                             // we need dependencies to get publication coordinate overrides (e.g. -jvm variant)
-                            CommonTaskType.Dependencies.getTaskName(module, platform, isTest = false),
-                        )
+                            add(CommonTaskType.Dependencies.getTaskName(module, platform, isTest = false))
+                        }
                     )
 
                     // Publish task should depend on publishing of modules which this module depends on

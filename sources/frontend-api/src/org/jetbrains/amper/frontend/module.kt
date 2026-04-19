@@ -167,6 +167,12 @@ fun AmperModule.fragmentsTargeting(platform: Platform, includeTestFragments: Boo
 fun AmperModule.isPublishingEnabled() = fragments.first().settings.publishing.enabled
 
 /**
+ * Returns whether JARs with sources for each platform should be published (as extra artifacts).
+ */
+// We don't have to go through all fragments, settings.publishing.publishSources is platform-agnostic.
+fun AmperModule.shouldPublishSourcesJars() = fragments.first { !it.isTest }.settings.publishing.publishSources
+
+/**
  * Returns the JDK settings for this module's production code.
  */
 // We don't have to go through all fragments, the JdkSettings are platform-agnostic.

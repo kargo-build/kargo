@@ -13,3 +13,4 @@ settings:
     version: "2.2"
     name: artifactName
     signArtifacts: true
+    publishSources: true

@@ -172,6 +172,7 @@ Fragments:
           }
           url: <default> null
         }
+        publishSources: <default> false
         signArtifacts: <default> false
         version: <default> null
       }
@@ -358,6 +359,7 @@ Fragments:
           }
           url: <default> null
         }
+        publishSources: <default> false
         signArtifacts: <default> false
         version: <default> null
       }
@@ -542,6 +544,7 @@ Fragments:
           }
           url: <default> null
         }
+        publishSources: <default> false
         signArtifacts: <default> false
         version: <default> null
       }
@@ -729,6 +732,7 @@ Fragments:
           }
           url: <default> null
         }
+        publishSources: <default> false
         signArtifacts: <default> false
         version: <default> null
       }
@@ -913,6 +917,7 @@ Fragments:
           }
           url: <default> null
         }
+        publishSources: <default> false
         signArtifacts: <default> false
         version: <default> null
       }
@@ -1100,6 +1105,7 @@ Fragments:
           }
           url: <default> null
         }
+        publishSources: <default> false
         signArtifacts: <default> false
         version: <default> null
       }
@@ -1284,6 +1290,7 @@ Fragments:
           }
           url: <default> null
         }
+        publishSources: <default> false
         signArtifacts: <default> false
         version: <default> null
       }
@@ -1471,6 +1478,7 @@ Fragments:
           }
           url: <default> null
         }
+        publishSources: <default> false
         signArtifacts: <default> false
         version: <default> null
       }

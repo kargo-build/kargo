@@ -50,3 +50,4 @@ settings:
     group: "amper.test.jvm-publish"
     version: "2.2"
     name: artifactName
+    publishSources: true

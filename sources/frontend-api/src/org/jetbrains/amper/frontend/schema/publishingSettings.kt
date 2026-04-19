@@ -45,6 +45,10 @@ class PublishingSettings : SchemaNode() {
             "If the key is encrypted, its passphrase must be specified via the `AMPER_SIGNING_KEY_PASSPHRASE` " +
             "environment variable.")
     val signArtifacts by value(default = false)
+
+    @PlatformAgnostic
+    @SchemaDoc("If set to true, JARs with sources for each platform are published as extra artifacts.")
+    val publishSources by value(default = false)
 }
 
 class PomSettings : SchemaNode() {
