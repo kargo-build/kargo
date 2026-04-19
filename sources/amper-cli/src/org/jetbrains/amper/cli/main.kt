@@ -21,6 +21,8 @@ import java.lang.management.ManagementFactory
 import java.time.Instant
 import kotlin.system.exitProcess
 
+private val logger = LoggerFactory.getLogger("main")
+
 suspend fun main(args: Array<String>) {
     try {
         // We don't use RuntimeMXBean.startTime because it might give incorrect results if the system time changes.
@@ -61,7 +63,7 @@ suspend fun main(args: Array<String>) {
     } catch (e: ExitProcessButCloseTelemetrySpansException) {
         exitProcess(e.exitCode)
     } catch (e: UserReadableError) {
-        printUserError(e.message)
+        printUserError(e.message, e.cause)
         exitProcess(e.exitCode)
     } catch (e: Exception) {
         printInternalError(e)
@@ -110,8 +112,11 @@ private suspend fun SuspendingCliktCommand.mainWithTelemetry(args: Array<String>
  */
 private class ExitProcessButCloseTelemetrySpansException(val exitCode: Int) : RuntimeException()
 
-private fun printUserError(message: String) {
+private fun printUserError(message: String, cause: Throwable?) {
     printRedToStderr("\nERROR: $message")
+    withoutConsoleLogging {
+        logger.error(message, cause)
+    }
 }
 
 private fun printInternalError(e: Exception) {
@@ -126,7 +131,7 @@ private fun printInternalError(e: Exception) {
                 "and if possible file a bug report at https://youtrack.jetbrains.com/newIssue?project=AMPER")
     }
     withoutConsoleLogging {
-        LoggerFactory.getLogger("main").error("Internal error:", e)
+        logger.error("Internal error:", e)
     }
 }
 

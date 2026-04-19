@@ -167,6 +167,7 @@ class CustomChecksTest : AmperCliTestBase() {
                   ├─ ${pluginYaml}:7:11
                   ╰─ ${pluginYaml}:16:11
             """.trimIndent(),
+            "failed to read Amper model, refer to the errors above",
         )
     }
 

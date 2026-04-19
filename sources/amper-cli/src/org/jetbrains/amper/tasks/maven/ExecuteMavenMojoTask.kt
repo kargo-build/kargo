@@ -267,8 +267,8 @@ class ExecuteMavenMojoTask(
                 /* remoteProjectRepositories = */ remoteRepositories,
                 /* skin = */ siteModel.skin
             )
-        } catch (_: SiteToolException) {
-            userReadableError("Failed to retrieve skin artifact from repository for maven goal: ${mojo.goal}")
+        } catch (e: SiteToolException) {
+            userReadableError("Failed to retrieve skin artifact from repository for maven goal: ${mojo.goal}", e)
         }
 
         return try {
@@ -279,8 +279,8 @@ class ExecuteMavenMojoTask(
                 /* defaultTitle = */ project.name,
                 /* locale = */ locale
             )
-        } catch (_: RendererException) {
-            userReadableError("Failed to create context for skin for maven goal: ${mojo.goal}")
+        } catch (e: RendererException) {
+            userReadableError("Failed to create context for skin for maven goal: ${mojo.goal}", e)
         }.apply {
             rootDirectory = project.basedir
 

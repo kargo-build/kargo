@@ -391,6 +391,7 @@ class PluginsTest : AmperCliTestBase() {
                 "${projectDir / "not-a-plugin" / "module.yaml"}:1:10: Unexpected product type for plugin. Expected jvm/amper-plugin, got jvm/app",
                 "${projectDir / "plugin-empty-id" / "module.yaml"}:5:18: Plugin settings class `com.example.Settings` is not found",
                 "${projectDir / "invalid-settings" / "module.yaml"}:4:18: Plugin settings class `com.example.Foo` must be an interface annotated with the `@Configurable` annotation",
+                "failed to read Amper model, refer to the errors above",
             )
             assertLogContains("Processing local plugin schema for [plugin-empty-id, plugin-no-plugin-block, hello, invalid-settings]...", level = Level.INFO)
         }
@@ -440,6 +441,7 @@ class PluginsTest : AmperCliTestBase() {
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:8:13: The task action function specifier 'com.example.nonExistentTask' doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:10:13: The task action function specifier 'com.example.nonExistentTask' doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:4:13: Missing task action function specifier. Add the `!<fully-qualified-task-action-function-name>` YAML type tag to the mapping. Available task action functions: <none>",
+                "failed to read Amper model, refer to the errors above",
             )
         }
     }
@@ -524,7 +526,8 @@ class PluginsTest : AmperCliTestBase() {
                ├─ $pluginYamlForInvalidInputs:41:27
                ├─ $pluginYamlForInvalidInputs:34:9
                ╰─ $pluginYamlForInvalidInputs:42:15
-            """.trimIndent()
+            """.trimIndent(),
+            "failed to read Amper model, refer to the errors above",
         )
     }
 
@@ -557,6 +560,7 @@ class PluginsTest : AmperCliTestBase() {
                 "${pluginYaml}:19:24: Unable to resolve `missing` on a non-object type `string`",
                 "${pluginYaml}:19:24: Unable to resolve `unknown`: no such property is found in type `Settings`",
                 "${pluginYaml}:10:20: The value of type `path | null` cannot be assigned to the type `integer | null`",
+                "failed to read Amper model, refer to the errors above",
             )
         }
     }
@@ -587,6 +591,7 @@ class PluginsTest : AmperCliTestBase() {
                    ╰─ $pluginYaml:12:11
                 """.trimIndent(),
                 "${pluginYaml}:15:11: Accessing properties/keys on the nullable type `Nested | null` is not allowed.",
+                "failed to read Amper model, refer to the errors above",
             )
         }
     }
@@ -655,6 +660,7 @@ class PluginsTest : AmperCliTestBase() {
             "${pluginYaml}:6:19: Referencing `processors` is not allowed",
             "${pluginYaml}:5:24: Referencing `publishing` is not allowed",
             "${pluginYaml}:4:21: Referencing `settings` is not allowed",
+            "failed to read Amper model, refer to the errors above",
         )
     }
 
@@ -670,6 +676,7 @@ class PluginsTest : AmperCliTestBase() {
             expectedExitCode = 1,
         ).assertErrors(
             "${pluginYaml}:3:13: No value for required task action parameters: 'booleanProp', 'intProp', 'enumProp'.",
+            "failed to read Amper model, refer to the errors above",
         )
     }
 
@@ -726,6 +733,7 @@ class PluginsTest : AmperCliTestBase() {
         r2.assertErrors(
             "$pluginKt:12:5: [Amper] Illegal overload for `org.example.myAction`: `@TaskAction` functions can't be overloaded",
             "$pluginKt:9:5: [Amper] Illegal overload for `org.example.myAction`: `@TaskAction` functions can't be overloaded",
+            "Task ':unapplied-plugin:buildAmperPluginInfo' failed: Plugin Kotlin schema processing failed, see the errors above.",
         )
         r2.assertStderrContains("Task ':unapplied-plugin:buildAmperPluginInfo' failed: Plugin Kotlin schema processing failed, see the errors above.")
 
@@ -739,6 +747,7 @@ class PluginsTest : AmperCliTestBase() {
         val plugin2Yaml = r1.projectDir / "unapplied-plugin-2" / "plugin.yaml"
         r3.assertErrors(
             "$plugin2Yaml:3:13: The task action function specifier 'nonExistedType' doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
+            "Task ':unapplied-plugin-2:buildAmperPluginInfo' failed: `plugin.yaml` processing failed, see the errors above.",
         )
         r3.assertStderrContains("Task ':unapplied-plugin-2:buildAmperPluginInfo' failed: `plugin.yaml` processing failed, see the errors above.")
     }

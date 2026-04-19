@@ -313,7 +313,7 @@ internal class UpdateCommand : AmperSubcommand(name = "update") {
                 oldFileTemp.deleteIfExists()
             }
         } catch (e: Exception) {
-            userReadableError("Couldn't update Amper script: $e")
+            userReadableError("Couldn't update Amper script: $e", e)
         }
     }
 

@@ -104,7 +104,8 @@ class DoCommandTest : AmperCliTestBase() {
                 ╰─ Conflicting command names:
                    ├─ ${pluginYaml}:7:11
                    ╰─ ${pluginYaml}:8:5
-            """.trimIndent()
+            """.trimIndent(),
+            "failed to read Amper model, refer to the errors above",
         )
     }
 }

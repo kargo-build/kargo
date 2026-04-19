@@ -79,7 +79,7 @@ class PublishTask(
                 try {
                     getPlexusContainer(executionContext).installToMavenLocal(localRepositoryPath, artifacts)
                 } catch (e: Exception) {
-                    userReadableError("Couldn't install artifacts of module '${module.userReadableName}' to maven local: $e")
+                    userReadableError("Couldn't install artifacts of module '${module.userReadableName}' to maven local: $e", e)
                 }
             } else {
                 val remoteRepository = targetRepository.toMavenRemoteRepository()
@@ -90,7 +90,7 @@ class PublishTask(
                 try {
                     getPlexusContainer(executionContext).deployToRemoteRepo(remoteRepository, localRepositoryPath, artifacts)
                 } catch (e: Exception) {
-                    userReadableError("Couldn't publish artifacts of module '${module.userReadableName}' to repository '${remoteRepository.id}': $e")
+                    userReadableError("Couldn't publish artifacts of module '${module.userReadableName}' to repository '${remoteRepository.id}': $e", e)
                 }
             }
         }
