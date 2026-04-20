@@ -25,7 +25,7 @@ import org.jetbrains.amper.dependency.resolution.diagnostics.SimpleDiagnosticDes
 import org.jetbrains.amper.dependency.resolution.diagnostics.detailedMessage
 import org.jetbrains.amper.dependency.resolution.getDefaultFileCacheBuilder
 import org.jetbrains.amper.frontend.Model
-import org.jetbrains.amper.frontend.dr.resolver.BaseModuleDrTest.Companion.DelayedAssertion.Companion.withDelayedAssertion
+import org.jetbrains.amper.frontend.dr.resolver.BaseModuleDrTest.Companion.DelayedAssertion.Companion.withDelayedSoftAssertion
 import org.jetbrains.amper.frontend.schema.DefaultVersions
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.test.Dirs
@@ -248,9 +248,9 @@ abstract class BaseModuleDrTest {
             timeout: Duration = 1.minutes,
             testBody: suspend TestScope.() -> Unit
         ) {
-            val testBodyWithDelayedAssertions: (suspend TestScope.() -> Unit) =
+            val testBodyWithDelayedSoftAssertions: (suspend TestScope.() -> Unit) =
                 {
-                    withDelayedAssertion {
+                    withDelayedSoftAssertion {
                         testBody()
                     }
                 }
@@ -262,11 +262,11 @@ abstract class BaseModuleDrTest {
                     context = incrementalCacheUsageContext,
                     timeout = timeout,
                     testBody = {
-                        executeWithAndWithoutCache(incrementalCacheUsageContext, testBodyWithDelayedAssertions)
+                        executeWithAndWithoutCache(incrementalCacheUsageContext, testBodyWithDelayedSoftAssertions)
                     }
                 )
             } else {
-                runTestRespectingDelays(testBody = testBodyWithDelayedAssertions, timeout = timeout)
+                runTestRespectingDelays(testBody = testBodyWithDelayedSoftAssertions, timeout = timeout)
             }
         }
 
@@ -324,26 +324,30 @@ abstract class BaseModuleDrTest {
                         else -> { /* do nothing */ }
                     }
                 }
-                throw e
+                throw SoftAssertionFailedError(e)
             }.also {
                 expectedResultPath?.parent?.resolve(expectedResultPath.fileName.name + ".tmp")?.deleteIfExists()
             }
         }
 
         internal suspend fun withActualDumpAndDelayedAssertion(expectedResultPath: Path? = null, block: () -> Unit) =
-            withDelayedAssertion {
+            withDelayedSoftAssertion {
                 withActualDump(expectedResultPath, block)
             }
 
+        internal class SoftAssertionFailedError(e: AssertionFailedError): AssertionFailedError(e.message, e) {
+            override val cause: Throwable get() = super.cause!!
+        }
+
         internal class DelayedAssertion {
-            private val assertions: MutableList<AssertionFailedError> = mutableListOf()
-            fun add(e: AssertionFailedError) { assertions.add(e) }
+            private val assertions: MutableList<SoftAssertionFailedError> = mutableListOf()
+            fun add(e: SoftAssertionFailedError) { assertions.add(e) }
 
             fun assert() {
                 when (assertions.size) {
                     0 -> return
-                    1 -> throw assertions[0]
-                    else -> throw assertions.subList(1, assertions.size).fold(assertions[0]) { acc, e -> acc.also { acc.addSuppressed(e) } }
+                    1 -> throw assertions[0].cause
+                    else -> throw assertions.subList(1, assertions.size).fold(assertions[0].cause) { acc, e -> acc.also { acc.addSuppressed(e.cause) } }
                 }
             }
 
@@ -362,22 +366,23 @@ abstract class BaseModuleDrTest {
 
                 /**
                  * Run given [block].
-                 * [AssertionFailedError] occurred inside the block is either caught there and registered by nested
-                 * [withDelayedAssertion] or thrown directly from the [block] and is registered by this method.
+                 * [SoftAssertionFailedError] occurred inside the block is either caught there and registered by nested
+                 * [SoftAssertionFailedError] or thrown directly from the [block] and is registered by this method.
                  *
-                 * Registered [AssertionFailedError]s are immediately thrown at the end of this method if either
+                 * Registered [SoftAssertionFailedError]s are immediately thrown at the end of this method (theur actual causes to be precise)
+                 * if either
                  * - [Exception] occurred inside the [block] (i.e., something is wrong and there is no need to proceed with accumulating assertions)
                  * - or if the block finished successfully, and delayed assertion context didn't exist before this method started executing.
                  *
-                 * Note: If several [AssertionFailedError]s were caught, the first one is thrown with all the rest being added as suppressed ones.
+                 * Note: If several [SoftAssertionFailedError]s were caught, the first one's cause is thrown with all the rest being added as suppressed ones.
                  *
                  * If block finished successfully, and delayed assertion context was set up before entering this method,
-                 * then registered [AssertionFailedError] are not thrown.
+                 * then registered [SoftAssertionFailedError] are not thrown.
                  * It is the responsibility of a caller to handle them in that case.
                  *
-                 * This way top-most call of [withDelayedAssertion] raise all accumulated assertions.
+                 * This way top-most call of [withDelayedSoftAssertion] raise all accumulated assertions.
                  */
-                internal suspend fun withDelayedAssertion(block: suspend () -> Unit) {
+                internal suspend fun withDelayedSoftAssertion(block: suspend () -> Unit) {
                     val upstreamDelayedAssertion = getCurrentDelayedAssertionElement()
                     val delayedAssertionContextElement = upstreamDelayedAssertion ?: DelayedAssertionContextElement(DelayedAssertion())
                     val delayedAssertion = delayedAssertionContextElement.delayedAssertion
@@ -386,7 +391,7 @@ abstract class BaseModuleDrTest {
                         withContext(delayedAssertionContextElement) {
                             block()
                         }
-                    } catch (e: AssertionFailedError) {
+                    } catch (e: SoftAssertionFailedError) {
                         delayedAssertion.add(e)
                     } catch (t: Exception) {
                         delayedAssertion.assert() // raise assertion if it was registered before exception was thrown
