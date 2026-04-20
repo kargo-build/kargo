@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.schema
@@ -41,7 +41,7 @@ enum class ProductType(
         defaultPlatforms = null,
     ),
 
-    @SchemaDoc("A JVM console or desktop application")
+    @SchemaDoc("A JVM application (console, desktop, server...)")
     JVM_APP(
         "jvm/app",
         supportedPlatforms = setOf(Platform.JVM),
@@ -49,7 +49,7 @@ enum class ProductType(
         supportsFragmentBamboos = false,
     ),
 
-    @SchemaDoc("A reusable JVM library which could be used as dependency by other modules in the codebase only limited by JVM platform")
+    @SchemaDoc("A reusable JVM library, which can be used as dependency by other modules in the codebase (in their JVM sources)")
     JVM_LIB(
         "jvm/lib",
         supportedPlatforms = setOf(Platform.JVM),
@@ -65,7 +65,7 @@ enum class ProductType(
         supportsFragmentBamboos = false,
     ),
 
-    @SchemaDoc("An Android VM application")
+    @SchemaDoc("An Android application")
     ANDROID_APP(
         "android/app",
         supportedPlatforms = setOf(Platform.ANDROID),
@@ -101,14 +101,14 @@ enum class ProductType(
         defaultPlatforms = setOf(Platform.MINGW_X64),
     ),
 
-    @SchemaDoc("A wasm JS application")
+    @SchemaDoc("A WebAssembly application with browser APIs")
     WASM_JS_APP(
         "wasm-js/app",
         supportedPlatforms = setOf(Platform.WASM_JS),
         defaultPlatforms = setOf(Platform.WASM_JS)
     ),
 
-    @SchemaDoc("A wasm JS application")
+    @SchemaDoc("A WebAssembly application with WASI APIs")
     WASM_WASI_APP(
         "wasm-wasi/app",
         supportedPlatforms = setOf(Platform.WASM_WASI),
