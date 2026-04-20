@@ -51,6 +51,6 @@ internal fun ProjectTasksBuilder.createLibCinteropTasks(
                     linkerOpts = cinteropModule.linkerOpts,
                     processRunner = context.processRunner,
                 ).also { tasks.registerTask(it) }
-            } ?: emptyMap()
+            } ?: emptyList()
         }
 }
