@@ -114,13 +114,15 @@ IDEA_PROVIDED_JAR_PATTERNS = [
     r"FastInfoset-.*",
     r"aalto-xml-.*",
     r"stax2-api-.*",
-    r"amper-cli.*",
-    r"amper-distribution.*",
-    r"amper-wrapper.*",
-    r"amper-cli-test.*",
-    r"amper-mobile-test.*",
-    r"amper-wrapper-test.*",
-    r"amper-deps-proprietary-xcode.*",
+    r"^amper-cli.*",
+    r"^amper-distribution.*",
+    r"^amper-wrapper.*",
+    r"^amper-cli-test.*",
+    r"^amper-mobile-test.*",
+    r"^amper-wrapper-test.*",
+    r"^amper-deps-proprietary-xcode.*",
+    r".*-stub\.jar$",
+    r".*-stub-\d.*\.jar$",
 ]
 
 # Padrão para versões da IntelliJ Platform (ex: -252.25557.178.jar ou -253.29346.138-hash.jar)
@@ -213,10 +215,14 @@ def main():
     # 2. JARs de todos os módulos Kargo compilados que o plugin possa precisar
     bundled_normalized_names = {normalize_name(PLUGIN_NAME)}
     
-    # Módulos do source que sabemos que conflitam com plugins do IDEA ou são apps
+    # Módulos do source que sabemos que conflitam com plugins do IDEA ou são apps.
+    # Stub jars (amper-extensibility-sdk-stub) must never be bundled: they contain
+    # stub implementations of JDK/Kotlin stdlib classes (e.g. CollectionsKt, Path)
+    # that shadow IntelliJ's real runtime classes and cause NoSuchMethodError / stub! crashes.
     SOURCE_MODULE_EXCLUSIONS = {
         "ampercli", "amperwrapper", "amperdistribution",
-        "yamlpsi", "tomlpsi"
+        "yamlpsi", "tomlpsi",
+        "amperextensibilitysdkstub", "extensibilitysdkstub", "sdkstub",
     }
 
     for module_dir in sorted(artifacts_root.iterdir()):
@@ -231,12 +237,17 @@ def main():
         norm_name = normalize_name(module_name)
         jar_name = f"{module_name}.jar"
 
-        # Nunca incluímos apps ou módulos que conflitam com plugins obrigatórios do IDEA
+        # Nunca incluímos apps ou módulos que conflitam com plugins obrigatórios do IDEA.
+        # Stub jars must never be bundled: they contain stub implementations of JDK/Kotlin
+        # stdlib classes that shadow IntelliJ's real runtime and cause stub!/NoSuchMethodError.
         should_exclude = False
         for excl in SOURCE_MODULE_EXCLUSIONS:
             if norm_name.startswith(excl):
                 should_exclude = True
                 break
+        # Also exclude any module whose normalized name ends with 'stub'
+        if norm_name.endswith("stub"):
+            should_exclude = True
         
         if should_exclude:
             # print(f"  (excluding source module: {module_name})")

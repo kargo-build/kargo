@@ -77,7 +77,7 @@ class Settings : SchemaNode() {
 
     @SchemaDoc("Native applications settings")
     @PlatformSpecific(Platform.NATIVE)
-    @ProductTypeSpecific(ProductType.MACOS_APP, ProductType.LINUX_APP, ProductType.WINDOWS_APP)
+    @ProductTypeSpecific(ProductType.MACOS_APP, ProductType.LINUX_APP, ProductType.WINDOWS_APP, ProductType.LIB)
     val native by nullableValue<NativeSettings>()
 
     @SchemaDoc("Ktor server settings")
@@ -247,8 +247,8 @@ class NativeSettings : SchemaNode() {
     @SchemaDoc("The fully-qualified name of the application's entry point function")
     val entryPoint by nullableValue<String>()
 
-    @SchemaDoc("Output directory or path for the final distributable, relative to the module root. Defaults to 'dist/'.")
-    val output by value<String>(default = "dist/")
+    @SchemaDoc("Output directory or path for the final distributable, relative to the module root.")
+    val output by nullableValue<String>()
 
     @SchemaDoc("C/Objective-C interop settings for native targets")
     val cinterop: Map<String, CinteropModule> by value(default = emptyMap())

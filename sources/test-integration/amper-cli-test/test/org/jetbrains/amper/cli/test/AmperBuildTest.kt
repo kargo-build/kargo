@@ -194,6 +194,12 @@ class AmperBuildTest : AmperCliTestBase() {
     }
 
     @Test
+    fun `native cinterop from source dep lib is propagated to app`() = runSlowTest {
+        val projectRoot = testProject("native-cinterop-source-dep")
+        runCli(projectDir = projectRoot, "build")
+    }
+
+    @Test
     fun `native linker options are respected`() = runSlowTest {
         val projectRoot = testProject("native-linker-options")
         val result = runCli(projectDir = projectRoot, "build")

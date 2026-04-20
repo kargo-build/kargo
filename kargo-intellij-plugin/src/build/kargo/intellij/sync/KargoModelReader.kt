@@ -4,7 +4,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.util.Computable
 import com.intellij.openapi.diagnostic.Logger
-import org.jetbrains.amper.frontend.project.StandaloneAmperProjectContext
+import org.jetbrains.amper.frontend.project.AmperProjectContext
 import org.jetbrains.amper.frontend.aomBuilder.readProjectModel
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 import org.jetbrains.amper.problems.reporting.BuildProblem
@@ -35,9 +35,9 @@ class KargoModelReader {
                 ApplicationManager.getApplication().runReadAction(Computable {
                     with(reporter) {
                         val context = runCatching {
-                            StandaloneAmperProjectContext.create(projectPath, null, project)
+                            AmperProjectContext.create(projectPath, null, project)
                         }.onFailure {
-                            logger.error("Kargo: Error during StandaloneAmperProjectContext.create", it)
+                            logger.error("Kargo: Error during AmperProjectContext.create", it)
                             errorCollector.reportException(it)
                         }.getOrNull() ?: return@Computable null
 

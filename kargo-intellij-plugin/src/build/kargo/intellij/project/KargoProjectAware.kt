@@ -33,12 +33,12 @@ class KargoProjectAware(private val project: Project) : ExternalSystemProjectAwa
             if (!root.exists()) return emptySet()
             
             return try {
+                val result = mutableSetOf<String>()
                 Files.walk(root, 4).use { stream ->
                     stream.filter { it.name == "project.yaml" || it.name == "module.yaml" }
-                          .map { it.toString() }
-                          .toList()
-                          .toSet()
+                          .forEach { result.add(it.toString()) }
                 }
+                result
             } catch (e: Exception) {
                 emptySet()
             }

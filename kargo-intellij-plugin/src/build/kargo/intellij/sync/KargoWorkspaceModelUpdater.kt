@@ -24,45 +24,36 @@ import com.intellij.openapi.roots.ProjectRootManager
 import com.intellij.openapi.roots.libraries.Library
 import com.intellij.openapi.roots.libraries.LibraryTable
 import com.intellij.openapi.roots.libraries.LibraryTablesRegistrar
+import com.intellij.openapi.roots.libraries.PersistentLibraryKind
 import com.intellij.openapi.vfs.VfsUtilCore
 import kotlinx.coroutines.runBlocking
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
+import org.jetbrains.amper.dependency.resolution.Key
 import org.jetbrains.amper.dependency.resolution.diagnostics.Severity
 import org.jetbrains.amper.dependency.resolution.diagnostics.detailedMessage
-import org.jetbrains.amper.dependency.resolution.ResolutionLevel
 import org.jetbrains.amper.dependency.resolution.DependencyNode
+import org.jetbrains.amper.dependency.resolution.ResolutionLevel
 import org.jetbrains.amper.dependency.resolution.diagnostics.PlatformsAreNotSupported
 import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.FragmentDependencyType
 import org.jetbrains.amper.frontend.LocalModuleDependency
 import org.jetbrains.amper.frontend.Model
+import org.jetbrains.amper.frontend.ancestralPath
 import org.jetbrains.amper.frontend.fragmentsTargeting
 import org.jetbrains.amper.frontend.Platform
-import org.jetbrains.amper.frontend.GitSourcesModulePart
-import org.jetbrains.amper.frontend.dr.resolver.DependenciesFlowType
+import org.jetbrains.amper.frontend.dr.resolver.AmperResolutionSettings
 import org.jetbrains.amper.frontend.dr.resolver.DirectFragmentDependencyNode
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies
+import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencies.Companion.resolveProjectDependencies
 import org.jetbrains.amper.frontend.dr.resolver.ModuleDependencyNode
 import org.jetbrains.amper.frontend.dr.resolver.ResolutionDepth
-import org.jetbrains.amper.frontend.dr.resolver.ResolutionInput
-import org.jetbrains.amper.frontend.dr.resolver.getAmperFileCacheBuilder
-import org.jetbrains.amper.frontend.dr.resolver.moduleDependenciesResolver
+import org.jetbrains.amper.frontend.dr.resolver.ResolutionRunSettings
 import org.jetbrains.amper.frontend.isDescendantOf
 import java.io.File
 import java.lang.reflect.Array
 import java.nio.file.Files
 import java.nio.file.Paths
-import build.kargo.frontend.dr.resolver.GitSourcesExtension
-import build.kargo.frontend.schema.BitbucketSource
-import build.kargo.frontend.schema.GitHubSource
-import build.kargo.frontend.schema.GitLabSource
-import build.kargo.frontend.schema.GitSource
-import build.kargo.frontend.schema.GitSourceException
-import build.kargo.frontend.schema.GitUrlSource
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
-import com.intellij.openapi.wm.ToolWindowManager
-import build.kargo.intellij.sync.KargoSyncErrorCollector
 
 /**
  * Updates the IntelliJ WorkspaceModel based on the Kargo project model.
@@ -73,40 +64,14 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
     fun updateWorkspaceModel(model: Model, errorCollector: KargoSyncErrorCollector) {
         val app = ApplicationManager.getApplication()
         logger.info("Kargo: Scheduling WorkspaceModel update with ${model.modules.size} modules")
-        
-        // 1. Process Git Sources synchronously on background thread
-        // We do this BEFORE invokeLater to prevent blocking the UI/EDT
-        // Clear stale cache so removed/added Git deps are detected on every sync
-        GitSourcesExtension.clearCache()
-        model.modules.forEach { kargoModule ->
-            val allPlatforms = kargoModule.fragments.flatMap { it.platforms.toList() }.distinct()
-            
-            GitSourcesExtension.processModuleGitSources(kargoModule, allPlatforms) { source, exception ->
-                val repoRef = when (source) {
-                    is GitHubSource -> "github:${source.github}:${source.version.value}"
-                    is GitLabSource -> "gitlab:${source.gitlab}:${source.version.value}"
-                    is BitbucketSource -> "bitbucket:${source.bitbucket}:${source.version.value}"
-                    is GitUrlSource -> "${source.git}:${source.version.value}"
-                }
-                val cleanMessage = if (exception is GitSourceException) {
-                    val msg = exception.rawMessage.replace("\n", "<br>")
-                    val details = exception.details?.trim()?.replace("\n", "<br>")
-                    if (details != null) "$msg<br>$details" else msg
-                } else {
-                    exception.message?.replace("\n", "<br>") ?: "Unknown error"
-                }
-                
-                errorCollector.reportError("<b>Git Dependency:</b> Unable to resolve dependency $repoRef<br>$cleanMessage")
-            }
-        }
-        
-        // 2. Resolve External Dependencies (Maven) on background thread
+
+        // Git sources are now resolved by the frontend as LocalModuleDependency entries
+        // injected into each fragment's externalDependencies. No separate processing needed here.
+
+        // Resolve External Dependencies (Maven) on background thread.
         // This is a heavy operation (uses runBlocking) so it MUST NOT be on EDT.
         val fragmentToExternalDeps = resolveAllDependencies(model, errorCollector)
 
-        // Errors are now collected via errorCollector and handled by KargoSyncManager
-
-        
         app.invokeLater {
             if (project.isDisposed) return@invokeLater
             
@@ -166,41 +131,29 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     nameToModule[moduleName] = ideModule
 
                     val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
-                    
-                    // Derive the module root directory from the fragment's source root parent
-                    // This prevents IntelliJ from rendering visual grouping brackets in the Project View
-                    val firstSourceRoot = fragment.sourceRoots.firstOrNull()?.toString()
-                    val moduleRootPath = firstSourceRoot?.let { Paths.get(it).parent?.toString() }
-                    
-                    val contentEntry = if (moduleRootPath != null) {
-                        val moduleBaseUrl = VfsUtilCore.pathToUrl(moduleRootPath)
-                        val entry = if (modifiableModel.contentEntries.none { it.url == moduleBaseUrl }) {
-                            modifiableModel.addContentEntry(moduleBaseUrl)
-                        } else {
-                            modifiableModel.contentEntries.first { it.url == moduleBaseUrl }
-                        }
-                        
-                        // Exclude commonly generated directories to speed up IDE search and indexing
-                        listOf("build", "logs", ".kargo", ".amper").forEach { dirName ->
-                            val excludeUrl = VfsUtilCore.pathToUrl("$moduleRootPath/$dirName")
-                            if (!entry.excludeFolderUrls.contains(excludeUrl)) {
-                                entry.addExcludeFolder(excludeUrl)
-                            }
-                        }
-                        entry
-                    } else null
-                    
+                    val isVendor = kargoModule.userReadableName.startsWith("vendor.")
+
                     fragment.sourceRoots.forEach { sourceRoot ->
                         val rootPath = sourceRoot.toString()
-                        val url = VfsUtilCore.pathToUrl(rootPath)
-                        
-                        val entryToUse = contentEntry ?: if (modifiableModel.contentEntries.none { it.url == url }) {
-                            modifiableModel.addContentEntry(url)
+                        val sourceUrl = VfsUtilCore.pathToUrl(rootPath)
+
+                        // For vendor (git source) modules, use the repo root as content root so the
+                        // full repo is visible in the Project View. For project modules, use the
+                        // source root directly to avoid duplicating the project root folder.
+                        val contentRootPath = if (isVendor) {
+                            Paths.get(rootPath).parent?.toString() ?: rootPath
                         } else {
-                            modifiableModel.contentEntries.first { it.url == url }
+                            rootPath
                         }
-                        
-                        entryToUse.addSourceFolder(url, fragment.isTest)
+                        val contentUrl = VfsUtilCore.pathToUrl(contentRootPath)
+
+                        val entry = if (modifiableModel.contentEntries.none { it.url == contentUrl }) {
+                            modifiableModel.addContentEntry(contentUrl)
+                        } else {
+                            modifiableModel.contentEntries.first { it.url == contentUrl }
+                        }
+
+                        entry.addSourceFolder(sourceUrl, fragment.isTest)
                     }
                     
                     modifiableModel.inheritSdk()
@@ -216,35 +169,51 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
 
         // External Dependencies (Maven)
         val allMavenNodes = fragmentToExternalDeps.values.flatten().toSet()
-        
+
+        // Detect if any maven node has klib files — those need KotlinNativeLibraryKind
+        val kotlinNativeLibraryKind: com.intellij.openapi.roots.libraries.PersistentLibraryKind<*>? = try {
+            @Suppress("UNCHECKED_CAST")
+            Class.forName("org.jetbrains.kotlin.idea.base.platforms.KotlinNativeLibraryKind")
+                .getField("INSTANCE").get(null) as? com.intellij.openapi.roots.libraries.PersistentLibraryKind<*>
+        } catch (_: Exception) { null }
+
         val libraryTable = LibraryTablesRegistrar.getInstance().getLibraryTable(project)
         val projectLibraryModel = libraryTable.modifiableModel
         val libraryMap = mutableMapOf<String, Library>()
-        
+
         allMavenNodes.forEach { mavenNode ->
             val coords = mavenNode.dependency.coordinates
             val libraryName = "Kargo: ${coords.groupId}:${coords.artifactId}:${coords.version}"
-            
+            val hasKlib = mavenNode.dependency.files(false).any { it.path?.toString()?.endsWith(".klib") == true }
+
+            // Always recreate the library roots to ensure stale entries from previous syncs are cleared.
             var library = libraryTable.getLibraryByName(libraryName)
             if (library == null) {
-                library = projectLibraryModel.createLibrary(libraryName)
-                val libModifiableModel = library.modifiableModel
-                
-                mavenNode.dependency.files(withSources = true).forEach { depFile ->
-                    val path = depFile.path
-                    if (path != null && Files.exists(path)) {
-                        val absPath = path.toAbsolutePath().toString()
-                        val url = VfsUtilCore.pathToUrl(absPath)
-                        val finalUrl = when {
-                            absPath.endsWith(".jar") || absPath.endsWith(".zip") || absPath.endsWith(".klib") -> "jar://${absPath}!/"
-                            else -> url
-                        }
-                        val rootType = if (depFile.isDocumentation) OrderRootType.SOURCES else OrderRootType.CLASSES
-                        libModifiableModel.addRoot(finalUrl, rootType)
-                    }
+                library = if (hasKlib && kotlinNativeLibraryKind != null) {
+                    projectLibraryModel.createLibrary(libraryName, kotlinNativeLibraryKind)
+                } else {
+                    projectLibraryModel.createLibrary(libraryName)
                 }
-                libModifiableModel.commit()
             }
+            val libModifiableModel = library.modifiableModel
+            // Clear existing roots before re-adding to avoid duplicates from previous syncs
+            libModifiableModel.getUrls(OrderRootType.CLASSES).forEach { libModifiableModel.removeRoot(it, OrderRootType.CLASSES) }
+            libModifiableModel.getUrls(OrderRootType.SOURCES).forEach { libModifiableModel.removeRoot(it, OrderRootType.SOURCES) }
+
+            mavenNode.dependency.files(withSources = true).forEach { depFile ->
+                val path = depFile.path
+                if (path != null && Files.exists(path)) {
+                    val absPath = path.toAbsolutePath().toString()
+                    val url = VfsUtilCore.pathToUrl(absPath)
+                    val finalUrl = when {
+                        absPath.endsWith(".jar") || absPath.endsWith(".zip") || absPath.endsWith(".klib") -> "jar://${absPath}!/"
+                        else -> url
+                    }
+                    val rootType = if (depFile.isDocumentation) OrderRootType.SOURCES else OrderRootType.CLASSES
+                    libModifiableModel.addRoot(finalUrl, rootType)
+                }
+            }
+            libModifiableModel.commit()
             libraryMap[libraryName] = library
         }
         projectLibraryModel.commit()
@@ -275,13 +244,23 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             }
         }
 
-        // Apply external dependencies to modules
+        // Apply external dependencies to modules.
+        // For each fragment that has resolved deps, also propagate to all ancestor fragments
+        // (e.g. kermit resolved for linuxX64 must also be visible in linux, native, common).
+        // This ensures source files in parent fragments can resolve symbols from leaf dependencies.
+        val fragmentToExternalDepsExpanded = mutableMapOf<Fragment, MutableSet<MavenDependencyNode>>()
+        fragmentToExternalDeps.forEach { (fragment, deps) ->
+            fragment.ancestralPath().forEach { ancestor ->
+                fragmentToExternalDepsExpanded.getOrPut(ancestor) { mutableSetOf() }.addAll(deps)
+            }
+        }
+
         model.modules.forEach { kargoModule ->
             kargoModule.fragments.forEach { fragment ->
                 val moduleName = "${kargoModule.userReadableName}.${fragment.name}"
                 val ideModule = nameToModule[moduleName] ?: return@forEach
-                val externalDeps = fragmentToExternalDeps[fragment] ?: return@forEach
-                
+                val externalDeps = fragmentToExternalDepsExpanded[fragment] ?: return@forEach
+
                 val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
                 externalDeps.forEach { mavenNode ->
                     val coords = mavenNode.dependency.coordinates
@@ -295,82 +274,6 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     }
                 }
                 modifiableModel.commit()
-            }
-        }
-        
-        // Inject Git Sources Dependencies
-        // Clean up old Kargo Git libraries from the LibraryTable
-        val gitLibraryModel = libraryTable.modifiableModel
-        val gitLibsToRemove = libraryTable.libraries.filter { it.name?.startsWith("Kargo Git:") == true || it.name?.startsWith("Kargo Local Git:") == true }
-
-        gitLibsToRemove.forEach { lib ->
-            gitLibraryModel.removeLibrary(lib)
-        }
-        gitLibraryModel.commit()
-        // 1. Create all Git libraries and commit the project library model
-        val gitLibMap = mutableMapOf<String, Library>()
-        val gitLibraryModelNew = libraryTable.modifiableModel
-        
-        model.modules.forEach { kargoModule ->
-            val gitArtifacts = GitSourcesExtension.getArtifacts(kargoModule)
-            gitArtifacts.forEach { artifact ->
-                val absPath = artifact.artifactPath.toAbsolutePath().toString()
-                val source = artifact.source
-                val repoName = when (source) {
-                    is GitHubSource -> source.github
-                    is GitLabSource -> source.gitlab
-                    is BitbucketSource -> source.bitbucket
-                    is GitUrlSource -> source.git.substringAfterLast("/").removeSuffix(".git")
-                }
-                val version = source.version.value
-                val libraryName = "Kargo Git: $repoName:$version"
-                
-                var library = gitLibMap[libraryName] ?: libraryTable.getLibraryByName(libraryName)
-                if (library == null) {
-                    library = gitLibraryModelNew.createLibrary(libraryName)
-                    val libModifiableModel = library.modifiableModel
-                    
-                    val url = VfsUtilCore.pathToUrl(absPath)
-                    val finalUrl = if (absPath.endsWith(".klib")) "jar://${absPath}!/" else url
-                    libModifiableModel.addRoot(finalUrl, OrderRootType.CLASSES)
-                    
-                    libModifiableModel.commit()
-                    gitLibMap[libraryName] = library
-                }
-            }
-        }
-        gitLibraryModelNew.commit()
-
-        // 2. Assign the created libraries to their respective modules
-        model.modules.forEach { kargoModule ->
-            val gitArtifacts = GitSourcesExtension.getArtifacts(kargoModule)
-            logger.info("Kargo: Module ${kargoModule.userReadableName} has ${gitArtifacts.size} Git artifacts to inject")
-            kargoModule.fragments.forEach { fragment ->
-                val moduleName = "${kargoModule.userReadableName}.${fragment.name}"
-                val ideModule = nameToModule[moduleName] ?: return@forEach
-                
-                val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
-                var changed = false
-                gitArtifacts.forEach { artifact ->
-                    val source = artifact.source
-                    val repoName = when (source) {
-                        is GitHubSource -> source.github
-                        is GitLabSource -> source.gitlab
-                        is BitbucketSource -> source.bitbucket
-                        is GitUrlSource -> source.git.substringAfterLast("/").removeSuffix(".git")
-                    }
-                    val version = source.version.value
-                    val libraryName = "Kargo Git: $repoName:$version"
-                    
-                    val library = gitLibMap[libraryName] ?: libraryTable.getLibraryByName(libraryName)
-                    val existingEntry = modifiableModel.orderEntries.find { it is LibraryOrderEntry && it.libraryName == libraryName }
-                    if (existingEntry == null && library != null) {
-                        modifiableModel.addLibraryEntry(library)
-                        changed = true
-                    }
-                }
-                
-                if (changed) modifiableModel.commit() else modifiableModel.dispose()
             }
         }
         
@@ -445,7 +348,11 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
     private fun setupKotlinFacet(ideModule: Module, moduleName: String, fragment: Fragment) {
         try {
             val facetManager = FacetManager.getInstance(ideModule)
-            val facetType = FacetTypeRegistry.getInstance().findFacetType("kotlin-language") ?: return
+            val facetType = FacetTypeRegistry.getInstance().findFacetType("kotlin-language")
+            if (facetType == null) {
+                logger.warn("Kargo: kotlin-language facet type not found for $moduleName")
+                return
+            }
 
             val modifiableFacetModel = facetManager.createModifiableModel()
             modifiableFacetModel.getFacetByType(facetType.id)?.let { modifiableFacetModel.removeFacet(it) }
@@ -518,16 +425,18 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
 
                     if (nativePlatform != null) {
                         settings.javaClass.methods.find { it.name == "setTargetPlatform" }?.invoke(settings, nativePlatform)
+                        logger.info("Kargo: Set native target platform for $moduleName: $nativePlatform")
                     } else {
-                        logger.warn("Kargo: Failed to obtain nativePlatform instance for Kotlin Facet")
+                        logger.warn("Kargo: Failed to obtain nativePlatform instance for Kotlin Facet on $moduleName")
                     }
                 } catch (e: Exception) {
-                    logger.warn("Kargo: Failed to set target platform in Kotlin Facet", e)
+                    logger.warn("Kargo: Failed to set target platform in Kotlin Facet for $moduleName", e)
                 }
             }
 
             modifiableFacetModel.addFacet(facet)
             modifiableFacetModel.commit()
+            logger.info("Kargo: Kotlin facet committed for $moduleName isNative=$isNative")
         } catch (e: Exception) {
             logger.warn("Kargo: Failed to setup Kotlin facet for $moduleName", e)
         }
@@ -535,55 +444,82 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
 
     private fun resolveAllDependencies(model: Model, errorCollector: KargoSyncErrorCollector): Map<Fragment, Set<MavenDependencyNode>> {
         val fragmentToDeps = mutableMapOf<Fragment, MutableSet<MavenDependencyNode>>()
-        
+
         val userCacheRootResult = AmperUserCacheRoot.fromCurrentUserResult()
         val userCacheRoot = if (userCacheRootResult is AmperUserCacheRoot) userCacheRootResult else null
-        
+
         if (userCacheRoot == null) {
             logger.warn("Kargo: Could not initialize Amper user cache root. External dependencies resolution skipped.")
             return emptyMap()
         }
 
-        val resolutionInput = ResolutionInput(
-            dependenciesFlowType = DependenciesFlowType.IdeSyncType(model),
+        val resolutionSettings = AmperResolutionSettings(
+            userCacheRoot = userCacheRoot,
+            includeNonExportedNative = false,
+        )
+        val resolutionRunSettings = ResolutionRunSettings(
             resolutionDepth = ResolutionDepth.GRAPH_FULL,
             resolutionLevel = ResolutionLevel.NETWORK,
-            fileCacheBuilder = getAmperFileCacheBuilder(userCacheRoot)
         )
 
         try {
             runBlocking {
-                val rootNode = moduleDependenciesResolver.run { model.modules.resolveDependencies(resolutionInput) }
-                
-                // Collect errors from all nodes in the resolution graph
-                rootNode.distinctBfsSequence().forEach { node ->
+                val resolvedGraph = model.resolveProjectDependencies(resolutionSettings, resolutionRunSettings)
+                val rootNode = resolvedGraph.root
+
+                // Collect diagnostics from all nodes via BFS
+                val diagQueue = ArrayDeque<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                val diagVisited = mutableSetOf<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                diagQueue.add(rootNode)
+                while (diagQueue.isNotEmpty()) {
+                    val node = diagQueue.removeFirst()
+                    if (!diagVisited.add(node)) continue
+                    diagQueue.addAll(node.children)
+
                     node.messages.forEach { message ->
                         if (message.severity >= Severity.WARNING) {
                             val isPlatformMismatch = message.id == PlatformsAreNotSupported.ID
-                            
+
                             val isDirect = node in rootNode.children
                             val isRoot = node == rootNode
                             val isTransitive = !isDirect && !isRoot
-                            
+
                             // Align with CLI: only report transitive diagnostics if allowed
                             if (isTransitive && !message.reportTransitive) return@forEach
 
                             val label = if (isPlatformMismatch) "Platform Compatibility" else "Maven Dependency"
-                            
+
                             val parent = node.parents.firstOrNull { it.graphEntryName.isNotBlank() }
                             val transitiveInfo = if (isTransitive && parent != null && parent != rootNode) {
                                 " (transitive from ${parent.graphEntryName})"
                             } else ""
-                            
+
                             // Force platform mismatch to WARNING, otherwise follow message severity
-                            val severity = if (isPlatformMismatch) SyncSeverity.WARNING 
-                                           else if (message.severity == Severity.ERROR) SyncSeverity.ERROR 
+                            val severity = if (isPlatformMismatch) SyncSeverity.WARNING
+                                           else if (message.severity == Severity.ERROR) SyncSeverity.ERROR
                                            else SyncSeverity.WARNING
-                            
+
                             val content = message.detailedMessage.trim().replace("\n", "<br>")
                             errorCollector.reportError("<b>$label:</b> $content$transitiveInfo", severity)
                         }
                     }
+                }
+
+                // Map resolved Maven deps back to their fragments.
+                // First, collect ALL resolved MavenDependencyNodes from the full graph (BFS from root),
+                // indexed by key. This ensures we capture KMP variant nodes (e.g. kermit-linuxx64)
+                // that are children of the KMP umbrella node (kermit) and have the actual .klib files.
+                val allMavenNodesByKey = mutableMapOf<org.jetbrains.amper.dependency.resolution.Key<*>, MavenDependencyNode>()
+                val globalQueue = ArrayDeque<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                val globalVisited = mutableSetOf<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                globalQueue.add(rootNode)
+                while (globalQueue.isNotEmpty()) {
+                    val current = globalQueue.removeFirst()
+                    if (!globalVisited.add(current)) continue
+                    if (current is MavenDependencyNode && current.dependency.files(false).isNotEmpty()) {
+                        allMavenNodesByKey[current.key] = current
+                    }
+                    globalQueue.addAll(current.children)
                 }
 
                 rootNode.children.filterIsInstance<ModuleDependencyNode>().forEach { moduleNode ->
@@ -592,13 +528,20 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                         val fragment = kargoModule?.fragments?.find { it.name == fragmentNode.fragmentName }
                         if (fragment != null) {
                             val deps = fragmentToDeps.getOrPut(fragment) { mutableSetOf() }
-                            val bfs = fragmentNode.dependencyNode.distinctBfsSequence().toList()
-                            val mavenDeps = bfs.filterIsInstance<MavenDependencyNode>()
-                            
-                            mavenDeps.forEach { 
-                                if (it.dependency.files(false).isNotEmpty()) {
-                                    deps.add(it)
+                            // BFS from the direct dependency node, matching resolved nodes by key.
+                            // For KMP libraries (e.g. kermit), the actual .klib is on a child node
+                            // (e.g. kermit-linuxx64), not on the umbrella node itself.
+                            val queue = ArrayDeque<DependencyNode>()
+                            val visited = mutableSetOf<DependencyNode>()
+                            queue.add(fragmentNode.dependencyNode)
+                            while (queue.isNotEmpty()) {
+                                val current = queue.removeFirst()
+                                if (!visited.add(current)) continue
+                                val resolved = allMavenNodesByKey[current.key]
+                                if (resolved != null) {
+                                    deps.add(resolved)
                                 }
+                                queue.addAll(current.children)
                             }
                         }
                     }
@@ -608,12 +551,12 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             logger.error("Kargo: Failed to resolve external dependencies", e)
             errorCollector.reportException(e)
         }
-        
+
         return fragmentToDeps
     }
     
     private fun injectNativeLibraries(
-        model: Model, 
+        model: Model,
         nameToModule: Map<String, Module>,
         libraryTable: LibraryTable
     ) {
@@ -623,7 +566,13 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
 
         val prebuiltDirs = konanDir.listFiles { f -> f.isDirectory && f.name.startsWith("kotlin-native-prebuilt-") }
         val latestPrebuilt = prebuiltDirs?.maxByOrNull { it.name } ?: return
-        
+
+        val kotlinNativeLibraryKind: PersistentLibraryKind<*>? = try {
+            @Suppress("UNCHECKED_CAST")
+            Class.forName("org.jetbrains.kotlin.idea.base.platforms.KotlinNativeLibraryKind")
+                .getField("INSTANCE").get(null) as? PersistentLibraryKind<*>
+        } catch (_: Exception) { null }
+
         val nativeLibMap = mutableMapOf<String, Library>()
         val projectLibraryModel = libraryTable.modifiableModel
         
@@ -650,19 +599,23 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     
                     for (klibDir in klibsToAttach) {
                         val libraryName = "Kargo Native: ${klibDir.name} [$platformFolder]"
-                        
+
                         var library = nativeLibMap[libraryName] ?: libraryTable.getLibraryByName(libraryName)
                         if (library == null) {
-                            library = projectLibraryModel.createLibrary(libraryName)
+                            library = if (kotlinNativeLibraryKind != null) {
+                                projectLibraryModel.createLibrary(libraryName, kotlinNativeLibraryKind)
+                            } else {
+                                projectLibraryModel.createLibrary(libraryName)
+                            }
                             val libModifiableModel = library.modifiableModel
-                            
+
                             val url = VfsUtilCore.pathToUrl(klibDir.absolutePath)
                             libModifiableModel.addRoot(url, OrderRootType.CLASSES)
-                            
+
                             libModifiableModel.commit()
                             nativeLibMap[libraryName] = library
                         }
-                        
+
                         val existingEntry = modifiableModel.orderEntries.find { it is LibraryOrderEntry && it.libraryName == libraryName }
                         if (existingEntry == null) {
                             modifiableModel.addLibraryEntry(library)
