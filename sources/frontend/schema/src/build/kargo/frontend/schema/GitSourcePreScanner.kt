@@ -9,12 +9,21 @@ import org.jetbrains.amper.frontend.tree.*
 import org.jetbrains.amper.frontend.tree.reading.readTree
 import org.jetbrains.amper.problems.reporting.CollectingProblemReporter
 import org.jetbrains.amper.problems.reporting.ProblemReporter
+import org.jetbrains.amper.problems.reporting.BuildProblemImpl
+import org.jetbrains.amper.problems.reporting.BuildProblemType
+import org.jetbrains.amper.problems.reporting.WholeFileBuildProblemSource
+import org.jetbrains.amper.problems.reporting.Level
+import org.jetbrains.amper.frontend.diagnostics.FrontendDiagnosticId
 import org.jetbrains.amper.frontend.contexts.EmptyContexts
 import org.jetbrains.amper.frontend.types.SchemaTypingContext
+import org.jetbrains.amper.problems.reporting.NonIdealDiagnostic
+import java.nio.file.Path
+import kotlin.io.path.Path
 
 object GitSourcePreScanner {
     private val logger = LoggerFactory.getLogger(GitSourcePreScanner::class.java)
 
+    @OptIn(NonIdealDiagnostic::class)
     fun preScanAndResolveGitSources(
         initialModuleFiles: List<VirtualFile>,
         frontendPathResolver: FrontendPathResolver
@@ -36,7 +45,28 @@ object GitSourcePreScanner {
 
                     for (parsed in gitSources) {
                         logger.debug("Pre-scanning detected Git source: ${parsed.url} (${parsed.version}) in ${moduleFile.path}")
-                        val resolvedDir = runCatching { cloner.resolveSourcesDir(parsed.url, parsed.version, parsed.path) }.getOrNull() ?: continue
+                        val resolvedDir = runCatching { 
+                            cloner.resolveSourcesDir(parsed.url, parsed.version, parsed.path) 
+                        }.getOrElse { error ->
+                            logger.error("Failed to resolve Git source: ${parsed.url}@${parsed.version}", error)
+                            
+                            // Report error to user via ProblemReporter
+                            val errorMessage = when (error) {
+                                is GitSourceException -> error.details ?: error.rawMessage
+                                else -> error.message ?: "Unknown error"
+                            }
+                            
+                            reportMessage(
+                                BuildProblemImpl(
+                                    source = WholeFileBuildProblemSource(Path(moduleFile.path)),
+                                    message = "Failed to resolve Git dependency: ${parsed.url}@${parsed.version}\n$errorMessage",
+                                    level = Level.Error,
+                                    type = BuildProblemType.UnresolvedReference,
+                                    diagnosticId = FrontendDiagnosticId.GitSourceResolutionFailed
+                                )
+                            )
+                            null
+                        } ?: continue
 
                         // Directly load the module file instead of iterating VFS `.children` which might be cached as empty
                         val clonedModuleFile = amperModuleFileNames.firstNotNullOfOrNull { name ->

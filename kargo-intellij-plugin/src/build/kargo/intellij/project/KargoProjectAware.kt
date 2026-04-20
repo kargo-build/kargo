@@ -67,13 +67,8 @@ class KargoProjectAware(private val project: Project) : ExternalSystemProjectAwa
     }
 
     override fun reloadProject(context: ExternalSystemProjectReloadContext) {
-        notifySyncStarted()
-        try {   
-            if (context.isExplicitReload || settingsFilesChanged(context.settingsFilesContext)) {
-                KargoSyncManager.getInstance(project).scheduleSync()
-            }
-        } finally {
-            notifySyncFinished(true)
+        if (context.isExplicitReload || settingsFilesChanged(context.settingsFilesContext)) {
+            KargoSyncManager.getInstance(project).scheduleSync("Project Reload")
         }
     }
 

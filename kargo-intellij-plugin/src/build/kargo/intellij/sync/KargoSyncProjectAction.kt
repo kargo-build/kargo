@@ -20,6 +20,6 @@ class KargoSyncProjectAction : DumbAwareAction() {
 
     override fun actionPerformed(e: AnActionEvent) {
         val project = e.project ?: return
-        KargoSyncManager.getInstance(project).scheduleSync()
+        KargoSyncManager.getInstance(project).scheduleSync("Project Action")
     }
 }

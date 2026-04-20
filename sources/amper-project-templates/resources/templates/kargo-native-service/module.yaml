@@ -9,7 +9,7 @@ settings:
 
 sources:
   - github: kargo-build/ktor-client-native
-    version: main
+    version: 3.4.1
 dependencies:
   - io.ktor:ktor-client-core:3.4.1
   - io.ktor:ktor-client-content-negotiation:3.4.1

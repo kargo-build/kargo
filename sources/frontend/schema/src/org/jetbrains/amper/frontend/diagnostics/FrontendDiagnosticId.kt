@@ -48,6 +48,7 @@ enum class FrontendDiagnosticId : DiagnosticId {
     SigningEnabledWithoutPropertiesFile,
     TemplateApplicationLoop,
     TemplateNameWithoutPostfix,
+    GitSourceResolutionFailed,
     UnknownProperty,
     UnknownQualifiers,
     UnresolvedModuleDeclaration,

@@ -1,5 +1,5 @@
 ---
-project: KARGO
+project: Kargo
 languages: [Kotlin, Java]
 build-system: Amper
 ---

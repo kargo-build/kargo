@@ -1,7 +1,7 @@
 package build.kargo.intellij.sync
 
+import build.kargo.intellij.project.isKargoProject
 import build.kargo.intellij.project.KargoProjectAware
-import com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectTracker
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.startup.ProjectActivity
 import kotlinx.coroutines.Dispatchers
@@ -13,33 +13,12 @@ import kotlinx.coroutines.withContext
  */
 class KargoStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
-        val basePath = project.basePath ?: return
-        val root = java.nio.file.Path.of(basePath)
-
-        // Ensure IO operations run on the IO dispatcher to prevent UI thread blocking
-        val hasKargoFiles = withContext(Dispatchers.IO) {
-            try {
-                java.nio.file.Files.walk(root, 3).use { stream ->
-                    stream.anyMatch { path ->
-                        val name = path.fileName?.toString()
-                        name == "project.yaml" || name == "module.yaml"
-                    }
-                }
-            } catch (e: Exception) {
-                false
-            }
+        val isKargoProject = withContext(Dispatchers.IO) {
+            isKargoProject(project)
         }
 
-        if (hasKargoFiles && !project.isDisposed) {
-            // Register Kargo to use IntelliJ's native floating sync action
-            val projectAware = KargoProjectAware(project)
-            KargoSyncManager.getInstance(project).projectAware = projectAware
-            
-            KargoSyncManager.getInstance(project).scheduleSync()
-            
-            val projectTracker = ExternalSystemProjectTracker.getInstance(project)
-            projectTracker.register(projectAware, project)
-            projectTracker.activate(projectAware.projectId)
+        if (isKargoProject && !project.isDisposed) {
+            KargoSyncManager.getInstance(project).scheduleSync("Project Open")
         }
     }
 }

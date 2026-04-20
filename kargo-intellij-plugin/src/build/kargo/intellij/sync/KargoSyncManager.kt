@@ -12,32 +12,30 @@ import com.intellij.notification.NotificationType.WARNING
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationAction
+import build.kargo.intellij.project.KargoProjectAware
+import com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectTracker
 
 @Service(Service.Level.PROJECT)
-class KargoSyncManager(
-    val project: Project
-) {
+class KargoSyncManager(val project: Project) {
     private val logger = Logger.getInstance(KargoSyncManager::class.java)
     private val isSyncRunning = AtomicBoolean(false)
-    var projectAware: build.kargo.intellij.project.KargoProjectAware? = null
+    private val projectAware: KargoProjectAware
 
     companion object {
-        fun getInstance(project: Project): KargoSyncManager =
-            project.getService(KargoSyncManager::class.java)
+        fun getInstance(project: Project) = project.getService(KargoSyncManager::class.java)
     }
-    
-    fun scheduleSync() {
+
+    fun scheduleSync(id: String? = null) {
         if (!isSyncRunning.compareAndSet(false, true)) {
-            logger.info("Kargo: Sync already in progress for project ${project.name}, dropping redundant request")
+            logger.info("Kargo: Sync already in progress $id for project ${project.name}, dropping redundant request")
             return
         }
-
-        logger.info("Kargo: scheduleSync triggered for project ${project.name}")
-        projectAware?.notifySyncStarted()
+        
+        projectAware.notifySyncStarted()
+        logger.info("Kargo: scheduleSync triggered $id for project ${project.name}")
         
         ProgressManager.getInstance().run(object : Task.Backgroundable(project, "Kargo Sync", false) {
             override fun run(indicator: ProgressIndicator) {
-                var success = false
                 try {
                     indicator.isIndeterminate = true
                     indicator.text = "Kargo: Resolving dependencies..."
@@ -65,10 +63,8 @@ class KargoSyncManager(
                         val hasErrors = errorCollector.hasErrors()
                         val title = if (hasErrors) "Kargo Sync: failed" else "Kargo Sync: completed with warnings"
                         val msg = if (hasErrors) "Kargo sync completed with errors. Check details for more information."
-                                      else "Kargo sync completed with warnings. Check details for more information."
-                        val type = if (hasErrors) ERROR
-                                   else WARNING
-
+                                        else "Kargo sync completed with warnings. Check details for more information."
+                        val type = if (hasErrors) ERROR else WARNING
                         val app = ApplicationManager.getApplication()
                         app.invokeLater {
                             if (!project.isDisposed) {
@@ -88,12 +84,22 @@ class KargoSyncManager(
                             }
                         }
                     }
-                    success = !errorCollector.hasErrors()
                 } finally {
+                    projectAware.notifySyncFinished(true)
                     isSyncRunning.set(false)
-                    projectAware?.notifySyncFinished(success)
                 }
             }
         })
+    }
+
+    init {
+        projectAware = KargoProjectAware(project)
+        
+        // Register with project tracker BEFORE scheduling sync
+        val projectTracker = ExternalSystemProjectTracker.getInstance(project)
+        projectTracker.register(projectAware, project)
+        
+        // Activate the tracker to enable auto-reload on file changes
+        projectTracker.activate(projectAware.projectId)
     }
 }

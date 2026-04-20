@@ -71,7 +71,7 @@ class KargoFileListener : BulkFileListener {
                 }
 
                 try {
-                    KargoSyncManager.getInstance(project).scheduleSync()
+                    KargoSyncManager.getInstance(project).scheduleSync("File Change")
                 } finally {
                     syncFlag.set(false)
                 }

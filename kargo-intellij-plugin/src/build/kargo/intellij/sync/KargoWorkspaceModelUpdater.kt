@@ -93,14 +93,17 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         
         ensureProjectSdk()
 
-        // Cleanup old modules
         val moduleBasenames = model.modules.map { it.userReadableName }.toSet()
         val validModuleNames = model.modules.flatMap { km -> km.fragments.map { f -> "${km.userReadableName}.${f.name}" } }.toSet()
 
+        val modifiableModuleModel = moduleManager.getModifiableModel()
+        
         val modulesToDispose = moduleManager.modules.filter { mod ->
             val name = mod.name
             if (name.startsWith("Kargo-")) return@filter true
+            if (name.startsWith("vendor.")) return@filter true
             
+            // Remove non-vendor modules that are no longer in the model
             val dotIndex = name.indexOf('.')
             if (dotIndex > 0) {
                 val basename = name.substring(0, dotIndex)
@@ -111,15 +114,12 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             false
         }
 
-        modulesToDispose.forEach { 
-            if (!it.isDisposed) {
-                moduleManager.disposeModule(it) 
-            }
+        modulesToDispose.forEach { mod ->
+            if (!mod.isDisposed) modifiableModuleModel.disposeModule(mod)
         }
-
+        
         // Create modules and map source roots
         val nameToModule = mutableMapOf<String, Module>()
-        val modifiableModuleModel = moduleManager.getModifiableModel()
         
         model.modules.forEach { kargoModule ->
             kargoModule.fragments.forEach { fragment ->
