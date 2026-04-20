@@ -6,6 +6,7 @@ package org.jetbrains.amper.tasks.native
 
 import build.kargo.tasks.native.NativeCompileKlibTask
 import build.kargo.tasks.native.NativeLinkTask
+import build.kargo.tasks.native.createLibCinteropTasks
 import org.jetbrains.amper.compilation.KotlinCompilationType
 import org.jetbrains.amper.compilation.singleLeafFragment
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
@@ -94,6 +95,7 @@ fun ProjectTasksBuilder.setupNativeTasks() {
                 },
             )
             if (needsLinkedExecutable(module, isTest)) {
+                val libCinteropTasks = createLibCinteropTasks(module, fragment, platform, isTest, buildType)
                 val (linkTaskName, compilationType) = getNativeLinkTaskDetails(platform, module, isTest, buildType)
                 tasks.registerTask(
                     task = NativeLinkTask(
@@ -128,6 +130,7 @@ fun ProjectTasksBuilder.setupNativeTasks() {
                     dependsOn = buildList {
                         add(compileKLibTaskName)
                         cinteropTasks?.forEach { add(it.taskName) }
+                        libCinteropTasks.forEach { add(it.taskName) }
                         add(CommonTaskType.Dependencies.getTaskName(module, platform, isTest))
                         if (isTest) {
                             add(NativeTaskType.CompileKLib.getTaskName(module, platform, isTest = false, buildType))

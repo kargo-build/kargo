@@ -1,0 +1,10 @@
+product:
+  type: linux/app
+  platforms: [linuxX64]
+
+dependencies:
+  - ../lib
+
+settings:
+  native:
+    entryPoint: main

@@ -77,7 +77,7 @@ class Settings : SchemaNode() {
 
     @SchemaDoc("Native applications settings")
     @PlatformSpecific(Platform.NATIVE)
-    @ProductTypeSpecific(ProductType.MACOS_APP, ProductType.LINUX_APP, ProductType.WINDOWS_APP)
+    @ProductTypeSpecific(ProductType.MACOS_APP, ProductType.LINUX_APP, ProductType.WINDOWS_APP, ProductType.LIB)
     val native by nullableValue<NativeSettings>()
 
     @SchemaDoc("Ktor server settings")
