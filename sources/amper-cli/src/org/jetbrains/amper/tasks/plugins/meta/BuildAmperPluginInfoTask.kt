@@ -15,6 +15,7 @@ import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.aomBuilder.plugins.AmperPluginImpl
 import org.jetbrains.amper.frontend.project.AmperProjectContext
 import org.jetbrains.amper.frontend.types.SchemaTypingContext
+import org.jetbrains.amper.plugins.schema.model.PluginData
 import org.jetbrains.amper.problems.reporting.CollectingProblemReporter
 import org.jetbrains.amper.problems.reporting.Level
 import org.jetbrains.amper.problems.reporting.replayProblemsTo
@@ -47,8 +48,8 @@ class BuildAmperPluginInfoTask(
         }
 
         val globalResult = dependenciesResult.requireSingleDependency<PreProcessAmperPluginsTask.Result>()
-        val modulePath = module.source.moduleDir
-        val (pluginData, _, problems) = globalResult.result.first { it.pluginRootDir == modulePath }
+        val modulePath = PluginData.Source.Local(module.source.moduleDir)
+        val (pluginData, problems) = globalResult.result.first { it.pluginData.source == modulePath }
 
         problems.forEach(CliProblemReporter::reportMessage)
         if (problems.any { it.level == Level.Error }) {

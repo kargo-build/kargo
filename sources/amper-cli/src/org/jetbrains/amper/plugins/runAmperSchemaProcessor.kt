@@ -20,7 +20,6 @@ import org.jetbrains.amper.processes.ArgsMode
 import org.jetbrains.amper.processes.ProcessInput
 import org.jetbrains.amper.processes.ProcessOutputListener
 import org.jetbrains.amper.processes.runJava
-import org.jetbrains.amper.serialization.paths.SerializablePath
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import kotlin.io.path.Path
@@ -30,7 +29,6 @@ import kotlin.io.path.relativeTo
 @Serializable
 data class PluginDataWithDiagnostics(
     val pluginData: PluginData,
-    val pluginRootDir: SerializablePath,
     val diagnostics: List<KotlinSchemaBuildProblem>,
 )
 
@@ -92,7 +90,6 @@ suspend fun runAmperSchemaProcessor(
                 declarations = result.declarations,
             ),
             diagnostics = result.diagnostics,
-            pluginRootDir = pluginRootDir,
         )
     }
     return pluginDataWithDiagnostics
