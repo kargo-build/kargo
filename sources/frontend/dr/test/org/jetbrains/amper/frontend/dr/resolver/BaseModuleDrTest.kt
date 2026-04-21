@@ -341,15 +341,29 @@ abstract class BaseModuleDrTest {
 
         internal class DelayedAssertion {
             private val assertions: MutableList<SoftAssertionFailedError> = mutableListOf()
+
             fun add(e: SoftAssertionFailedError) { assertions.add(e) }
 
-            fun assert() {
+            /**
+             * This method raises already registered assertions if any,
+             * or re-throw the given [exception] if it is not null.
+             *
+             * Details:
+             * - If there are registered assertions, the first one is thrown,
+             *   with all other attached as suppressed exceptions. Given [exception] is also added as a suppressed one in this case.
+             * - If there is no assertion registered, and non-null [exception] is passed, then it is re-thrown.
+             * - If neither assertions are registered nor the [exception] is passed, then the method does nothing and simply returns.
+             */
+            private fun assert(exception: Exception? = null) {
                 when (assertions.size) {
-                    0 -> return
-                    1 -> throw assertions[0].cause
-                    else -> throw assertions.subList(1, assertions.size).fold(assertions[0].cause) { acc, e -> acc.also { acc.addSuppressed(e.cause) } }
+                    0 -> if (exception != null) throw exception
+                    1 -> throw assertions[0].cause.withSuppressed(exception)
+                    else -> throw assertions.subList(1, assertions.size).fold(assertions[0].cause) { acc, e -> acc.also { acc.addSuppressed(e.cause) } }.withSuppressed(exception)
                 }
             }
+
+            private fun Throwable.withSuppressed(t: Throwable?) =
+                this.also { if (t != null) this.addSuppressed(t) }
 
             companion object {
                 private suspend fun getCurrentDelayedAssertionElement(): DelayedAssertionContextElement? =
@@ -394,8 +408,8 @@ abstract class BaseModuleDrTest {
                     } catch (e: SoftAssertionFailedError) {
                         delayedAssertion.add(e)
                     } catch (t: Exception) {
-                        delayedAssertion.assert() // raise assertion if it was registered before exception was thrown
-                        throw t // re-throw exception if there is no assertion registered yet
+                        // exception occurred, we stop collecting assertions at this point and raise what we already have.
+                        delayedAssertion.assert(t)
                     }
 
                     if (upstreamDelayedAssertion == null) {
