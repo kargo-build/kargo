@@ -141,7 +141,7 @@ class DiagnosticsTest : BaseModuleDrTest() {
                 messagesCheck = { node ->
                     node.messages.all { it.severity <= Severity.WARNING }
                 },
-                filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
+                filter = ideSyncModuleResolutionFilter
             )
 
             assertFiles(testInfo,projectDeps)
@@ -202,7 +202,7 @@ class DiagnosticsTest : BaseModuleDrTest() {
                     messagesCheck = { node ->
                         node.messages.all { it.severity <= Severity.WARNING }
                     },
-                    filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE)
+                    filter = ideSyncModuleResolutionFilter
                 )
             }
 

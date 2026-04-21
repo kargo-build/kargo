@@ -188,13 +188,21 @@ private fun DependencyNode.isThereAPathToTopBypassingEffectiveParents(group: Str
         .any { it.isThereAPathToTopBypassingEffectiveParents(group, module, visited) }
 }
 
+fun DependencyNode.withFilteredChildren(
+    resolvedVersionOnly: Boolean = false,
+    childrenFilter: (DependencyNode, DependencyNode) -> Boolean
+): DependencyNode = withFilteredChildrenImpl(
+    resolvedVersionOnly = resolvedVersionOnly,
+    childrenFilter = childrenFilter
+)
+
 /**
  * Returned filtered dependencies graph.
  * Given filter is applied transitively to the children of all the nodes of the original graph.
  *
  * Every node of the returned graph is of the type [DependencyNodeWithChildren] holding the original node inside.
  */
-private fun DependencyNode.withFilteredChildren(
+private fun DependencyNode.withFilteredChildrenImpl(
     cachedChildrenMap: MutableMap<DependencyNode, DependencyNodeWithChildren> = mutableMapOf(),
     resolvedVersionOnly: Boolean = false,
     childrenFilter: (DependencyNode, DependencyNode) -> Boolean
@@ -209,7 +217,7 @@ private fun DependencyNode.withFilteredChildren(
             .filter { childrenFilter(it, currentNode) }
             // Leaving the only transitive subtree (all other subtrees don't add valuable information)
             .let { if (it.size > 1 && resolvedVersionOnly && this is MavenDependencyNode) it.subList(0,1) else it }
-            .map { it.withFilteredChildren(cachedChildrenMap, resolvedVersionOnly, childrenFilter) }
+            .map { it.withFilteredChildrenImpl(cachedChildrenMap, resolvedVersionOnly, childrenFilter) }
         nodeWithFilteredChildren.children.addAll(children)
 
         children.forEach { it.parents.add(nodeWithFilteredChildren) }

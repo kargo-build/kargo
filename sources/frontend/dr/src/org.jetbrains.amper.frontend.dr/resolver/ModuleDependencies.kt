@@ -584,22 +584,23 @@ class ModuleDependencies private constructor(
 
         private fun SerializableDependencyNode.fillNotation(sourceNode: DependencyNodeHolderWithContext) {
             val sourceDirectDeps = sourceNode.children.groupBy { it.key }
-            this.children.forEach { node ->
-                when (node) {
+            this.children.forEach { serializableNode ->
+                when (serializableNode) {
                     is SerializableDirectFragmentDependencyNodeHolder -> {
-                        val sourceNode = sourceDirectDeps[node.key].resolveCorrespondingSourceNode<DirectFragmentDependencyNodeHolderWithContext>(node) {
-                            node.dependencyNode.getOriginalMavenCoordinates() == notation.coordinates
+                        val originalMavenCoordinates = serializableNode.dependencyNode.getOriginalMavenCoordinates()
+                        val sourceNode = sourceDirectDeps[serializableNode.key].resolveCorrespondingSourceNode<DirectFragmentDependencyNodeHolderWithContext>(serializableNode) {
+                            originalMavenCoordinates == notation.coordinates.toDrMavenCoordinates()
                         }
-                        node.notation = sourceNode.notation
+                        serializableNode.notation = sourceNode.notation
                     }
                     is SerializableModuleDependencyNodeWithModule -> {
-                        val sourceNode = sourceDirectDeps[node.key].resolveCorrespondingSourceNode<ModuleDependencyNodeWithModuleAndContext>(node)
-                        node.notation = sourceNode.notation
-                        node.fillNotation(sourceNode)
+                        val sourceNode = sourceDirectDeps[serializableNode.key].resolveCorrespondingSourceNode<ModuleDependencyNodeWithModuleAndContext>(serializableNode)
+                        serializableNode.notation = sourceNode.notation
+                        serializableNode.fillNotation(sourceNode)
                     }
                     is SerializableRootDependencyNode -> {
-                        val sourceNode = sourceDirectDeps[node.key].resolveCorrespondingSourceNode<RootDependencyNodeWithContext>(node)
-                        node.fillNotation(sourceNode)
+                        val sourceNode = sourceDirectDeps[serializableNode.key].resolveCorrespondingSourceNode<RootDependencyNodeWithContext>(serializableNode)
+                        serializableNode.fillNotation(sourceNode)
                     }
                 }
             }
@@ -620,7 +621,8 @@ class ModuleDependencies private constructor(
                 it.additionalMatch()
             }.takeIf { it.isNotEmpty() } ?: this
 
-            if (matchedNodes.size > 1) logger.warn("Found ${matchedNodes.size} matching nodes for ${node.key} while a single node is expected")
+            if (matchedNodes.size > 1)
+                logger.warn("Found ${matchedNodes.size} matching nodes for ${node.key} while a single node is expected")
             return matchedNodes.first() as T
         }
 
@@ -900,7 +902,7 @@ data class AmperResolutionSettings(
     val fileCacheBuilder: FileCacheBuilder.() -> Unit = getAmperFileCacheBuilder(userCacheRoot)
 }
 
-internal fun AmperResolutionSettings.toEmptyContext() = emptyContext(
+private fun AmperResolutionSettings.toEmptyContext(scope: ResolutionScope? = null) = emptyContext(
     userCacheRoot = userCacheRoot,
     openTelemetry = openTelemetry,
     incrementalCache = incrementalCache,

@@ -20,7 +20,6 @@ interface DependencyNodeHolder: DependencyNode
  * @see [MavenDependencyNode]
  */
 abstract class DependencyNodeHolderWithContext(
-    override val graphEntryName: String,
     final override val children: List<DependencyNodeWithContext>,
     templateContext: Context,
     parentNodes: Set<DependencyNodeWithContext> = emptySet(),
@@ -32,7 +31,6 @@ abstract class DependencyNodeHolderWithContext(
         children.forEach { it.context.nodeParents.add(this) }
     }
 
-    override val key: Key<*> = Key<DependencyNodeHolder>(graphEntryName)
     override val messages: List<Message> = emptyList()
 
     override fun toString(): String = graphEntryName
@@ -51,7 +49,7 @@ abstract class SerializableDependencyNodeHolderBase(
 }
 
 class RootDependencyNodeWithContext(
-    graphEntryName: String = "root",
+    override val graphEntryName: String = "root",
     /**
      * This field is an ID of cache entry corresponding to the dependency graph defined by this node.
      *
@@ -68,9 +66,10 @@ class RootDependencyNodeWithContext(
     children: List<DependencyNodeWithContext>,
     templateContext: Context
 ) : RootDependencyNode,
-    DependencyNodeHolderWithContext(graphEntryName, children, templateContext)
+    DependencyNodeHolderWithContext(children, templateContext)
 {
     override val cacheEntryKey: CacheEntryKey = rootCacheEntryKey.toCacheEntryKey(this)
+    override val key: Key<*> = Key<RootDependencyNode>(graphEntryName)
 }
 
 sealed class RootCacheEntryKey {

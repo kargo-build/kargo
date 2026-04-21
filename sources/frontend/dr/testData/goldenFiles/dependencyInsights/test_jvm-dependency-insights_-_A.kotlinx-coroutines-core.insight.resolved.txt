@@ -1,10 +1,9 @@
-root
-╰─── Module A
+Module A
 │ - main
 │ - scope = COMPILE
 │ - platforms = [jvm]
-     ├─── A:common:org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.9.0
-     │    ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.9.0
-     │         ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0
-     ╰─── A:jvm:org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.9.0
-          ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.9.0 (*)
+├─── A:common:org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.9.0
+│    ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.9.0
+│         ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0
+╰─── A:jvm:org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.9.0
+     ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-jdk8:1.9.0 (*)

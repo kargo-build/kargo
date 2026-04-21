@@ -65,11 +65,11 @@ class DependencyInsightsTest : BaseModuleDrTest() {
         )
         assertInsight(
             group = "org.jetbrains.kotlin", module = "XXX", graph = jvmEmptyModuleGraph,
-            expected = "root"
+            expected = ""
         )
         assertInsight(
             group = "XXX", module = "kotlin-test-junit", graph = jvmEmptyModuleGraph,
-            expected = "root"
+            expected = ""
         )
     }
 
@@ -375,7 +375,7 @@ class DependencyInsightsTest : BaseModuleDrTest() {
         val goldenFileOriginalGraph = goldenFileOsAware("$insightFilePrefix.insight.originalGraph.txt")
         val expectedGraph = getGoldenFileText(goldenFileOriginalGraph, fileDescription = "Golden file with full dependency graph")
         withActualDumpAndDelayedAssertion(expectedResultPath = goldenFileOriginalGraph) {
-            assertEquals(expectedGraph, graph, null)
+            assertModuleDepsEquals(expectedGraph, graph, null)
         }
     }
 
@@ -385,6 +385,6 @@ class DependencyInsightsTest : BaseModuleDrTest() {
         ) {
             graph.filterGraph(group, module, resolvedVersionOnly)
         }
-        assertEquals(expected, subGraph, MavenCoordinates(group, module, null))
+        assertModuleDepsEquals(expected, subGraph, MavenCoordinates(group, module, null))
     }
 }

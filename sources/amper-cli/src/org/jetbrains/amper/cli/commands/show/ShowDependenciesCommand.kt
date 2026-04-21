@@ -156,7 +156,7 @@ internal class ShowDependenciesCommand: AmperModelAwareCommand(name = "dependenc
                             && platforms == it.resolutionConfig.platforms
                             && scopes.contains(it.resolutionConfig.scope)
                 }
-            }.distinctBy { it.graphEntryName }
+            }.distinctBy { it.graphEntryName } // todo (AB) : Why is it needed
     }
 
     private fun printDependencies(

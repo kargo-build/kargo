@@ -51,9 +51,11 @@ private sealed class ModuleDependencyNodeWithModuleConverter<T: ModuleDependency
 
     override fun toEmptyNodePlain(node: T, graphContext: DependencyGraphContext): SerializableModuleDependencyNodeWithModule =
         SerializableModuleDependencyNodeWithModule(
-            node.moduleName, node.graphEntryName,
-            resolutionConfig = ResolutionConfigPlain(node.resolutionConfig),
-            graphContext = graphContext, isForTests = node.isForTests
+            node.moduleName,
+            node.isForTests,
+            ResolutionConfigPlain(node.resolutionConfig),
+            topLevel = node.topLevel,
+            graphContext = graphContext,
         )
 
     companion object {
@@ -74,7 +76,7 @@ private sealed class DirectFragmentDependencyNodeConverter<T: DirectFragmentDepe
 
     override fun toEmptyNodePlain(node: T, graphContext: DependencyGraphContext): SerializableDirectFragmentDependencyNodeHolder =
         SerializableDirectFragmentDependencyNodeHolder(
-            node.fragmentName, node.graphEntryName, node.messages, graphContext = graphContext)
+            node.fragmentName, node.moduleName, node.traceInfo, node.messages, graphContext = graphContext)
 
     override fun fillEmptyNodePlain(nodePlain: SerializableDirectFragmentDependencyNodeHolder, node: T, graphContext: DependencyGraphContext, nodeReference: DependencyNodeReference?) {
         super.fillEmptyNodePlain(nodePlain, node, graphContext, nodeReference)

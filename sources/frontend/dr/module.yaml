@@ -10,6 +10,7 @@ test-dependencies:
   - ../../test-base
   - org.reflections:reflections:0.10.2
   - $kotlin.reflect
+  - ../../amper-build-info
 
 dependencies:
   - ../schema

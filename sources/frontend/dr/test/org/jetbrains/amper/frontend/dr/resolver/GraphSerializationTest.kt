@@ -80,7 +80,7 @@ class GraphSerializationTest: BaseModuleDrTest() {
             testInfo,
             aom,
             ideSyncTestResolutionInput,
-            filter = ideSyncModuleResolutionFilter.copy(scope = ResolutionScope.COMPILE),
+            filter = ideSyncModuleResolutionFilter,
             verifyMessages = false
         )
 

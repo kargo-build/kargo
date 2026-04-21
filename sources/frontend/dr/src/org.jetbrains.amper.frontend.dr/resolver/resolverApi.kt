@@ -68,18 +68,33 @@ data class ModuleResolutionFilter(
 internal val defaultModuleResolutionFilter = ModuleResolutionFilter()
 
 abstract class DependencyNodeHolderWithNotationAndContext(
-    graphEntryName: String,
     children: List<DependencyNodeWithContext>,
     templateContext: Context,
     open val notation: Notation? = null,
     parentNodes: Set<DependencyNodeWithContext> = emptySet(),
-) : DependencyNodeHolderWithContext(graphEntryName, children, templateContext, parentNodes)
+) : DependencyNodeHolderWithContext(children, templateContext, parentNodes)
 
 interface ModuleDependencyNode: DependencyNodeHolder {
     val moduleName: String
     val notation: LocalModuleDependency?
     val isForTests: Boolean
     val resolutionConfig: ResolutionConfig
+    val topLevel: Boolean
+
+    override val graphEntryName: String get() {
+        val graphEntryNameBuilder = StringBuilder("Module $moduleName")
+        if (topLevel) {
+            graphEntryNameBuilder
+                .append("\n")
+                .append(
+                    """│ - ${if (isForTests) "test" else "main"}
+                  |│ - scope = ${resolutionConfig.scope.name}
+                  |│ - platforms = [${resolutionConfig.platforms.joinToString { it.toPlatform().pretty }}]
+                  """.trimMargin()
+                )
+        }
+        return graphEntryNameBuilder.toString()
+    }
 
     fun attachToNewRoot(parent: RootDependencyNode)
 }
@@ -101,11 +116,9 @@ class ModuleDependencyNodeWithModuleAndContext internal constructor(
     templateContext: Context,
     override val notation: LocalModuleDependency? = null,
     parentNodes: Set<DependencyNodeWithContext> = emptySet(),
-    topLevel: Boolean,
+    override val topLevel: Boolean,
 ) : ModuleDependencyNode,
-    DependencyNodeHolderWithNotationAndContext(
-        module.getGraphEntryName(topLevel, isForTests, templateContext.settings),
-        children, templateContext, notation, parentNodes = parentNodes)
+    DependencyNodeHolderWithNotationAndContext(children, templateContext, notation, parentNodes = parentNodes)
 {
     override val moduleName = module.userReadableName
 
@@ -113,11 +126,10 @@ class ModuleDependencyNodeWithModuleAndContext internal constructor(
         get() = context.settings
 
     override val cacheEntryKey: CacheEntryKey.CompositeCacheEntryKey
-        get() = CacheEntryKey.CompositeCacheEntryKey(listOf
-            (module.uniqueModuleKey(),
-            isForTests,
-            context.settings.scope,
-            context.settings.platforms))
+        get() = CacheEntryKey.CompositeCacheEntryKey(listOf(
+            module.uniqueModuleKey(),
+            isForTests
+        ))
 
     override fun attachToNewRoot(parent: RootDependencyNode) {
         context.nodeParents.clear()
@@ -127,32 +139,13 @@ class ModuleDependencyNodeWithModuleAndContext internal constructor(
     override val key = getKey()
 }
 
-private fun AmperModule.getGraphEntryName(
-    topLevel: Boolean,
-    isForTests: Boolean,
-    resolutionConfig: ResolutionConfig,
-): String {
-    val moduleName = StringBuilder("Module ${this.userReadableName}")
-    if (topLevel) {
-        moduleName
-            .append("\n")
-            .append(
-                """│ - ${if (isForTests) "test" else "main"}
-                  |│ - scope = ${resolutionConfig.scope.name}
-                  |│ - platforms = [${resolutionConfig.platforms.joinToString { it.toPlatform().pretty }}]
-                  """.trimMargin()
-            )
-    }
-    return moduleName.toString()
-}
-
 @Serializable
 @SerialName("ModuleDN")
 internal class SerializableModuleDependencyNodeWithModule internal constructor(
     override val moduleName: String,
-    override val graphEntryName: String,
-    override val isForTests: Boolean,
+    override val isForTests: Boolean = false,
     override val resolutionConfig: ResolutionConfigPlain,
+    override val topLevel: Boolean = false,
     override val childrenRefs: List<DependencyNodeReference> = mutableListOf(),
     @Transient
     private val graphContext: DependencyGraphContext = currentGraphContext(),
@@ -174,9 +167,25 @@ internal class SerializableModuleDependencyNodeWithModule internal constructor(
 
 interface DirectFragmentDependencyNode: DependencyNodeHolder {
     val fragmentName: String
+    val moduleName: String
     val dependencyNode: MavenDependencyNode
+    val traceInfo: String
     val notation: MavenDependencyBase
+
+    override val graphEntryName: String get() =
+        "$moduleName:$fragmentName:${dependencyNode.getOriginalMavenCoordinates().toPrettyString()}$traceInfo"
 }
+
+fun DirectFragmentDependencyNode.getKey() =
+    Key<DependencyNodeHolder>(
+        CacheEntryKey.CompositeCacheEntryKey(listOf(
+                moduleName,
+                fragmentName,
+                dependencyNode.getOriginalMavenCoordinates(),
+                traceInfo,
+                dependencyNode.dependency.resolutionConfig.scope, // scope only, platforms are distingwuixhed by fragment name already
+            )).computeKey()
+    )
 
 internal class DirectFragmentDependencyNodeHolderWithContext(
     override val dependencyNode: MavenDependencyNodeWithContext,
@@ -186,19 +195,20 @@ internal class DirectFragmentDependencyNodeHolderWithContext(
     parentNodes: Set<DependencyNodeWithContext> = emptySet(),
     override val messages: List<Message> = emptyList(),
 ) : DirectFragmentDependencyNode,
-    DependencyNodeHolderWithNotationAndContext(
-        graphEntryName = "${fragment.module.userReadableName}:${fragment.name}:${dependencyNode}${traceInfo(notation)}",
-        children = listOf(dependencyNode), templateContext, notation, parentNodes = parentNodes
-) {
+    DependencyNodeHolderWithNotationAndContext(listOf(dependencyNode), templateContext, notation, parentNodes)
+{
     override val fragmentName: String = fragment.name
+    override val moduleName: String = fragment.module.userReadableName
+    override val traceInfo: String = traceInfo(notation)
 
     override val cacheEntryKey: CacheEntryKey.CompositeCacheEntryKey
         get() = CacheEntryKey.CompositeCacheEntryKey(listOf(
             fragment.module.uniqueModuleKey(),
             fragment.name,
-            dependencyNode.context.settings.scope,
-            dependencyNode.context.settings.platforms,
+            dependencyNode.cacheEntryKey,
         ))
+
+    override val key by lazy { getKey() }
 }
 
 private fun traceInfo(notation: Notation): String {
@@ -217,7 +227,8 @@ private fun traceInfo(notation: Notation): String {
 @SerialName("DirectDN")
 internal class SerializableDirectFragmentDependencyNodeHolder internal constructor(
     override val fragmentName: String,
-    override val graphEntryName: String,
+    override val moduleName: String,
+    override val traceInfo: String = "",
     override val messages: List<Message> = emptyList(),
     override val childrenRefs: List<DependencyNodeReference> = mutableListOf(),
     @Transient
@@ -233,6 +244,8 @@ internal class SerializableDirectFragmentDependencyNodeHolder internal construct
                     ?: error("Unexpected dependency node type [${it::class.simpleName}]")
             }
     }
+
+    override val key by lazy { getKey() }
 
     @Transient
     override lateinit var notation: MavenDependencyBase

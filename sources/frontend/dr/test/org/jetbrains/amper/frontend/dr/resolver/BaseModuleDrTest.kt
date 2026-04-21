@@ -9,6 +9,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.withContext
 import org.intellij.lang.annotations.Language
+import org.jetbrains.amper.buildinfo.AmperBuild
 import org.jetbrains.amper.dependency.resolution.Context
 import org.jetbrains.amper.dependency.resolution.DependencyNode
 import org.jetbrains.amper.dependency.resolution.FileCacheBuilder
@@ -24,6 +25,8 @@ import org.jetbrains.amper.dependency.resolution.diagnostics.Severity
 import org.jetbrains.amper.dependency.resolution.diagnostics.SimpleDiagnosticDescriptor
 import org.jetbrains.amper.dependency.resolution.diagnostics.detailedMessage
 import org.jetbrains.amper.dependency.resolution.getDefaultFileCacheBuilder
+import org.jetbrains.amper.dependency.resolution.unwrap
+import org.jetbrains.amper.dependency.resolution.withFilteredChildren
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.dr.resolver.BaseModuleDrTest.Companion.DelayedAssertion.Companion.withDelayedSoftAssertion
 import org.jetbrains.amper.frontend.schema.DefaultVersions
@@ -107,6 +110,14 @@ abstract class BaseModuleDrTest {
                         resolutionRunSettings,
                     ).also { checkMessages(verifyMessages, it, messagesCheck) }
                         .root
+                        .let {
+                            if (filter.scope != null) {
+                                it.withFilteredChildren { child, _ ->
+                                    child !is DirectFragmentDependencyNode
+                                            || child.dependencyNode.dependency.resolutionConfig.scope == filter.scope
+                                }
+                            } else it
+                        }
                 }
             } else {
                 val modules = aom.modules.filter { module == null || it.userReadableName == module }
@@ -135,13 +146,8 @@ abstract class BaseModuleDrTest {
 
 
         expected?.let {
-            val moduleDeps = graph.children.filterIsInstance<ModuleDependencyNode>()
-            assertEquals(moduleDeps.size, graph.children.size,
-                "Unexpected dependency type is among root children: " +
-                        (graph.children - moduleDeps.toSet()).joinToString { it::class.java.simpleName }
-            )
             expectedCheckWrapper {
-                assertModuleDepsEquals(expected, moduleDeps)
+                assertModuleDepsEquals(expected, graph)
             }
         }
 
@@ -153,8 +159,13 @@ abstract class BaseModuleDrTest {
         readOnlyExternalRepositories = emptyList()
     }
 
-    protected fun assertModuleDepsEquals(@Language("text") expected: String, moduleDeps: List<ModuleDependencyNode>, forMavenNode: MavenCoordinates? = null) {
-        assertEquals(expected, moduleDeps, forMavenNode)
+    protected fun assertModuleDepsEquals(@Language("text") expected: String, graph: DependencyNode, forMavenNode: MavenCoordinates? = null) {
+        val moduleDeps = graph.children.filter { it.unwrap() is ModuleDependencyNode }
+        assertEquals(moduleDeps.size, graph.children.size,
+            "Unexpected dependency type is among root children: " +
+                    (graph.children - moduleDeps.toSet()).joinToString { it::class.java.simpleName }
+        )
+        assertEquals(expected, graph.children, forMavenNode)
     }
 
     private fun assertEquals(@Language("text") expected: String, roots: List<DependencyNode>, forMavenNode: MavenCoordinates? = null) {
@@ -166,10 +177,6 @@ abstract class BaseModuleDrTest {
             expected.trimEnd().lines(),
             actual.trimEnd().lines()
         )
-    }
-
-    protected fun assertEquals(@Language("text") expected: String, root: DependencyNode, forMavenNode: MavenCoordinates? = null) {
-        assertEquals(expected, listOf(root), forMavenNode)
     }
 
     protected suspend fun assertFiles(
@@ -198,11 +205,11 @@ abstract class BaseModuleDrTest {
         scope: ResolutionScope? = null,
     ) {
         root.distinctBfsSequence()
-            .filterIsInstance<MavenDependencyNode>()
-            .groupBy { it.dependency.resolutionConfig.scope } // todo (AB) : Group by module and test/main as well
+            .filter{ it.unwrap() is MavenDependencyNode }
+            .groupBy { (it.unwrap() as MavenDependencyNode).dependency.resolutionConfig.scope } // todo (AB) : Group by module and test/main as well
             .filterKeys { scope == null || it == scope }
             .mapValues {
-                it.value.flatMap { it.dependency.files(withSources) }
+                it.value.flatMap { (it.unwrap() as MavenDependencyNode).dependency.files(withSources) }
                     .filterNot { !checkAutoAddedDocumentation && it.isAutoAddedDocumentation }
                     .mapNotNull { it.path }
                     .sortedBy { it.name }
@@ -546,7 +553,14 @@ data class TestResolutionInput(
     val resolutionRunSettings: ResolutionRunSettings = defaultResolutionRunSettings,
 )
 
-internal val defaultTestResolutionSettings = AmperResolutionSettings(amperUserCacheRoot)
+internal val defaultTestResolutionSettings = AmperResolutionSettings(
+    amperUserCacheRoot,
+    incrementalCache = IncrementalCache(
+        stateRoot = amperUserCacheRoot.path.resolve("incremental.state"),
+        codeVersion = AmperBuild.commitHash
+    ),
+)
+
 internal val defaultTestResolutionInput = TestResolutionInput()
 internal val ideSyncTestResolutionInput = defaultTestResolutionInput
     .copy(
