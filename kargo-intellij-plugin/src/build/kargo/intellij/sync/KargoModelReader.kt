@@ -8,6 +8,7 @@ import com.intellij.openapi.util.Computable
 import java.nio.file.Path
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.aomBuilder.readProjectModel
+import org.jetbrains.amper.frontend.diagnostics.FrontendDiagnosticId.GitSourceResolutionFailed
 import org.jetbrains.amper.frontend.project.AmperProjectContext
 import org.jetbrains.amper.problems.reporting.BuildProblem
 import org.jetbrains.amper.problems.reporting.ProblemReporter
@@ -30,7 +31,12 @@ class KargoModelReader {
             val reporter = object : ProblemReporter {
                 override fun reportMessage(message: BuildProblem) {
                     logger.warn("Kargo Sync Problem: ${message.message}")
-                    errorCollector.reportProblem(message)
+                    if (message.diagnosticId == GitSourceResolutionFailed) {
+                        val content = message.message.trim().replace("\n", "<br>")
+                        errorCollector.reportError(content, SyncSeverity.ERROR, "Git Dependency")
+                    } else {
+                        errorCollector.reportProblem(message)
+                    }
                 }
             }
 

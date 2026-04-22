@@ -337,7 +337,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                                 logger.info("Kargo: Wired local module dep: $moduleName -> $targetModuleName")
                             } else {
                                 logger.warn("Kargo: Could not find IDE module for local dep target: $targetModuleName")
-                                errorCollector.reportError("<b>Local Dependency:</b> $targetModuleName<br>Could not find IDE module for local dependency target.")
+                                errorCollector.reportError("$targetModuleName<br>Could not find IDE module for local dependency target.", SyncSeverity.ERROR, "Local Dependency")
                             }
                         }
                     }
@@ -470,6 +470,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                 // Collect diagnostics from all nodes via BFS
                 val diagQueue = ArrayDeque<org.jetbrains.amper.dependency.resolution.DependencyNode>()
                 val diagVisited = mutableSetOf<org.jetbrains.amper.dependency.resolution.DependencyNode>()
+                val reportedMessages = mutableSetOf<String>()
                 diagQueue.add(rootNode)
                 while (diagQueue.isNotEmpty()) {
                     val node = diagQueue.removeFirst()
@@ -487,6 +488,11 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                             // Align with CLI: only report transitive diagnostics if allowed
                             if (isTransitive && !message.reportTransitive) return@forEach
 
+                            val content = message.detailedMessage.trim().replace("\n", "<br>")
+                            
+                            // Deduplicate exact same messages (ignoring the transitive label which might vary slightly)
+                            if (!reportedMessages.add(content)) return@forEach
+
                             val label = if (isPlatformMismatch) "Platform Compatibility" else "Maven Dependency"
 
                             val parent = node.parents.firstOrNull { it.graphEntryName.isNotBlank() }
@@ -499,8 +505,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                                            else if (message.severity == Severity.ERROR) SyncSeverity.ERROR
                                            else SyncSeverity.WARNING
 
-                            val content = message.detailedMessage.trim().replace("\n", "<br>")
-                            errorCollector.reportError("<b>$label:</b> $content$transitiveInfo", severity)
+                            errorCollector.reportError("$content$transitiveInfo", severity, label)
                         }
                     }
                 }

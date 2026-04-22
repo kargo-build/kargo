@@ -28,13 +28,15 @@ class KargoSyncErrorCollector {
     // For backward compatibility during migration
     val errors: List<String> get() = messagesList.map { it.content }
 
-    fun reportError(message: String, severity: SyncSeverity = SyncSeverity.ERROR) {
+    fun reportError(message: String, severity: SyncSeverity = SyncSeverity.ERROR, label: String? = null) {
+        val finalMessage = if (label != null) "<b>$label:</b> $message" else message
+        
         if (severity == SyncSeverity.ERROR) {
-            logger.warn("Kargo Sync Error: $message")
+            logger.warn("Kargo Sync Error: $finalMessage")
         } else {
-            logger.info("Kargo Sync Warning: $message")
+            logger.info("Kargo Sync Warning: $finalMessage")
         }
-        messagesList.add(SyncMessage(message, severity))
+        messagesList.add(SyncMessage(finalMessage, severity))
     }
 
     fun reportProblem(problem: BuildProblem) {

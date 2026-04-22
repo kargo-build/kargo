@@ -51,7 +51,7 @@ object GitSourcePreScanner {
                         reportMessage(
                             BuildProblemImpl(
                                 source = WholeFileBuildProblemSource(Path(moduleFile.path)),
-                                message = "Failed to resolve Git dependency: ${parsed.url}@${parsed.version}\n$errorMessage",
+                                message = "Unable to resolve Git dependency: ${parsed.url}@${parsed.version}\n$errorMessage",
                                 level = Level.Error,
                                 type = BuildProblemType.UnresolvedReference,
                                 diagnosticId = FrontendDiagnosticId.GitSourceResolutionFailed
