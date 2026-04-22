@@ -122,7 +122,11 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         val nameToModule = mutableMapOf<String, Module>()
         
         model.modules.forEach { kargoModule ->
+            var rootAssigned = false
             kargoModule.fragments.forEach { fragment ->
+                val isRootModule = !fragment.isTest && !rootAssigned
+                if (isRootModule) rootAssigned = true
+
                 val moduleName = "${kargoModule.userReadableName}.${fragment.name}"
                 val imlPath = project.basePath + "/.idea/modules/$moduleName.iml"
 
@@ -138,10 +142,12 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                         val sourceUrl = VfsUtilCore.pathToUrl(rootPath)
 
                         // For vendor (git source) modules, use the repo root as content root so the
-                        // full repo is visible in the Project View. For project modules, use the
-                        // source root directly to avoid duplicating the project root folder.
+                        // full repo is visible in the Project View. For local modules, map the first
+                        // non-test fragment to the module directory so project-level files and exclusions work.
                         val contentRootPath = if (isVendor) {
                             Paths.get(rootPath).parent?.toString() ?: rootPath
+                        } else if (isRootModule) {
+                            kargoModule.source.moduleDir.toString()
                         } else {
                             rootPath
                         }
@@ -152,6 +158,8 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                         } else {
                             modifiableModel.contentEntries.first { it.url == contentUrl }
                         }
+
+                        configureExclusions(entry, contentRootPath, kargoModule.source.moduleDir.toString())
 
                         entry.addSourceFolder(sourceUrl, fragment.isTest)
                     }
@@ -301,6 +309,51 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
 
         // Inter-module Dependencies (local module deps like ./shared, ./infrastructure/server)
         applyLocalModuleDependencies(model, nameToModule, errorCollector)
+    }
+
+    private fun configureExclusions(entry: com.intellij.openapi.roots.ContentEntry, contentRootPath: String, moduleDirPath: String) {
+        if (contentRootPath.startsWith(moduleDirPath) || moduleDirPath.startsWith(contentRootPath)) {
+            val buildUrl = VfsUtilCore.pathToUrl("$moduleDirPath/build")
+            val logsUrl = VfsUtilCore.pathToUrl("$moduleDirPath/logs")
+
+            if (entry.excludeFolderUrls.none { it == buildUrl }) {
+                entry.addExcludeFolder(buildUrl)
+            }
+            if (entry.excludeFolderUrls.none { it == logsUrl }) {
+                entry.addExcludeFolder(logsUrl)
+            }
+
+            // Automaticaly parse and exclude .gitignore entries
+            val gitignoreFile = java.io.File(moduleDirPath, ".gitignore")
+            if (gitignoreFile.exists()) {
+                try {
+                    gitignoreFile.readLines().forEach { line ->
+                        val trimmed = line.trim()
+                        if (trimmed.isNotEmpty() && !trimmed.startsWith("#") && !trimmed.startsWith("!")) {
+                            val isRootSpecific = trimmed.startsWith("/")
+                            val pattern = trimmed.removePrefix("/").removeSuffix("/**").removeSuffix("/")
+                            
+                            if (isRootSpecific || pattern.contains("/")) {
+                                val url = VfsUtilCore.pathToUrl("$moduleDirPath/$pattern")
+                                if (entry.excludeFolderUrls.none { it == url }) {
+                                    entry.addExcludeFolder(url)
+                                }
+                            } else {
+                                if (!entry.excludePatterns.contains(pattern)) {
+                                    entry.addExcludePattern(pattern)
+                                }
+                            }
+                        }
+                    }
+                } catch (e: Exception) {
+                    // Ignore reading errors to not break sync
+                }
+            }
+        }
+
+        if (!entry.excludePatterns.contains("*.log")) {
+            entry.addExcludePattern("*.log")
+        }
     }
 
     /**
