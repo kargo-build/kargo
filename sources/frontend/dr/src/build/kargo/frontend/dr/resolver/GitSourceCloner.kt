@@ -1,5 +1,10 @@
-package build.kargo.frontend.schema
+package build.kargo.frontend.dr.resolver
 
+import build.kargo.frontend.schema.BitbucketSource
+import build.kargo.frontend.schema.GitHubSource
+import build.kargo.frontend.schema.GitLabSource
+import build.kargo.frontend.schema.GitSource
+import build.kargo.frontend.schema.GitUrlSource
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.ReentrantLock
@@ -10,8 +15,8 @@ import kotlin.io.path.*
  * collection. Used by IDE sync to expose source directories for navigation.
  */
 class GitSourceCloner(
-        private val cacheRoot: Path =
-                Path(System.getProperty("user.home")).resolve(".kargo/sources-cache")
+    private val cacheRoot: Path =
+        Path(System.getProperty("user.home")).resolve(".kargo/sources-cache")
 ) {
     private val locks = ConcurrentHashMap<String, ReentrantLock>()
 
@@ -39,9 +44,9 @@ class GitSourceCloner(
 
     /** Overload for [resolveSourcesDir] that takes a [GitSource] schema object. */
     fun resolveSourcesDir(source: GitSource) = resolveSourcesDir(
-            repoUrl = extractRepositoryUrl(source),
-            version = source.version.value,
-            subPath = source.path?.toString()
+        repoUrl = extractRepositoryUrl(source),
+        version = source.version.value,
+        subPath = source.path?.toString()
     )
 
     private fun writeModuleNameMetadata(repoUrl: String, subPath: String?, targetDir: Path) {
@@ -101,23 +106,11 @@ class GitSourceCloner(
             } else {
                 targetDir.toFile().deleteRecursively()
                 targetDir.parent.createDirectories()
-                executeGitCommand(
-                        workingDir = targetDir.parent,
-                        "clone",
-                        "--quiet",
-                        repoUrl,
-                        targetDir.name
-                )
+                executeGitCommand(workingDir = targetDir.parent, "clone", "--quiet", repoUrl, targetDir.name)
             }
         } else {
             targetDir.parent.createDirectories()
-            executeGitCommand(
-                    workingDir = targetDir.parent,
-                    "clone",
-                    "--quiet",
-                    repoUrl,
-                    targetDir.name
-            )
+            executeGitCommand(workingDir = targetDir.parent, "clone", "--quiet", repoUrl, targetDir.name)
         }
         return targetDir
     }
@@ -130,17 +123,16 @@ class GitSourceCloner(
     }
 
     fun executeGitCommand(workingDir: Path, vararg args: String): String {
-        val process =
-                ProcessBuilder("git", *args)
-                        .directory(workingDir.toFile())
-                        .redirectErrorStream(true)
-                        .start()
+        val process = ProcessBuilder("git", *args)
+            .directory(workingDir.toFile())
+            .redirectErrorStream(true)
+            .start()
         val output = process.inputStream.bufferedReader().readText()
         val exitCode = process.waitFor()
         if (exitCode != 0) {
             throw GitSourceException(
-                    rawMessage = "Git command failed: git ${args.joinToString(" ")}",
-                    details = output.trim()
+                rawMessage = "Git command failed: git ${args.joinToString(" ")}",
+                details = output.trim()
             )
         }
         return output
@@ -149,9 +141,9 @@ class GitSourceCloner(
 
 /** User-friendly exception for git source resolution failures. */
 class GitSourceException(
-        val rawMessage: String,
-        val details: String? = null,
-        cause: Throwable? = null,
+    val rawMessage: String,
+    val details: String? = null,
+    cause: Throwable? = null,
 ) : RuntimeException(rawMessage, cause) {
     val cliFormattedMessage: String
         get() = buildString {

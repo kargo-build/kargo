@@ -1,8 +1,6 @@
 package build.kargo.frontend.dr.resolver
 
 import build.kargo.frontend.schema.GitSource
-import build.kargo.frontend.schema.GitSourceCloner
-import build.kargo.frontend.schema.GitSourceException
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json

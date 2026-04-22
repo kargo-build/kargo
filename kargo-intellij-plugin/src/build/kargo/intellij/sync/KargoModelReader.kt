@@ -1,15 +1,16 @@
 package build.kargo.intellij.sync
 
-import com.intellij.openapi.project.Project
+import build.kargo.frontend.dr.resolver.withGitSources
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.util.Computable
 import com.intellij.openapi.diagnostic.Logger
-import org.jetbrains.amper.frontend.project.AmperProjectContext
-import org.jetbrains.amper.frontend.aomBuilder.readProjectModel
-import org.jetbrains.amper.problems.reporting.ProblemReporter
-import org.jetbrains.amper.problems.reporting.BuildProblem
-import org.jetbrains.amper.frontend.Model
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Computable
 import java.nio.file.Path
+import org.jetbrains.amper.frontend.Model
+import org.jetbrains.amper.frontend.aomBuilder.readProjectModel
+import org.jetbrains.amper.frontend.project.AmperProjectContext
+import org.jetbrains.amper.problems.reporting.BuildProblem
+import org.jetbrains.amper.problems.reporting.ProblemReporter
 
 class KargoModelReader {
 
@@ -19,10 +20,12 @@ class KargoModelReader {
         fun readModel(
             projectPath: Path,
             project: Project,
-            errorCollector: KargoSyncErrorCollector
+            errorCollector: KargoSyncErrorCollector,
         ): Model? {
 
-            logger.info("Kargo: Attempting to read model from $projectPath (Project: ${project.name})")
+            logger.info(
+                "Kargo: Attempting to read model from $projectPath (Project: ${project.name})"
+            )
 
             val reporter = object : ProblemReporter {
                 override fun reportMessage(message: BuildProblem) {
@@ -35,19 +38,25 @@ class KargoModelReader {
                 ApplicationManager.getApplication().runReadAction(Computable {
                     with(reporter) {
                         val context = runCatching {
-                            AmperProjectContext.create(projectPath, null, project)
+                            AmperProjectContext.create(
+                                projectPath,
+                                null,
+                                project
+                            )?.withGitSources()
                         }.onFailure {
-                            logger.error("Kargo: Error during AmperProjectContext.create", it)
+                            logger.warn("Kargo: Error during AmperProjectContext.create: ${it.message}")
                             errorCollector.reportException(it)
                         }.getOrNull() ?: return@Computable null
-
                         runCatching {
                             context.readProjectModel(
                                 pluginData = emptyList(),
                                 mavenPluginXmls = emptyList()
                             )
                         }.onFailure {
-                            logger.error("Kargo: Error during context.readProjectModel", it)
+                            logger.error(
+                                "Kargo: Error during context.readProjectModel",
+                                it
+                            )
                             errorCollector.reportException(it)
                         }.getOrNull()
                     }

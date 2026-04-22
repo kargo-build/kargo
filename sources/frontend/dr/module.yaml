@@ -18,6 +18,7 @@ dependencies:
   - ../../dependency-resolution: exported
   - ../../libraries/telemetry
   - ../../libraries/incremental-cache
+  - ../../frontend/plain/yaml-psi
   - $libs.slf4j.api
   - $libs.intellij.platform.util
 

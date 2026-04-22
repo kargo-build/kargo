@@ -8,7 +8,7 @@ import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.openapi.vfs.VirtualFileVisitor
 
-internal val amperModuleFileNames = setOf("module.yaml", "module.amper")
+val amperModuleFileNames = setOf("module.yaml", "module.amper")
 
 internal fun VirtualFile.hasChildMatchingAnyOf(names: Set<String>): Boolean = findChildMatchingAnyOf(names) != null
 

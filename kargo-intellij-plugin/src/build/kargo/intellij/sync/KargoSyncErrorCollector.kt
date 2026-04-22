@@ -43,14 +43,7 @@ class KargoSyncErrorCollector {
             Level.Warning, Level.WeakWarning -> SyncSeverity.WARNING
         }
         
-        if (severity == SyncSeverity.ERROR) {
-            logger.warn("Kargo Sync Problem: ${problem.message}")
-        } else {
-            logger.info("Kargo Sync Warning: ${problem.message}")
-        }
-        
-        val msg = problem.message.trim().replace("\n", "<br>")
-        messagesList.add(SyncMessage("<b>Project Problem:</b> $msg", severity))
+        reportError(problem.message, severity)
     }
 
     fun reportException(t: Throwable) {

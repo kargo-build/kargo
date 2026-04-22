@@ -7,19 +7,18 @@ import java.util.concurrent.atomic.AtomicBoolean
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.Task
 import com.intellij.openapi.progress.ProgressIndicator
-import com.intellij.notification.NotificationType.ERROR
-import com.intellij.notification.NotificationType.WARNING
 import com.intellij.openapi.application.ApplicationManager
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationAction
 import build.kargo.intellij.project.KargoProjectAware
 import com.intellij.openapi.externalSystem.autoimport.ExternalSystemProjectTracker
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationType
 
 @Service(Service.Level.PROJECT)
 class KargoSyncManager(val project: Project) {
     private val logger = Logger.getInstance(KargoSyncManager::class.java)
     private val isSyncRunning = AtomicBoolean(false)
-    private val projectAware: KargoProjectAware
+    private val projectAware = KargoProjectAware(project)
 
     companion object {
         fun getInstance(project: Project) = project.getService(KargoSyncManager::class.java)
@@ -64,7 +63,7 @@ class KargoSyncManager(val project: Project) {
                         val title = if (hasErrors) "Kargo Sync: failed" else "Kargo Sync: completed with warnings"
                         val msg = if (hasErrors) "Kargo sync completed with errors. Check details for more information."
                                         else "Kargo sync completed with warnings. Check details for more information."
-                        val type = if (hasErrors) ERROR else WARNING
+                        val type = if (hasErrors) NotificationType.ERROR else NotificationType.WARNING
                         val app = ApplicationManager.getApplication()
                         app.invokeLater {
                             if (!project.isDisposed) {
@@ -93,8 +92,6 @@ class KargoSyncManager(val project: Project) {
     }
 
     init {
-        projectAware = KargoProjectAware(project)
-        
         // Register with project tracker BEFORE scheduling sync
         val projectTracker = ExternalSystemProjectTracker.getInstance(project)
         projectTracker.register(projectAware, project)

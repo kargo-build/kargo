@@ -20,6 +20,8 @@ import org.jetbrains.amper.plugins.prepareMavenPlugins
 import org.jetbrains.amper.plugins.preparePlugins
 import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.use
+import build.kargo.frontend.dr.resolver.withGitDependencies
+import build.kargo.frontend.dr.resolver.withGitSources
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.absolute
@@ -51,7 +53,7 @@ internal suspend fun findProjectContext(explicitProjectDir: Path?, explicitBuild
             if (wereProblemsReported()) {
                 userReadableError("Aborting because there were errors in the Kargo project file, please see above.")
             }
-            context
+            context?.withGitSources()
         }
     }
 
@@ -89,7 +91,7 @@ internal suspend fun CliContext.preparePluginsAndReadModel(): Model {
     }
 
     checkUniqueModuleNames(model.modules)
-    return model
+    return model.withGitDependencies()
 }
 
 /**

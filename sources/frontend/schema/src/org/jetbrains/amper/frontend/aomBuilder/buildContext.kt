@@ -21,7 +21,7 @@ import org.jetbrains.amper.problems.reporting.ProblemReporter
 import java.nio.file.Path
 
 context(pathResolver: FrontendPathResolver)
-internal fun VirtualFile.asPsi(): PsiFile = pathResolver.toPsiFile(this) ?: error("No $this file")
+fun VirtualFile.asPsi(): PsiFile = pathResolver.toPsiFile(this) ?: error("No $this file")
 
 context(pathResolver: FrontendPathResolver)
 internal fun Path.asVirtualOrNull() = pathResolver.loadVirtualFileOrNull(this)
