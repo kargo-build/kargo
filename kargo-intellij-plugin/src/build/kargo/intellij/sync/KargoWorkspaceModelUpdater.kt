@@ -312,7 +312,9 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
     }
 
     private fun configureExclusions(entry: com.intellij.openapi.roots.ContentEntry, contentRootPath: String, moduleDirPath: String) {
-        if (contentRootPath.startsWith(moduleDirPath) || moduleDirPath.startsWith(contentRootPath)) {
+        // Only apply physical directory exclusions if this ContentEntry represents the entire module directory
+        // or a parent of it. Otherwise, we get an IllegalStateException because the exclude folder is not under the content entry.
+        if (moduleDirPath.startsWith(contentRootPath)) {
             val buildUrl = VfsUtilCore.pathToUrl("$moduleDirPath/build")
             val logsUrl = VfsUtilCore.pathToUrl("$moduleDirPath/logs")
 
