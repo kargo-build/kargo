@@ -16,6 +16,7 @@ import org.jetbrains.amper.dependency.resolution.module
 import org.jetbrains.amper.dependency.resolution.orUnspecified
 import org.jetbrains.amper.dependency.resolution.originalVersion
 import org.jetbrains.amper.dependency.resolution.resolvedVersion
+import org.jetbrains.amper.dependency.resolution.transitiveParents
 import org.jetbrains.amper.dependency.resolution.version
 import org.jetbrains.amper.frontend.diagnostics.FrontendDiagnosticId
 import org.jetbrains.amper.frontend.dr.resolver.DirectFragmentDependencyNode
@@ -46,14 +47,13 @@ open class OverriddenDirectModuleDependencies : DrDiagnosticsReporter {
         if (node !is DirectFragmentDependencyNode) return
         val dependencyNode = node.dependencyNode
 
-        val moduleName = node.parents.filterIsInstance<ModuleDependencyNode>().singleOrNull()?.moduleName ?: return
-        val isForTestsModule = node.parents.filterIsInstance<ModuleDependencyNode>().singleOrNull()?.isForTests ?: return
-        if (isForTestsModule) return // do not report diagnostic for tests (avoiding double calculation of insights for test/main resolution)
-
         val originalVersion = dependencyNode.originalVersion() ?: return
 
         if (originalVersion != dependencyNode.resolvedVersion()) {
-            // for every direct module dependency referencing this dependency node
+            val moduleNode = node.transitiveParents().filterIsInstance<ModuleDependencyNode>().singleOrNull { it.topLevel } ?: return
+            val moduleName = moduleNode.moduleName
+            val isForTestsModule = moduleNode.isForTests
+            if (moduleNode.isForTests) return // do not report diagnostic for tests (avoiding double calculation of insights for test/main resolution)
 
             // We prefer the trace of the coordinates to the trace of the notation as it's more specific.
             // E.g., in the case of implicit dependencies, it prefers 'version' over 'enabled'.
@@ -66,7 +66,7 @@ open class OverriddenDirectModuleDependencies : DrDiagnosticsReporter {
                     // This call assumes that conflict resolution is applied module-wide (test/main are resolved separately though).
                     // Rule of thumb: this method should be called on the complete (!) subgraph that contains
                     // all nodes resolved with the same conflict resolver.
-                     context.graphRoot.filterGraph(
+                    moduleNode.filterGraph(
                         dependencyNode.group,
                         dependencyNode.module,
                         resolvedVersionOnly = true,

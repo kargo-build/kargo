@@ -291,17 +291,6 @@ class MavenDependencyNodeWithContext internal constructor(
         return transitiveParents() + this
     }
 
-    private fun DependencyNode.transitiveParents(
-        visited: MutableSet<DependencyNode> = mutableSetOf(),
-    ): Set<DependencyNode> {
-        parents.forEach {
-            if (visited.add(it)) {
-                it.transitiveParents(visited)
-            }
-        }
-        return visited
-    }
-
     /**
      * NB: This method currently works properly only in the single-platform resolution context.
      *
@@ -2331,3 +2320,14 @@ fun String?.orUnspecified(): String = this ?: "unspecified"
 internal val org.jetbrains.amper.dependency.resolution.metadata.xml.Dependency.coordinates: MavenCoordinates
     get() = mavenCoordinatesTrimmed(groupId = groupId, artifactId = artifactId, version = version,
         classifier = classifier, packagingType = type)
+
+fun DependencyNode.transitiveParents(
+    visited: MutableSet<DependencyNode> = mutableSetOf(),
+): Set<DependencyNode> {
+    parents.forEach {
+        if (visited.add(it)) {
+            it.transitiveParents(visited)
+        }
+    }
+    return visited
+}
