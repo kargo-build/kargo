@@ -1,0 +1,8 @@
+tasks:
+  generateResources:
+    action: !org.example.generateResources
+      outputDir: ${taskOutputDir}
+
+generated:
+  resources:
+    - directory: ${tasks.generateResources.action.outputDir}

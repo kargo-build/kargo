@@ -5,26 +5,31 @@
 package org.jetbrains.amper.frontend.aomBuilder.plugins
 
 import org.jetbrains.amper.frontend.AmperModule
+import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.MavenCoordinates
 import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.aomBuilder.ModuleBuildCtx
+import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.api.TraceablePath
 import org.jetbrains.amper.frontend.api.asTraceableValue
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.diagnostics.FrontendDiagnosticId
 import org.jetbrains.amper.frontend.plugins.CheckFromPlugin
 import org.jetbrains.amper.frontend.plugins.CustomCommandFromPlugin
+import org.jetbrains.amper.frontend.plugins.FragmentDescriptor
+import org.jetbrains.amper.frontend.plugins.GeneratedPathKind
+import org.jetbrains.amper.frontend.plugins.GeneratedSourcesLanguage
 import org.jetbrains.amper.frontend.plugins.PluginYamlRoot
 import org.jetbrains.amper.frontend.plugins.TaskFromPluginDescription
 import org.jetbrains.amper.frontend.plugins.generated.ShadowDependencyLocal
 import org.jetbrains.amper.frontend.plugins.generated.ShadowDependencyMaven
 import org.jetbrains.amper.frontend.reportBundleError
-import org.jetbrains.amper.frontend.schema.toMavenCoordinates
 import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.problems.reporting.FileBuildProblemSource
 import org.jetbrains.amper.problems.reporting.MultipleLocationsBuildProblemSource
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 import org.jetbrains.amper.stdlib.collections.distinctBy
+import java.nio.file.Path
 import kotlin.io.path.pathString
 
 /**
@@ -41,10 +46,35 @@ internal fun applyPlugins(
         val appliedPlugin: PluginYamlRoot = plugin.asAppliedTo(
             module = moduleBuildCtx,
         ) ?: continue
+
+        val isOldMarkerApiUsed = appliedPlugin.tasks.values.any { it.markOutputsAs.isNotEmpty() }
+        val isNewMarkerApiUsed = appliedPlugin.generated.let { it.sources.any() || it.resources.any() }
+        if (isOldMarkerApiUsed && isNewMarkerApiUsed) {
+            // TODO: For migration period we support both, but not simultaneously
+            // Currently we don't bother with precise traces,
+            // as migration period is very short just to migrate Amper itself.
+            // Later we'll just introduce error-level deprecation diagnostic for `markOutputsAs`, which will be no-op
+            // until ultimately removed.
+            problemReporter.reportBundleError(
+                appliedPlugin.asBuildProblemSource(), PluginDiagnosticId.MixedOutputMarkerApiUsage,
+                "plugin.mixed.output.marker.api.usage",
+            )
+            continue
+        }
+
+        val taskNameToPathCollector = appliedPlugin.tasks.entries.associate { (name, task) ->
+            name to InputOutputCollector(task.action.backingTree)
+        }
+
+        // Collect generated marks from generatedSources/generatedResources blocks
+        val topLevelMarkedOutputs = collectGeneratedMarks(
+            appliedPlugin = appliedPlugin,
+            allOutputPaths = taskNameToPathCollector.values.flatMap { it.allOutputPaths.map(TraceablePath::value) },
+            moduleBuildCtx = moduleBuildCtx,
+        )
+
         for ((name, task) in appliedPlugin.tasks) {
-            val taskInfo = task.action.taskInfo
-            val pathsCollector = InputOutputCollector(task.action.backingTree)
-            val outputMarks = task.markOutputsAs.distinctBy(
+            val perTaskOutputMarks = task.markOutputsAs.distinctBy(
                 selector = { it.path },
                 onDuplicates = { path, duplicateMarks ->
                     val source = MultipleLocationsBuildProblemSource(
@@ -59,8 +89,10 @@ internal fun applyPlugins(
                     )
                 }
             ).associateBy { it.path }
+
+            val pathsCollector = taskNameToPathCollector.getValue(name)
             val outputPathsSet = pathsCollector.allOutputPaths.mapTo(hashSetOf()) { it.value }
-            outputMarks.forEach { (path, mark) ->
+            perTaskOutputMarks.forEach { (path, mark) ->
                 if (path !in outputPathsSet) {
                     problemReporter.reportBundleError(
                         source = mark.asBuildProblemSource(),
@@ -71,19 +103,18 @@ internal fun applyPlugins(
                 }
             }
             val outputsToMarks = pathsCollector.allOutputPaths.map { path: TraceablePath ->
-                TaskFromPluginDescription.OutputPath(
+                topLevelMarkedOutputs[path.value] ?: TaskFromPluginDescription.OutputPath(
                     path = path,
-                    outputMark = outputMarks[path.value]?.let { mark ->
+                    outputMark = perTaskOutputMarks[path.value]?.let { markOutputAs ->
                         TaskFromPluginDescription.OutputMark(
-                            kind = mark.kind,
-                            associateWith = moduleBuildCtx.module.fragments.first {
-                                it.isTest == mark.fragment.isTest && it.modifier == mark.fragment.modifier
-                            },
-                            trace = mark.trace,
+                            kind = markOutputAs.kind,
+                            associateWith = selectFragmentByDescriptor(moduleBuildCtx, markOutputAs.fragment),
+                            trace = markOutputAs.trace,
                         )
                     }
                 )
             }
+            val taskInfo = task.action.taskInfo
             val taskDescription = TaskFromPluginDescription(
                 name = name,
                 pluginId = plugin.id,
@@ -162,6 +193,84 @@ internal fun applyPlugins(
         }
     }
 }
+
+private fun selectFragmentByDescriptor(
+    moduleBuildCtx: ModuleBuildCtx,
+    descriptor: FragmentDescriptor,
+): Fragment = moduleBuildCtx.module.fragments.first {
+    it.isTest == descriptor.isTest && it.modifier == descriptor.modifier
+}
+
+/**
+ * A generated output mark derived from [PluginYamlRoot.generated].
+ */
+private data class TopLevelOutputMark(
+    val kind: GeneratedPathKind,
+    val directoryPath: Path,
+    val trace: Trace,
+    val fragment: FragmentDescriptor,
+)
+
+/**
+ * Collects [TopLevelOutputMark] entries from the [PluginYamlRoot.generated] top-level block.
+ */
+context(problemReporter: ProblemReporter)
+private fun collectGeneratedMarks(
+    moduleBuildCtx: ModuleBuildCtx,
+    allOutputPaths: List<Path>,
+    appliedPlugin: PluginYamlRoot,
+): Map<Path, TaskFromPluginDescription.OutputPath> = buildList {
+    for (sources in appliedPlugin.generated.sources) {
+        this += TaskFromPluginDescription.OutputPath(
+            path = sources.directoryDelegate.asTraceableValue(),
+            outputMark = TaskFromPluginDescription.OutputMark(
+                kind = when (sources.language) {
+                    GeneratedSourcesLanguage.Kotlin -> GeneratedPathKind.KotlinSources
+                    GeneratedSourcesLanguage.Java -> GeneratedPathKind.JavaSources
+                },
+                trace = sources.trace,
+                associateWith = selectFragmentByDescriptor(moduleBuildCtx, sources.fragment),
+            )
+        )
+    }
+
+    for (resources in appliedPlugin.generated.resources) {
+        this += TaskFromPluginDescription.OutputPath(
+            path = resources.directoryDelegate.asTraceableValue(),
+            outputMark = TaskFromPluginDescription.OutputMark(
+                kind = GeneratedPathKind.JvmResources,
+                trace = resources.trace,
+                associateWith = selectFragmentByDescriptor(moduleBuildCtx, resources.fragment),
+            )
+        )
+    }
+
+    // Diagnose those outputs that do not belong to any task
+    forEach { output ->
+        if (output.path.value !in allOutputPaths) {
+            problemReporter.reportBundleError(
+                source = appliedPlugin.asBuildProblemSource(),
+                diagnosticId = PluginDiagnosticId.UndeclaredGeneratedDirectoryOutput,
+                messageKey = "plugin.generated.directory.not.an.output",
+                output.path.value.pathString,
+            )
+        }
+    }
+}.distinctBy(
+    selector = { it.path },
+    onDuplicates = { path, duplicateMarks ->
+        val source = MultipleLocationsBuildProblemSource(
+            sources = duplicateMarks.mapNotNull { it.path.asBuildProblemSource() as? FileBuildProblemSource },
+            groupingMessage = SchemaBundle.message("plugin.generated.directory.duplicates.grouping"),
+        )
+        problemReporter.reportBundleError(
+            source = source,
+            diagnosticId = PluginDiagnosticId.ConflictingMarkedPluginPaths,
+            messageKey = "plugin.generated.directory.duplicates",
+            path,
+        )
+    }
+).associateBy { it.path.value }
 
 context(problemReporter: ProblemReporter)
 private fun ShadowDependencyLocal.resolve(

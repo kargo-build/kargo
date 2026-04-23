@@ -1,0 +1,8 @@
+modules:
+  - app
+  - build-konfig-plugin
+  - resource-plugin
+
+plugins:
+  - ./build-konfig-plugin
+  - resource-plugin

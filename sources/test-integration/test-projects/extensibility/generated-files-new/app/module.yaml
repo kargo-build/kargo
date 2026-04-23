@@ -1,0 +1,14 @@
+product:
+  type: jvm/app
+
+plugins:
+  build-konfig:
+    enabled: true
+    packageName: "com.example"
+    objectName: Konfig
+    visibility: internal
+    config:
+      VERSION: 1.0+hello
+      ID: "table-green-geese"
+  resource-plugin:
+    enabled: true

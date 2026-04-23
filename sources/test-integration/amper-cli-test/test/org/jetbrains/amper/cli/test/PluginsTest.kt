@@ -707,7 +707,7 @@ class PluginsTest : AmperCliTestBase() {
         )
 
         result.assertCustomTaskStdoutEquals(
-            testProject / "expected-plugin-output.txt", 
+            testProject / "expected-plugin-output.txt",
             taskName,
         )
     }
@@ -727,6 +727,26 @@ class PluginsTest : AmperCliTestBase() {
         return taskOutputLineRegex
             .findAll(stdoutClean)
             .joinToString(separator = "\n") { it.groupValues[1] }
+    }
+
+    @Test
+    fun `generatedSources API - contributes source file when enabled`() = runSlowTest {
+        val r = runCli(
+            projectDir = testProject("extensibility/generated-files-new"),
+            "run", "-m", "app",
+            copyToTempDir = true,
+        )
+        r.assertStdoutContains("version: 1.0+hello; id: table-green-geese")
+    }
+
+    @Test
+    fun `generatedResources API - contributes resource file when enabled`() = runSlowTest {
+        val r = runCli(
+            projectDir = testProject("extensibility/generated-files-new"),
+            "run", "-m", "app",
+            copyToTempDir = true,
+        )
+        r.assertStdoutContains("greeting: hello from generated resources")
     }
 
     @Test
