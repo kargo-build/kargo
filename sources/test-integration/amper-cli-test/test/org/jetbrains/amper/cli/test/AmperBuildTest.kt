@@ -176,7 +176,7 @@ class AmperBuildTest : AmperCliTestBase() {
         )
 
         result1.assertStdoutContains(
-            "Explicit -v/--variant argument is ignored because all selected platforms (jvm) do not support build variants."
+            "Explicit -v/--variant argument is ignored because none of the selected platforms (jvm) support build variants."
         )
 
         val result2 = runCli(
@@ -185,7 +185,7 @@ class AmperBuildTest : AmperCliTestBase() {
         )
 
         result2.assertStdoutDoesNotContain(
-            "Explicit -v/--variant argument is ignored because all selected platforms (jvm) do not support build variants."
+            "Explicit -v/--variant argument is ignored because none of the selected platforms (jvm) support build variants."
         )
     }
 

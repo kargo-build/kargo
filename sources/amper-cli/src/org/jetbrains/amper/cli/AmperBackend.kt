@@ -17,6 +17,7 @@ import org.jetbrains.amper.engine.TaskExecutor.TaskExecutionFailed
 import org.jetbrains.amper.engine.TaskGraph
 import org.jetbrains.amper.engine.TestTask
 import org.jetbrains.amper.engine.runTasksAndReportOnFailure
+import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.TaskName
@@ -37,7 +38,6 @@ import org.jetbrains.amper.tasks.jvm.JvmHotRunTask
 import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.useWithoutCoroutines
 import org.jetbrains.amper.util.BuildType
-import org.jetbrains.amper.util.isRunnableFrom
 import org.jetbrains.amper.util.runnablePlatforms
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -424,36 +424,7 @@ class AmperBackend(
         val moduleToRun = if (moduleName != null) {
             resolveModule(moduleName)
         } else {
-            val candidates = model.modules
-                .filter { if (runSettings.composeHotReloadMode) it.type == ProductType.JVM_APP else it.type.isApplication() }
-                .filter { platform == null || platform in it.leafPlatforms }
-            when {
-                candidates.isEmpty() -> {
-                    val supportingClause = platform?.let { " supporting ${it.pretty}" } ?: ""
-                    userReadableError("No modules in the project with application type$supportingClause")
-                }
-                candidates.size > 1 -> {
-                    val canBeSelectedUsingPlatform = candidates.flatMap { it.leafPlatforms }.let { allPlatformEntries ->
-                        // Check if there are no such two app modules that share a leaf platform
-                        allPlatformEntries.distinct().size == allPlatformEntries.size
-                    }
-
-                    val supportingClause = if (platform != null) " supporting ${platform.pretty}" else ""
-                    val candidatesList = candidates.map { it.userReadableName }.sorted().joinToString()
-                    val optionSuggestion = if (canBeSelectedUsingPlatform) {
-                        "'--platform' or '--module' arguments"
-                    } else {
-                        "'--module' argument"
-                    }
-                    userReadableError(
-                        "There are several matching application modules in the project. " +
-                                "Please specify one with $optionSuggestion.\n\n" +
-                                "Available application modules${supportingClause}: $candidatesList"
-                    )
-                }
-
-                else -> candidates.single()
-            }
+            findSingleRunnableAppModule(platform)
         }
 
         val runTasks = if (runSettings.composeHotReloadMode) {
@@ -514,6 +485,67 @@ class AmperBackend(
         runTask(task.taskName)
     }
 
+    private fun findSingleRunnableAppModule(platform: Platform?): AmperModule {
+        val appModules = model.modules
+            .filter { it.type.isApplication() }
+            .ifEmpty {
+                userReadableError("There are no application modules in the project, nothing to run")
+            }
+        val appModulesMatchingPlatform = appModules
+            .filter { platform == null || platform in it.leafPlatforms }
+            .ifEmpty {
+                userReadableError(
+                    "There are no application modules in the project that support the '${platform?.pretty}' platform.\n\n" +
+                            "Available application modules and their platforms:\n" +
+                            appModules.joinToString("\n") { " ${it.userReadableName}: ${formatPlatforms(it.leafPlatforms)}" },
+                )
+            }
+        val appModulesMatchingRunMode = appModulesMatchingPlatform
+            .filter { !runSettings.composeHotReloadMode || it.type == ProductType.JVM_APP }
+            .ifEmpty {
+                userReadableError(
+                    "There are no JVM application modules in the project, and only those support Compose Hot Reload.\n\n" +
+                            "Available application modules and their platform(s):\n" +
+                            appModules.joinToString("\n") { " ${it.userReadableName}: ${formatPlatforms(it.leafPlatforms)}" },
+                )
+            }
+        // We don't check this earlier because if there are no modules with the given platform at all,
+        // it's a more important error because the command doesn't work for this project on any host.
+        if (platform != null && platform !in runnablePlatforms) {
+            userReadableError("Code compiled for the '${platform.pretty}' platform cannot be run from the current host")
+        }
+        val runnableCandidates = appModulesMatchingRunMode.filter { it.hasRunnablePlatforms() }
+            .ifEmpty {
+                userReadableError(
+                    "There are no application modules in the project that can be run from the current host.\n\n" +
+                            "Runnable platforms on this host: ${formatPlatforms(runnablePlatforms)}",
+                )
+            }
+        if (runnableCandidates.size > 1) {
+            val canBeSelectedUsingPlatform = runnableCandidates
+                .flatMap { it.leafPlatforms intersect runnablePlatforms }
+                .let { allPlatformEntries ->
+                    // Check if there are no such two app modules that share a leaf platform
+                    allPlatformEntries.distinct().size == allPlatformEntries.size
+                }
+
+            val supportingClause = if (platform != null) " supporting the '${platform.pretty}' platform" else ""
+            val optionSuggestion = if (canBeSelectedUsingPlatform && platform == null) {
+                "'--platform' or '--module' option"
+            } else {
+                "'--module' option"
+            }
+            userReadableError(
+                "There are several matching application modules in the project. " +
+                        "Please specify one with the $optionSuggestion.\n\n" +
+                        "Runnable application modules${supportingClause}: ${formatModules(runnableCandidates)}"
+            )
+        }
+        return runnableCandidates.single()
+    }
+
+    private fun AmperModule.hasRunnablePlatforms(): Boolean = leafPlatforms.any { it in runnablePlatforms }
+
     /**
      * Run the iOS pre-build task identified by the [platform], [buildType] and the module.
      * The module is identified by its [moduleDir].
@@ -551,11 +583,11 @@ class AmperBackend(
 
     private fun resolveModule(moduleName: String) = modulesByName[moduleName] ?: userReadableError(
         "Unable to resolve module by name '$moduleName'.\n\n" +
-                "Available modules: ${availableModulesString()}"
+                "Available modules: ${formatModules(model.modules)}"
     )
 
-    private fun availableModulesString() =
-        model.modules.map { it.userReadableName }.sorted().joinToString(" ")
+    private fun formatModules(modules: Collection<AmperModule>) =
+        modules.map { it.userReadableName }.sorted().joinToString(" ")
 
     private fun formatTaskNames(publishTasks: Collection<TaskName>) =
         publishTasks.map { it.name }.sorted().joinToString(" ")
@@ -573,7 +605,7 @@ class AmperBackend(
             if (matchingTasks.isNotEmpty() && matchingTasks.all { it.buildType == null }) {
                 val allPlatforms = matchingTasks.map(PlatformAware::platform).distinct()
                 logger.warn("Explicit -v/--variant argument is ignored because " +
-                        "all selected platforms (${formatPlatforms(allPlatforms)}) do not support build variants.")
+                        "none of the selected platforms (${formatPlatforms(allPlatforms)}) support build variants.")
             }
             matchingTasks
         } else {

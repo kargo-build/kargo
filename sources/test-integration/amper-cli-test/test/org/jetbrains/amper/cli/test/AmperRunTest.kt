@@ -17,6 +17,8 @@ import org.jetbrains.amper.test.LinuxOnly
 import org.jetbrains.amper.test.MacOnly
 import org.jetbrains.amper.test.WindowsOnly
 import org.jetbrains.amper.test.spans.kotlinJvmCompilationSpans
+import org.junit.jupiter.api.Assumptions.assumeFalse
+import org.junit.jupiter.api.condition.OS
 import org.slf4j.event.Level
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -28,7 +30,7 @@ class AmperRunTest : AmperCliTestBase() {
     private val argumentsWithSpecialChars = listOf(
         "simple123",
         "my arg2",
-        "my arg3 :\"'<>\$ && || ; \"\" $specialCmdChars ${specialCmdChars.chunked(1).joinToString(" ")}",
+        "my arg3 :\"'<>\$ && || ; \"\" $specialCmdChars ${specialCmdChars.asSequence().joinToString(" ")}",
     )
 
     @Test
@@ -289,6 +291,15 @@ ARG2: <${argumentsWithSpecialChars[2]}>"""
     }
 
     @Test
+    fun `run succeeds without filters if there is only one runnable app`() = runSlowTest {
+        val projectRoot = testProject("multi-module-one-app-per-host")
+
+        val result = runCli(projectDir = projectRoot, "run")
+
+        result.assertStdoutContains("Hello, world!")
+    }
+
+    @Test
     fun `run fails if no app modules matching the platform`() = runSlowTest {
         val projectRoot = testProject("multi-module")
 
@@ -299,7 +310,7 @@ ARG2: <${argumentsWithSpecialChars[2]}>"""
             assertEmptyStdErr = false,
         )
 
-        result.assertStderrContains("No modules in the project with application type supporting iosArm64")
+        result.assertStderrContains("There are no application modules in the project that support the 'iosArm64' platform")
     }
 
     @Test
@@ -313,11 +324,58 @@ ARG2: <${argumentsWithSpecialChars[2]}>"""
             assertEmptyStdErr = false,
         )
 
-        result.assertStderrContains("No modules in the project with application type")
+        result.assertStderrContains("There are no application modules in the project, nothing to run")
     }
 
     @Test
-    fun `run fails if more than one module matches`() = runSlowTest {
+    fun `run fails if more than one module matches (without platform filter)`() = runSlowTest {
+        val projectRoot = testProject("multi-module-multi-apps")
+        val result2 = runCli(
+            projectDir = projectRoot,
+            "run",
+            expectedExitCode = 1,
+            assertEmptyStdErr = false,
+        )
+
+        val runnableModules = when (SystemInfo.CurrentHost.family) {
+            OsFamily.MacOs,
+            OsFamily.Windows -> "app3 app4"
+            OsFamily.Linux,
+            OsFamily.FreeBSD,
+            OsFamily.Solaris -> "app1 app2 app3 app4"
+        }
+        result2.assertStderrContains("""
+            There are several matching application modules in the project. Please specify one with the '--module' option.
+            
+            Runnable application modules: $runnableModules
+        """.trimIndent())
+    }
+
+    @Test
+    fun `run fails if more than one module matches (with platform filter)`() = runSlowTest {
+        val projectRoot = testProject("multi-module-multi-apps")
+        val result1 = runCli(
+            projectDir = projectRoot,
+            "run", "--platform", "jvm",
+            expectedExitCode = 1,
+            assertEmptyStdErr = false,
+        )
+
+        result1.assertStderrContains("""
+            There are several matching application modules in the project. Please specify one with the '--module' option.
+            
+            Runnable application modules supporting the 'jvm' platform: app3 app4
+        """.trimIndent()
+        )
+    }
+
+    @Test
+    fun `run fails if the platform cannot run on the current host`() = runSlowTest {
+        assumeFalse(
+            SystemInfo.CurrentHost.family.isLinux && SystemInfo.CurrentHost.arch == Arch.X64,
+            "This test is disabled on Linux x64 because we want to test when the 'linuxX64' platform cannot run on the host"
+        )
+
         val projectRoot = testProject("multi-module-multi-apps")
 
         val result1 = runCli(
@@ -327,23 +385,6 @@ ARG2: <${argumentsWithSpecialChars[2]}>"""
             assertEmptyStdErr = false,
         )
 
-        result1.assertStderrContains("""
-            There are several matching application modules in the project. Please specify one with '--module' argument.
-            
-            Available application modules supporting linuxX64: app1, app2
-        """.trimIndent())
-
-        val result2 = runCli(
-            projectDir = projectRoot,
-            "run",
-            expectedExitCode = 1,
-            assertEmptyStdErr = false,
-        )
-
-        result2.assertStderrContains("""
-            There are several matching application modules in the project. Please specify one with '--module' argument.
-            
-            Available application modules: app1, app2, app3
-        """.trimIndent())
+        result1.assertStderrContains("ERROR: Code compiled for the 'linuxX64' platform cannot be run from the current host")
     }
 }
