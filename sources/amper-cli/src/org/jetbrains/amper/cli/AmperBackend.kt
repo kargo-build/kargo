@@ -25,6 +25,7 @@ import org.jetbrains.amper.frontend.mavenRepositories
 import org.jetbrains.amper.frontend.plugins.CustomCommandFromPlugin
 import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.system.info.OsFamily
+import org.jetbrains.amper.system.info.SystemInfo
 import org.jetbrains.amper.tasks.AllRunSettings
 import org.jetbrains.amper.tasks.ProjectTasksBuilder
 import org.jetbrains.amper.tasks.PublishTask
@@ -36,7 +37,8 @@ import org.jetbrains.amper.tasks.jvm.JvmHotRunTask
 import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.useWithoutCoroutines
 import org.jetbrains.amper.util.BuildType
-import org.jetbrains.amper.util.PlatformUtil
+import org.jetbrains.amper.util.isRunnableFrom
+import org.jetbrains.amper.util.runnablePlatforms
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
@@ -75,6 +77,20 @@ class AmperBackend(
         val progress = TaskProgressRenderer(context.terminal, backgroundScope)
         TaskExecutor(taskGraph, taskExecutionMode, progress)
     }
+
+    /**
+     * The leaf [Platform]s that can be "run" from the current host.
+     *
+     * That is, code compiled to the returned [Platform]s can be run in any of the following ways:
+     * * on this host directly
+     * * in an emulator that runs on this host
+     * * on a suitable physical device connected to this host
+     *
+     * Note: the actual presence of connected physical devices is not checked here.
+     * Platforms that correspond to connected devices are returned as part of the set based on whether it would be
+     * _possible_ to run them, should a suitable device be connected.
+     */
+    val runnablePlatforms: Set<Platform> by lazy { SystemInfo.CurrentHost.runnablePlatforms() }
 
     /**
      * Called by the 'build' command.
@@ -255,14 +271,14 @@ class AmperBackend(
         moduleNamesToCheck.forEach { resolveModule(it) }
 
         requestedPlatforms
-            ?.filter { it !in PlatformUtil.platformsMayRunOnCurrentSystem }
+            ?.filter { it !in runnablePlatforms }
             ?.takeIf { it.isNotEmpty() }
             ?.let { unsupportedPlatforms ->
                 val message = """
                     Unable to run requested platform(s) on the current system.
                     
                     Requested unsupported platforms: ${formatPlatforms(unsupportedPlatforms)}
-                    Runnable platforms on the current system: ${formatPlatforms(PlatformUtil.platformsMayRunOnCurrentSystem)}
+                    Runnable platforms on the current system: ${formatPlatforms(runnablePlatforms)}
                 """.trimIndent()
                 userReadableError(message)
             }
@@ -273,7 +289,7 @@ class AmperBackend(
         }
 
         val platformTestTasks = allTestTasks
-            .filter { it.platform in (requestedPlatforms ?: PlatformUtil.platformsMayRunOnCurrentSystem) }
+            .filter { it.platform in (requestedPlatforms ?: runnablePlatforms) }
             .filterByBuildTypeAndReport(
                 explicit = buildType?.let(::setOf),
                 default = BuildType.Debug,
@@ -348,7 +364,7 @@ class AmperBackend(
                 is CheckEntry.Custom -> listOf(check.custom.performedBy)
                 CheckEntry.Tests ->
                     taskGraph.tasks.filterIsInstance<TestTask>().filter {
-                        it.module in selectedModules && it.platform in PlatformUtil.platformsMayRunOnCurrentSystem
+                        it.module in selectedModules && it.platform in runnablePlatforms
                     }.map { it.taskName }
             }
         }.toSet()

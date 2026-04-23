@@ -9,10 +9,13 @@ import org.jetbrains.amper.cli.test.utils.assertStderrContains
 import org.jetbrains.amper.cli.test.utils.assertStdoutContains
 import org.jetbrains.amper.cli.test.utils.readTelemetrySpans
 import org.jetbrains.amper.cli.test.utils.runSlowTest
+import org.jetbrains.amper.system.info.Arch
+import org.jetbrains.amper.system.info.SystemInfo
 import org.jetbrains.amper.telemetry.getListAttribute
 import org.jetbrains.amper.test.MacOnly
 import org.jetbrains.amper.test.WindowsOnly
 import org.jetbrains.amper.test.spans.spansNamed
+import org.junit.jupiter.api.Assumptions
 import org.slf4j.event.Level
 import kotlin.io.path.readText
 import kotlin.test.Ignore
@@ -146,6 +149,10 @@ class AmperTestBasicTest : AmperCliTestBase() {
     @Test
     @MacOnly
     fun `unsupported platform to test`() = runSlowTest {
+        // We make sure this test runs on ARM64 because that's what the expected list of runnable platforms is based on,
+        // Also, the vast majority of macOS machines are ARM64 now anyway (Intel is no longer supported)
+        Assumptions.assumeTrue { SystemInfo.CurrentHost.arch == Arch.Arm64 }
+
         val projectContext = testProject("simple-multiplatform-cli")
         val result = runCli(
             projectDir = projectContext,
@@ -158,7 +165,7 @@ class AmperTestBasicTest : AmperCliTestBase() {
             Unable to run requested platform(s) on the current system.
 
             Requested unsupported platforms: mingwX64
-            Runnable platforms on the current system: android iosSimulatorArm64 jvm macosArm64 tvosSimulatorArm64 watchosSimulatorArm64
+            Runnable platforms on the current system: android iosArm64 iosSimulatorArm64 js jvm macosArm64 macosX64 tvosArm64 tvosSimulatorArm64 wasmJs wasmWasi watchosArm32 watchosArm64 watchosDeviceArm64 watchosSimulatorArm64
         """.trimIndent()
         )
     }
