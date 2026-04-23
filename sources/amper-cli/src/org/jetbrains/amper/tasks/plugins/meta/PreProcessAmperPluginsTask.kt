@@ -28,6 +28,7 @@ import org.jetbrains.amper.tasks.TaskResult
  * @see org.jetbrains.amper.plugins.preparePlugins
  */
 class PreProcessAmperPluginsTask(
+    override val taskName: TaskName,
     private val projectRoot: AmperProjectRoot,
     private val incrementalCache: IncrementalCache,
     private val processRunner: ProcessRunner,
@@ -36,8 +37,6 @@ class PreProcessAmperPluginsTask(
     init {
         require(unappliedPluginModules.all { it.type == ProductType.JVM_AMPER_PLUGIN })
     }
-
-    override val taskName = TaskName("buildAmperPluginInfo")
 
     override suspend fun run(
         dependenciesResult: List<TaskResult>,
@@ -73,8 +72,4 @@ class PreProcessAmperPluginsTask(
     }
 
     class Result(val result: List<PluginDataWithDiagnostics>) : TaskResult
-
-    companion object {
-        val TaskName = TaskName("buildAmperPluginInfo")
-    }
 }

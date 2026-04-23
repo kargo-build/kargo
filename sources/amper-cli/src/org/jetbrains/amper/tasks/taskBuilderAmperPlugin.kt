@@ -26,9 +26,11 @@ fun ProjectTasksBuilder.setupAmperPluginTasks() {
     }
 
     // So we process such unapplied plugins separately in a "global task", in batch, as it's more efficient.
+    val preProcessUnappliedPluginsTaskName = TaskName("preProcessUnappliedPlugins")
     if (unappliedPluginModules.isNotEmpty()) {
         tasks.registerTask(
             PreProcessAmperPluginsTask(
+                taskName = preProcessUnappliedPluginsTaskName,
                 projectRoot = context.projectRoot,
                 incrementalCache = context.incrementalCache,
                 processRunner = context.processRunner,
@@ -49,7 +51,7 @@ fun ProjectTasksBuilder.setupAmperPluginTasks() {
             ),
             dependsOn = buildList {
                 if (!isApplied) {
-                    add(PreProcessAmperPluginsTask.TaskName)
+                    add(preProcessUnappliedPluginsTaskName)
                 }
             }
         )
