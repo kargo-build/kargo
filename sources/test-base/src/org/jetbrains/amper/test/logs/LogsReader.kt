@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.test.logs
@@ -51,7 +51,7 @@ private sealed interface LogFileLine {
 }
 
 // See how it's defined for files in sources/cli/resources/tinylog.properties
-private val logLineRegex = Regex("""(?<time>\d{2}:\d{2}.\d{3}+)\s+(?<level>[A-Z]+)\s+((?<amperTaskName>:\S+)\s+)?(?<class>(?!:)\S+)\s+(?<message>.*)""")
+private val logLineRegex = Regex("""(?<time>\d{2}:\d{2}.\d{3}+)\s+(?<level>[a-zA-Z]+)\s{1,4}((?<amperTaskName>\S+)\s{1,24}|\s{25,})(?<class>\S+)\s+(?<message>.*)""")
 
 private fun parseLine(line: String): LogFileLine {
     val match = logLineRegex.matchEntire(line) ?: return LogFileLine.Plain(line)
