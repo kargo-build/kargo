@@ -18,7 +18,7 @@ import org.jetbrains.amper.test.MacOnly
 import org.jetbrains.amper.test.WindowsOnly
 import org.jetbrains.amper.test.spans.kotlinJvmCompilationSpans
 import org.junit.jupiter.api.Assumptions.assumeFalse
-import org.junit.jupiter.api.condition.OS
+import org.junit.jupiter.api.Disabled
 import org.slf4j.event.Level
 import kotlin.test.Test
 import kotlin.test.assertContains
@@ -314,8 +314,26 @@ ARG2: <${argumentsWithSpecialChars[2]}>"""
     }
 
     @Test
-    fun `run fails if no app modules at all`() = runSlowTest {
+    fun `run fails if no app modules at all (single module)`() = runSlowTest {
         val projectRoot = testProject("jvm-publish")
+
+        val result = runCli(
+            projectDir = projectRoot,
+            "run",
+            expectedExitCode = 1,
+            assertEmptyStdErr = false,
+        )
+
+        result.assertStderrContains("""
+            ERROR: Module 'jvm-publish' cannot be run with the 'run' command because it's a library module. Please use an application product type.
+            See the documentation for more info:
+            https://amper.org/dev/user-guide/product-types
+        """.trimIndent())
+    }
+
+    @Test
+    fun `run fails if no app modules at all (multi-module)`() = runSlowTest {
+        val projectRoot = testProject("multi-module-libs-only")
 
         val result = runCli(
             projectDir = projectRoot,
@@ -336,18 +354,14 @@ ARG2: <${argumentsWithSpecialChars[2]}>"""
             expectedExitCode = 1,
             assertEmptyStdErr = false,
         )
-
-        val runnableModules = when (SystemInfo.CurrentHost.family) {
-            OsFamily.MacOs,
-            OsFamily.Windows -> "app3 app4"
-            OsFamily.Linux,
-            OsFamily.FreeBSD,
-            OsFamily.Solaris -> "app1 app2 app3 app4"
-        }
         result2.assertStderrContains("""
             There are several matching application modules in the project. Please specify one with the '--module' option.
             
-            Runnable application modules: $runnableModules
+            Runnable application modules:
+              js-app
+              jvm-app-1
+              jvm-app-2
+              wasm-js-app
         """.trimIndent())
     }
 
@@ -364,7 +378,9 @@ ARG2: <${argumentsWithSpecialChars[2]}>"""
         result1.assertStderrContains("""
             There are several matching application modules in the project. Please specify one with the '--module' option.
             
-            Runnable application modules supporting the 'jvm' platform: app3 app4
+            Runnable application modules supporting the 'jvm' platform:
+              jvm-app-1
+              jvm-app-2
         """.trimIndent()
         )
     }
@@ -376,7 +392,7 @@ ARG2: <${argumentsWithSpecialChars[2]}>"""
             "This test is disabled on Linux x64 because we want to test when the 'linuxX64' platform cannot run on the host"
         )
 
-        val projectRoot = testProject("multi-module-multi-apps")
+        val projectRoot = testProject("multi-module-one-app-per-host")
 
         val result1 = runCli(
             projectDir = projectRoot,
@@ -428,5 +444,86 @@ ARG2: <${argumentsWithSpecialChars[2]}>"""
         )
 
         result.assertStderrContains("Module 'wasm-wasi-app' of type 'wasm-wasi/app' cannot be run directly by Amper at the moment")
+    }
+
+    @Disabled("Our regular tests don't support running on iOS simulators at the moment. " +
+            "This will be possible once we run on GitHub Actions.")
+    @MacOnly
+    @Test
+    fun `run chooses the correct iOS simulator target by default`() = runSlowTest {
+        val projectRoot = testProject("ios/hello-and-exit")
+
+        runCli(projectDir = projectRoot, "run") // just check that it runs without error
+    }
+
+    @MacOnly
+    @Test
+    fun `run fails if --device-id is not provided and only physical targets are present`() = runSlowTest {
+        val projectRoot = testProject("ios/device-only")
+
+        val result = runCli(
+            projectDir = projectRoot,
+            "run",
+            expectedExitCode = 1,
+            assertEmptyStdErr = false,
+        )
+
+        result.assertStderrContains("ERROR: Please select a physical device to run module 'device-only' with --device-id.")
+    }
+
+    @Test
+    fun `run fails if --device-id is provided but no mobile app modules are present (single module)`() = runSlowTest {
+        val projectRoot = testProject("java-kotlin-mixed")
+
+        val result = runCli(
+            projectDir = projectRoot,
+            "run",
+            "--device-id=something",
+            expectedExitCode = 1,
+            assertEmptyStdErr = false,
+        )
+
+        result.assertStderrContains(
+            "No platforms of module 'java-kotlin-mixed' support device selection with --device-id. " +
+                    "Please remove the option.\n\n" +
+                    "Current platforms: jvm"
+        )
+    }
+
+    @Test
+    fun `run fails if --device-id is provided but no mobile app modules are present (multi-module)`() = runSlowTest {
+        val projectRoot = testProject("simple-multiplatform-cli")
+
+        val result = runCli(
+            projectDir = projectRoot,
+            "run",
+            "--device-id=something",
+            expectedExitCode = 1,
+            assertEmptyStdErr = false,
+        )
+
+        result.assertStderrContains(
+            "There are no Android or iOS application modules in the project, and only those support selecting a " +
+                    "device or emulator explicitly. Please remove the '--device-id' option."
+        )
+    }
+
+    @Test
+    fun `run fails if --device-id is provided with a platform that doesn't support it`() = runSlowTest {
+        val projectRoot = testProject("compose-multiplatform-room")
+
+        val result = runCli(
+            projectDir = projectRoot,
+            "run",
+            "--platform=jvm",
+            "--device-id=something",
+            expectedExitCode = 1,
+            assertEmptyStdErr = false,
+        )
+
+        result.assertStderrContains(
+            "There are no application modules in the project that support the 'jvm' platform and device selection " +
+                    "with --device-id."
+        )
     }
 }

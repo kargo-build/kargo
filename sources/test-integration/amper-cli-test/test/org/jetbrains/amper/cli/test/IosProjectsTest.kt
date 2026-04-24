@@ -167,7 +167,8 @@ class IosProjectsTest : AmperCliTestBase() {
 
         val runResult = runCli(
             projectDir = result.projectDir,
-            "run", "-p", "iosArm64",
+            // A fake device ID is fine because we'll fail before it's actually used anyway
+            "run", "--platform=iosArm64", "--device-id=12345",
             assertEmptyStdErr = false,
             expectedExitCode = 1,
         )

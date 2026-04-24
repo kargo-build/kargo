@@ -1,5 +1,5 @@
 modules:
-  - app1
-  - app2
-  - app3
-  - app4
+  - js-app
+  - jvm-app-1
+  - jvm-app-2
+  - wasm-js-app

@@ -92,7 +92,8 @@ class ComposeHotReloadTest : AmperCliTestBase() {
             assertEmptyStdErr = false,
         )
 
-        result.assertStderrContains("Compose Hot Reload is only supported in jvm/app applications")
+        result.assertStderrContains("Module 'app-android' doesn't support Compose Hot Reload because it's not a JVM " +
+                "application. Please remove the --compose-hot-reload-mode option.")
     }
 
     @Test
@@ -106,7 +107,14 @@ class ComposeHotReloadTest : AmperCliTestBase() {
             assertEmptyStdErr = false,
         )
 
-        result.assertStderrContains("Compose Hot Reload doesn't support running on the 'android' platform")
+        result.assertStderrContains("""
+            ERROR: There are no application modules in the project that support the 'android' platform and Compose Hot Reload.
+            
+            Available application modules and their platforms:
+              app-android: android
+              app-ios: iosArm64 iosSimulatorArm64 iosX64
+              app-jvm: jvm
+        """.trimIndent())
     }
 
     @Disabled("Running the app during the test makes it unable to terminate on its own (the window must be closed by hand)")
@@ -119,9 +127,6 @@ class ComposeHotReloadTest : AmperCliTestBase() {
         )
 
         result.readTelemetrySpans().assertHotReloadJavaExecSpan("app-jvm")
-
-        // Ensure we did not complain about multiple apps
-        result.assertStderrDoesNotContain("There are several matching application modules")
     }
 
     private fun SpansTestCollector.assertHotReloadJavaExecSpan(moduleName: String) {

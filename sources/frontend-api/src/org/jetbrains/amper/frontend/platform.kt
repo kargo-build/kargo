@@ -5,7 +5,6 @@
 package org.jetbrains.amper.frontend
 
 import org.jetbrains.amper.buildinfo.AmperBuild
-import org.jetbrains.amper.frontend.Platform.Companion.naturalHierarchy
 import org.jetbrains.amper.frontend.api.EnumValueFilter
 import org.jetbrains.amper.frontend.api.TraceableEnum
 
@@ -19,7 +18,12 @@ import org.jetbrains.amper.frontend.api.TraceableEnum
 enum class Platform(
     override val parent: Platform? = null,
     override val isLeaf: Boolean = false,
-    override val outdated: Boolean = false
+    override val outdated: Boolean = false,
+    /**
+     * Whether this platform represents an Apple simulator (as opposed to a physical device).
+     * See https://kotlinlang.org/docs/native-target-support.html for more details about native targets.
+     */
+    val isAppleDevice: Boolean = false,
 ) : SchemaEnum, Context {
     COMMON,
 
@@ -40,25 +44,25 @@ enum class Platform(
 
     APPLE(NATIVE),
 
-    TVOS(APPLE),
-    TVOS_ARM64(TVOS, isLeaf = true),
-    TVOS_X64(TVOS, isLeaf = true),
-    TVOS_SIMULATOR_ARM64(TVOS, isLeaf = true),
-
     MACOS(APPLE),
-    MACOS_X64(MACOS, isLeaf = true),
+    MACOS_X64(MACOS, isLeaf = true, outdated = true), // deprecated in Kotlin 2.3.20, soon unsupported by Apple
     MACOS_ARM64(MACOS, isLeaf = true),
 
+    TVOS(APPLE),
+    TVOS_ARM64(TVOS, isLeaf = true, isAppleDevice = true),
+    TVOS_X64(TVOS, isLeaf = true, outdated = true, isAppleDevice = false), // deprecated in Kotlin 2.3.20, soon unsupported by Apple
+    TVOS_SIMULATOR_ARM64(TVOS, isLeaf = true, isAppleDevice = false),
+
     IOS(APPLE),
-    IOS_ARM64(IOS, isLeaf = true),
-    IOS_SIMULATOR_ARM64(IOS, isLeaf = true),
-    IOS_X64(IOS, isLeaf = true),
+    IOS_ARM64(IOS, isLeaf = true, isAppleDevice = true),
+    IOS_SIMULATOR_ARM64(IOS, isLeaf = true, isAppleDevice = false),
+    IOS_X64(IOS, isLeaf = true, isAppleDevice = false),
 
     WATCHOS(APPLE),
-    WATCHOS_ARM64(WATCHOS, isLeaf = true),
-    WATCHOS_ARM32(WATCHOS, isLeaf = true),
-    WATCHOS_DEVICE_ARM64(WATCHOS, isLeaf = true),
-    WATCHOS_SIMULATOR_ARM64(WATCHOS, isLeaf = true),
+    WATCHOS_ARM64(WATCHOS, isLeaf = true, isAppleDevice = true),
+    WATCHOS_ARM32(WATCHOS, isLeaf = true, isAppleDevice = true),
+    WATCHOS_DEVICE_ARM64(WATCHOS, isLeaf = true, isAppleDevice = true),
+    WATCHOS_SIMULATOR_ARM64(WATCHOS, isLeaf = true, isAppleDevice = false),
 
     MINGW(NATIVE),
     MINGW_X64(MINGW, isLeaf = true),
