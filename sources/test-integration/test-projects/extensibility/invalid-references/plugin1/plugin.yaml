@@ -24,6 +24,11 @@ tasks:
       unknownProperty5: ${module.name}
       unknownProperty6: ${module.settings}
       unknownProperty7: ${module.settings.kotlin.languageVersion}
+      path2: ${taskOutputDir}/abc
+      unknownProperty8: ${path2} # path
+      unknownProperty9: ${path2}/hello # path
+      unknownProperty10: ${path2}/hello/${requiredString} # path
+      unknownProperty11: hello/${requiredString}/nested # string
     taskOutputDir: ./hack/ed
 
 module: {}

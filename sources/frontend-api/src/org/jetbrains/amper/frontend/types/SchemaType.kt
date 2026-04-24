@@ -19,7 +19,7 @@ sealed interface SchemaType {
     /**
      * Type for [org.jetbrains.amper.frontend.tree.StringInterpolationNode]
      */
-    sealed interface StringInterpolatableType : ScalarType
+    sealed interface StringInterpolatableType : SchemaType
 
     /**
      * Type for [org.jetbrains.amper.frontend.tree.MappingNode]
@@ -103,7 +103,7 @@ sealed interface SchemaType {
      * Used internally in places where the concrete type can't be known due to an invalid user input,
      * but where we still want to proceed "normally" on the best effort basis/to not issue induced errors.
      */
-    data object UndefinedType : SchemaType {
+    data object UndefinedType : SchemaType, StringInterpolatableType {
         override val isMarkedNullable: Boolean get() = true
     }
 

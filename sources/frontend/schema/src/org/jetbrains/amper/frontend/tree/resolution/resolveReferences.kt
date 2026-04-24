@@ -6,7 +6,6 @@ package org.jetbrains.amper.frontend.tree.resolution
 
 import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.api.Default
-import org.jetbrains.amper.frontend.api.Traceable
 import org.jetbrains.amper.frontend.api.TransformedValueTrace
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.reportBundleError
@@ -176,7 +175,14 @@ private class ReferenceResolutionSession(
         context: ResolutionContext,
     ): RefinedTreeNode? = when (val result = doResolve(referenceNode, context, referenceNode.referencedPath)) {
         is ResolutionStep.Value -> when {
-            result.value.subtreeContainsResolvableNodes() -> null // Reference (nested) with a "hole", leave as is
+            result.value.subtreeContainsResolvableNodes() -> {
+                if (referenceNode.expectedType == SchemaType.UndefinedType) {
+                    // Replace the type with a more precise one from the hole.
+                    // Some clients (like unknown properties diagnostics) may be interested in as narrow types as possible.
+                    @OptIn(DelicateSchemaTypeInferenceApi::class)
+                    referenceNode.copy(expectedType = result.value.inferPossibleExpectedTypeBestEffort())
+                } else null // Reference (nested) with a "hole", leave as is
+            }
             else -> {
                 var value = result.value
                 val transform = referenceNode.transform
@@ -227,11 +233,15 @@ private class ReferenceResolutionSession(
         interpolationNode: StringInterpolationNode,
         context: ResolutionContext,
     ): LeafTreeNode? {
-        val allResolvedValues = mutableListOf<Traceable>()
+        val resolvedReferenceParts: Map<StringInterpolationNode.Part.Reference, ResolutionStep?> = interpolationNode.parts
+            .filterIsInstance<StringInterpolationNode.Part.Reference>()
+            .distinct()  // Resolve identical parts only once
+            .associateWith { doResolve(interpolationNode, context, it.referencePath) }
+
         val resolvedParts = interpolationNode.parts.map { part ->
             when (part) {
                 is StringInterpolationNode.Part.Reference -> {
-                    when (val result = doResolve(interpolationNode, context, part.referencePath)) {
+                    when (val result = resolvedReferenceParts.getValue(part)) {
                         is ResolutionStep.Hole -> {
                             if (StringInterpolationExpectedType.isAssignableFrom(result.type)) {
                                 // Type-check - OK, leave the same part unresolved
@@ -250,7 +260,6 @@ private class ReferenceResolutionSession(
                             val value = StringInterpolationExpectedType.cast(result.value)
                         ) {
                             is StringNode -> {
-                                allResolvedValues += value
                                 StringInterpolationNode.Part.Text(value.value)
                             }
                             is ErrorNode -> {
@@ -268,8 +277,7 @@ private class ReferenceResolutionSession(
                                 )
                                 null
                             }
-                            // Sanity assertions
-                            is ResolvableNode -> error("Unresolved transitive reference")
+                            is ResolvableNode -> part  // transitive reference with holes
                             else -> error("Unexpected node after `cast`: $value")
                         }
                         null -> null
@@ -278,13 +286,34 @@ private class ReferenceResolutionSession(
                 is StringInterpolationNode.Part.Text -> part
             }
         }
+
+        @OptIn(DelicateSchemaTypeInferenceApi::class)
+        val preciseExpectedType = when (val type = interpolationNode.expectedType) {
+            is SchemaType.UndefinedType -> {
+                // Use "path" type if at least one reference part resolves to a path
+                val resolvesToAnyPaths = resolvedReferenceParts.any { (_, result) ->
+                    when (result) {
+                        is ResolutionStep.Hole -> result.type
+                        is ResolutionStep.Value -> result.value.inferPossibleExpectedTypeBestEffort()
+                        null -> null
+                    } is SchemaType.PathType
+                }
+                if (resolvesToAnyPaths) SchemaType.PathType else SchemaType.StringType
+            }
+            else -> type
+        }
+
         return when {
             // At least one part is unresolved - the whole interpolation becomes an error node
-            resolvedParts.anyNull() -> ErrorNode(interpolationNode)
+            resolvedParts.anyNull() -> ErrorNode(interpolationNode, expectedType = preciseExpectedType)
 
             // Partial resolution - update the node with the resolved parts
             resolvedParts.any { it is StringInterpolationNode.Part.Reference } -> {
-                null  // Contains holes, keep as is
+                if (interpolationNode.expectedType != preciseExpectedType) {
+                    // Replace the type with a more precise one from the hole.
+                    // Some clients (like unknown properties diagnostics) are interested in as narrow types as possible.
+                    interpolationNode.copy(expectedType = preciseExpectedType)
+                } else null  // Contains holes, keep as is
             }
             else -> {  // All parts are resolved - do the interpolation
                 val interpolated = resolvedParts.joinToString(separator = "") {
@@ -294,17 +323,17 @@ private class ReferenceResolutionSession(
                 val trace = TransformedValueTrace(
                     description = "string interpolation: ${interpolationNode.parts.joinToString("") {
                         when(it) {
-                            is StringInterpolationNode.Part.Reference -> "\${${it.referencePath.joinToString(".")}}"
+                            is StringInterpolationNode.Part.Reference -> $$"${$${it.referencePath.joinToString(".")}}"
                             is StringInterpolationNode.Part.Text -> it.text
                         }
                     }}",
                     definitionTrace = interpolationNode.trace,
                     // TODO: Support multi-source traces
                     // first() is safe because of StringInterpolationValue contract.
-                    sourceValue = allResolvedValues.first(),
+                    sourceValue = resolvedReferenceParts.mapNotNull { it.value as? ResolutionStep.Value }.first().value,
                 )
 
-                when (val type = interpolationNode.expectedType) {
+                when (preciseExpectedType) {
                     is SchemaType.PathType -> try {
                         PathNode(Path(interpolated).normalize(), trace, interpolationNode.contexts)
                     } catch (e: InvalidPathException) {
@@ -328,8 +357,9 @@ private class ReferenceResolutionSession(
                         ErrorNode(interpolationNode.expectedType, trace, interpolationNode.contexts)
                     }
                     is SchemaType.StringType -> {
-                        StringNode(interpolated, type.semantics, trace, interpolationNode.contexts)
+                        StringNode(interpolated, preciseExpectedType.semantics, trace, interpolationNode.contexts)
                     }
+                    is SchemaType.UndefinedType -> error("Not reached: should be replaced with a precise type above")
                 }
             }
         }

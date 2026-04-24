@@ -24,6 +24,7 @@ import org.jetbrains.amper.frontend.tree.RefinedTreeNode
 import org.jetbrains.amper.frontend.tree.ResolvableNode
 import org.jetbrains.amper.frontend.tree.StringNode
 import org.jetbrains.amper.frontend.tree.TreeNode
+import org.jetbrains.amper.frontend.types.SchemaType
 import org.jetbrains.amper.frontend.types.render
 import org.jetbrains.amper.stdlib.collections.joinToString
 
@@ -58,6 +59,45 @@ fun renderTypeOf(value: TreeNode): String = when(value) {
     is ResolvableNode -> value.expectedType.render(includeSyntax = false)
 }
 
+@RequiresOptIn(
+    message = "This API infers the type on the best effort basis. " +
+            "Only use in cases were the precise type can't be tracked because it's physically not known. " +
+            "Suited for diagnostics or suggestions",
+    level = RequiresOptIn.Level.WARNING
+)
+annotation class DelicateSchemaTypeInferenceApi
+
+/**
+ * Tries to infer as precise a type as possible to which this node can be assigned.
+ * If no well-formed type can be inferred, returns [SchemaType.UndefinedType], e.g., for `null` literals.
+ *
+ * @param nullFallbackType a type that is to be returned when encountering [NullLiteralNode]
+ */
+@DelicateSchemaTypeInferenceApi
+fun TreeNode.inferPossibleExpectedTypeBestEffort(
+    nullFallbackType: SchemaType = SchemaType.UndefinedType,
+): SchemaType {
+    require(nullFallbackType.isMarkedNullable)
+    return when (this) {
+        is NullLiteralNode -> nullFallbackType
+        is ErrorNode -> expectedType
+        is ResolvableNode -> expectedType
+        is EnumNode -> declaration.toType()
+        is BooleanNode -> SchemaType.BooleanType
+        is IntNode -> SchemaType.IntType
+        is PathNode -> SchemaType.PathType
+        is StringNode -> SchemaType.StringType(semantics = semantics)
+        is ListNode -> SchemaType.ListType(
+            elementType = children.mapTo(mutableSetOf(), TreeNode::inferPossibleExpectedTypeBestEffort).singleOrNull()
+                ?: SchemaType.UndefinedType
+        )
+        is MappingNode -> declaration?.toType() ?: SchemaType.MapType(
+            valueType = children.mapTo(mutableSetOf()) { it.value.inferPossibleExpectedTypeBestEffort() }.singleOrNull()
+                ?: SchemaType.UndefinedType
+        )
+    }
+}
+
 internal fun RefinedTreeNode.subtreeContainsResolvableNodes(): Boolean = when(this) {
     is RefinedListNode -> children.any { it.subtreeContainsResolvableNodes() }
     is RefinedMappingNode -> children.any { it.value.subtreeContainsResolvableNodes() }
@@ -82,5 +122,7 @@ internal fun ReferenceNode.transformedTrace(
     )
 }
 
-internal fun ErrorNode(unresolved: ResolvableNode) =
-    ErrorNode(unresolved.expectedType, unresolved.trace, unresolved.contexts)
+internal fun ErrorNode(
+    unresolved: ResolvableNode,
+    expectedType: SchemaType = unresolved.expectedType,
+) = ErrorNode(expectedType, unresolved.trace, unresolved.contexts)

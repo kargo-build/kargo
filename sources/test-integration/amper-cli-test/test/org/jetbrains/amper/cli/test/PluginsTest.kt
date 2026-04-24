@@ -523,9 +523,9 @@ class PluginsTest : AmperCliTestBase() {
         with(result) {
             val pluginYaml = projectDir / "plugin1" / "plugin.yaml"
             assertErrors(
-                "${pluginYaml}:27:5: Cannot assign to property `taskOutputDir` - it is a built-in property available for reference only",
+                "${pluginYaml}:32:5: Cannot assign to property `taskOutputDir` - it is a built-in property available for reference only",
                 "${pluginYaml}:18:11: Expected `Dependency.Maven ( maven-coordinates )`, but got `sequence []`",
-                "${pluginYaml}:29:1: Cannot assign to property `module` - it is a built-in property available for reference only",
+                "${pluginYaml}:34:1: Cannot assign to property `module` - it is a built-in property available for reference only",
                 "${pluginYaml}:17:11: Referencing `markOutputsAs` is not allowed",
                 "${pluginYaml}:14:11: Maven coordinates should not contain slashes",
                 "${pluginYaml}:15:11: Maven coordinates one-part should contain at least two parts separated by ':', but got 1",
@@ -548,6 +548,10 @@ class PluginsTest : AmperCliTestBase() {
                 "${pluginYaml}:25:7: Unknown property `unknownProperty6` (inferred type `<undefined-type>`) in `someAction`",
                 "${pluginYaml}:25:25: Referencing `settings` is not allowed",
                 "${pluginYaml}:26:7: Unknown property `unknownProperty7` (inferred type `KotlinVersion | null`) in `someAction`",
+                "${pluginYaml}:28:7: Unknown property `unknownProperty8` (inferred type `path`) in `someAction`",
+                "${pluginYaml}:29:7: Unknown property `unknownProperty9` (inferred type `path`) in `someAction`",
+                "${pluginYaml}:30:7: Unknown property `unknownProperty10` (inferred type `path`) in `someAction`",
+                "${pluginYaml}:31:7: Unknown property `unknownProperty11` (inferred type `string`) in `someAction`",
                 "failed to read Amper model, refer to the errors above",
             )
         }

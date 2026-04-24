@@ -46,4 +46,5 @@ fun someAction(
     dependencies: List<Dependency.Maven>,
     @Input classpath: Classpath,
     requiredString2: String,
+    @Input path2: Path,
 ) {}
