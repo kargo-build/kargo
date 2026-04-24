@@ -387,4 +387,46 @@ ARG2: <${argumentsWithSpecialChars[2]}>"""
 
         result1.assertStderrContains("ERROR: Code compiled for the 'linuxX64' platform cannot be run from the current host")
     }
+
+    @Test
+    fun `run fails gracefully for JS app`() = runSlowTest {
+        val projectRoot = testProject("js-app")
+
+        val result = runCli(
+            projectDir = projectRoot,
+            "run",
+            expectedExitCode = 1,
+            assertEmptyStdErr = false,
+        )
+
+        result.assertStderrContains("Module 'js-app' of type 'js/app' cannot be run directly by Amper at the moment")
+    }
+
+    @Test
+    fun `run fails gracefully for Wasm JS app`() = runSlowTest {
+        val projectRoot = testProject("wasm-js-app")
+
+        val result = runCli(
+            projectDir = projectRoot,
+            "run",
+            expectedExitCode = 1,
+            assertEmptyStdErr = false,
+        )
+
+        result.assertStderrContains("Module 'wasm-js-app' of type 'wasm-js/app' cannot be run directly by Amper at the moment")
+    }
+
+    @Test
+    fun `run fails gracefully for Wasm WASI app`() = runSlowTest {
+        val projectRoot = testProject("wasm-wasi-app")
+
+        val result = runCli(
+            projectDir = projectRoot,
+            "run",
+            expectedExitCode = 1,
+            assertEmptyStdErr = false,
+        )
+
+        result.assertStderrContains("Module 'wasm-wasi-app' of type 'wasm-wasi/app' cannot be run directly by Amper at the moment")
+    }
 }

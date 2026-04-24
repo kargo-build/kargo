@@ -5,6 +5,7 @@
 package org.jetbrains.amper.cli
 
 import kotlinx.coroutines.CoroutineScope
+import org.jetbrains.amper.buildinfo.AmperBuild
 import org.jetbrains.amper.cli.options.UserJvmArgsOption
 import org.jetbrains.amper.cli.widgets.TaskProgressRenderer
 import org.jetbrains.amper.engine.BuildTask
@@ -450,7 +451,12 @@ class AmperBackend(
             )
 
         if (moduleRunTasks.isEmpty()) {
-            userReadableError("No run tasks are available for module '${moduleToRun.userReadableName}'")
+            when (moduleToRun.type) {
+                ProductType.JS_APP -> errorNonRunnableModuleType(moduleToRun, "${AmperBuild.documentationUrl}/user-guide/product-types/js-app/#running-your-application")
+                ProductType.WASM_JS_APP,
+                ProductType.WASM_WASI_APP -> errorNonRunnableModuleType(moduleToRun, "${AmperBuild.documentationUrl}/user-guide/product-types/wasm-app/#running-your-application")
+                else -> userReadableError("No run tasks are available for module '${moduleToRun.userReadableName}'")
+            }
         }
 
         fun availablePlatformsForModule() = moduleRunTasks.map { it.platform.pretty }.sorted().joinToString(" ")
@@ -483,6 +489,16 @@ class AmperBackend(
             userReadableError("-d/--device-id argument is not supported for the ${task.platform.pretty} platform")
         }
         runTask(task.taskName)
+    }
+
+    private fun errorNonRunnableModuleType(
+        module: AmperModule,
+        documentationUrl: String,
+    ): Nothing {
+        userReadableError(
+            "Module '${module.userReadableName}' of type '${module.type.value}' cannot be run directly by Amper at the moment.\n" +
+                    "See the documentation for more info:\n$documentationUrl",
+        )
     }
 
     private fun findSingleRunnableAppModule(platform: Platform?): AmperModule {
