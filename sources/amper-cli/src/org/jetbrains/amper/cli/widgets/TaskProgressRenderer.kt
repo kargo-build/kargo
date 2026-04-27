@@ -22,9 +22,8 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.jetbrains.amper.frontend.TaskName
+import org.jetbrains.amper.engine.Task
 import org.jetbrains.amper.engine.TaskProgressListener
-import java.util.Collections.swap
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -37,16 +36,20 @@ class TaskProgressRenderer(
     private val coroutineScope: CoroutineScope,
     private val timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
 ) : TaskProgressListener {
-    private data class ThreadState(val name: String?, val startTime: ComparableTimeMark, val elapsed: Duration)
+    private data class TaskEntry(
+        val task: Task,
+        val startTime: ComparableTimeMark,
+        val elapsed: Duration,
+    )
 
     private val maxTasksOnScreen
         get() = terminal.size.height / 3
 
-    private val updateFlow: MutableStateFlow<List<ThreadState>> by lazy {
-        val flow = MutableStateFlow(emptyList<ThreadState>())
+    private val updateFlow: MutableStateFlow<List<TaskEntry>> by lazy {
+        val flow = MutableStateFlow(emptyList<TaskEntry>())
 
         coroutineScope.launch(Dispatchers.IO) {
-            val animation = terminal.animation<List<ThreadState>> { threadStates ->
+            val animation = terminal.animation<List<TaskEntry>> { threadStates ->
                 createTasksProgressWidget(threadStates)
             }
 
@@ -76,7 +79,7 @@ class TaskProgressRenderer(
         flow
     }
 
-    private fun createTasksProgressWidget(threadStates: List<ThreadState>): Widget = verticalLayout {
+    private fun createTasksProgressWidget(taskEntries: List<TaskEntry>): Widget = verticalLayout {
         // Required to explicitly fill empty space with whitespaces and overwrite old lines
         align = TextAlign.LEFT
         // Required to correctly truncate very long status lines (or on very narrow terminal windows)
@@ -84,32 +87,26 @@ class TaskProgressRenderer(
 
         cell("")
 
-        for (threadState in threadStates.take(maxTasksOnScreen)) {
+        for (entry in taskEntries.take(maxTasksOnScreen)) {
             cell(horizontalLayout {
                 cell(">") {
                     style = terminal.theme.muted
                 }
-                if (threadState.name == null) {
-                    cell("IDLE") {
-                        style = terminal.theme.muted
-                    }
-                } else {
-                    cell(threadState.name) {
-                        style = terminal.theme.info
-                    }
 
-                    if (threadState.elapsed >= 1.seconds) {
-                        cell(threadState.elapsed.toString()) {
-                            style = terminal.theme.muted
-                        }
+                cell(entry.task.taskName.name) {
+                    style = terminal.theme.info
+                }
+
+                if (entry.elapsed >= 1.seconds) {
+                    cell(entry.elapsed.toString()) {
+                        style = terminal.theme.muted
                     }
                 }
             })
         }
-        if (threadStates.size > maxTasksOnScreen) {
-            cell("(+${threadStates.size - maxTasksOnScreen} more)")
+        if (taskEntries.size > maxTasksOnScreen) {
+            cell("(+${taskEntries.size - maxTasksOnScreen} more)")
         }
-        cell("")
     }
 
     private fun updateState() {
@@ -118,53 +115,12 @@ class TaskProgressRenderer(
         }
     }
 
-    private fun trimOverflow(mutable: MutableList<ThreadState>) {
-        val maxTasksOnScreen = maxTasksOnScreen
-        if (mutable.size <= maxTasksOnScreen) return
-
-        // try to fill idle positions on screen with tasks not on screen
-        for (i in 0 until maxTasksOnScreen) {
-            if (mutable[i].name == null) {
-                // the current position is idle, let's try to fill it
-                // not very effective, but good enough
-                var swapped = false
-                for (j in mutable.size - 1 downTo  maxTasksOnScreen) {
-                    if (mutable[j].name != null) {
-                        swap(mutable, i, j)
-                        swapped = true
-                        break
-                    }
-                }
-                if (!swapped) {
-                    // nothing to swap => can't fill more
-                    break
-                }
-            }
-        }
-
-        // trim idle positions on the end
-        while (mutable.isNotEmpty() && mutable[mutable.lastIndex].name == null) {
-            mutable.removeLast()
-        }
-    }
-
-    override fun taskStarted(taskName: TaskName): TaskProgressListener.TaskProgressCookie {
+    override fun taskStarted(task: Task): TaskProgressListener.TaskProgressCookie {
         val job = coroutineScope.launch(Dispatchers.IO) {
-            val newThreadState = ThreadState(taskName.name, startTime = timeSource.markNow(), elapsed = Duration.ZERO)
-            delay(200)
+            val newTaskEntry = TaskEntry(task, startTime = timeSource.markNow(), elapsed = Duration.ZERO)
+            delay(200.milliseconds)
             updateFlow.update { current ->
-                val mutable = current.toMutableList()
-                val emptyIndex = current
-                    .withIndex()
-                    .filter { it.value.name == null }
-                    .minByOrNull { it.value.startTime }
-                if (emptyIndex != null) {
-                    mutable[emptyIndex.index] = newThreadState
-                } else {
-                    mutable.add(newThreadState)
-                }
-                trimOverflow(mutable)
-                mutable
+                current + newTaskEntry
             }
         }
 
@@ -173,13 +129,7 @@ class TaskProgressRenderer(
                 job.cancel()
 
                 updateFlow.update { current ->
-                    val mutable = current.toMutableList()
-                    val taskIndex = mutable.indexOfFirst { it.name == taskName.name }
-                    if (taskIndex >= 0) {
-                        mutable[taskIndex] = ThreadState(null, startTime = timeSource.markNow(), elapsed = Duration.ZERO)
-                    }
-                    trimOverflow(mutable)
-                    mutable
+                    current.filterNot { it.task === task }
                 }
             }
         }

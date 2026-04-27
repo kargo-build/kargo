@@ -4,14 +4,12 @@
 
 package org.jetbrains.amper.engine
 
-import org.jetbrains.amper.frontend.TaskName
-
 interface TaskProgressListener {
-    fun taskStarted(taskName: TaskName): TaskProgressCookie
+    fun taskStarted(task: Task): TaskProgressCookie
     interface TaskProgressCookie: AutoCloseable
 
     object Noop: TaskProgressListener {
-        override fun taskStarted(taskName: TaskName): TaskProgressCookie = object : TaskProgressCookie {
+        override fun taskStarted(task: Task): TaskProgressCookie = object : TaskProgressCookie {
             override fun close() = Unit
         }
     }

@@ -169,8 +169,8 @@ class TaskExecutor(
         dependencyResults: List<TaskResult>,
         executionContext: TaskGraphExecutionContext,
     ): TaskResult = spanBuilder("task ${taskName.name}").use {
-        progressListener.taskStarted(taskName).use {
-            val task = graph.nameToTask[taskName] ?: error("Unable to find task by name: ${taskName.name}")
+        val task = graph.nameToTask[taskName] ?: error("Unable to find task by name: ${taskName.name}")
+        progressListener.taskStarted(task).use {
             val mdcWithTaskName = MDCContext(MDC.getCopyOfContextMap() + ("amper-task-name" to taskName.name))
             withContext(tasksDispatcher + mdcWithTaskName + CoroutineName("task:${taskName.name}")) {
                 task.run(dependencyResults, executionContext)
