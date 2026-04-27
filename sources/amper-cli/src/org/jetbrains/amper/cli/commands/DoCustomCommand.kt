@@ -25,7 +25,8 @@ internal class DoCustomCommand : AmperModelAwareCommand(name = "do") {
 
     private val customCommandName by argument(
         name = "command",
-        help = "The (qualified) name of the custom command to run."
+        help = "The (qualified) name of the custom command to run. " +
+                "Run the `show commands` command to get the custom commands list."
     )
 
     override fun help(context: Context): String = "Run a custom command"
