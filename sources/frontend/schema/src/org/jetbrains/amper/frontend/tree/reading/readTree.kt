@@ -112,7 +112,7 @@ private fun parseFile(
     }
     val value = documents.first() // Safe - at least one document is always present
         .topLevelValue ?: return null
-    val resultNode = parseNode(YamlValue(value), type)
+    val resultNode = parseNode(YamlValue(value, tag = null), type)
     if (config.reportUnknownProperties) {
         diagnoseUnknownProperties(resultNode)
     }

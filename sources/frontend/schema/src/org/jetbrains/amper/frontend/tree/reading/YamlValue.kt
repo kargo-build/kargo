@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.tree.reading
@@ -61,7 +61,7 @@ private class MissingImpl(
     override val tag: PsiElement?,
 ) : YamlValue.Missing
 
-fun YamlValue(value: YAMLValue, tag: PsiElement? = value.tag) : YamlValue {
+fun YamlValue(value: YAMLValue, tag: PsiElement?) : YamlValue {
     @Suppress("unused") // mixin override for YamlValue
     open class YAMLValueBased {
         val psi get() = value
@@ -81,9 +81,11 @@ fun YamlValue(value: YAMLValue, tag: PsiElement? = value.tag) : YamlValue {
         }
         is YAMLSequence -> object : YamlValue.Sequence, YAMLValueBased() {
             override val items: List<YamlValue> = value.items.map { item ->
-                item.value?.let { YamlValue(it) } ?: MissingImpl(
+                val tag = item.allChildren().find { it.isYamlTag }
+                // We fall back to the manually found tag because PSI parser sometimes attaches it to the key-value instead of value
+                item.value?.let { YamlValue(it, tag = it.tag ?: tag) } ?: MissingImpl(
                     psi = item,
-                    tag = item.allChildren().find { it.isYamlTag },
+                    tag = tag,
                 )
             }
         }
@@ -119,7 +121,8 @@ private class YamlKeyValueImpl(
             tag = keyTag,
         )
 
-        value = valuePsi?.let { YamlValue(it) } ?: MissingImpl(
+        // We fall back to the manually found tag because PSI parser sometimes attaches it to the parent instead
+        value = valuePsi?.let { YamlValue(it, tag = it.tag ?: valueTag) } ?: MissingImpl(
             psi = psi,
             tag = valueTag,
         )
