@@ -5,6 +5,7 @@
 package org.jetbrains.amper.cli.test
 
 import org.jetbrains.amper.cli.test.utils.UpdatedAttribute
+import org.jetbrains.amper.cli.test.utils.assertWarnings
 import org.jetbrains.amper.cli.test.utils.readTelemetrySpans
 import org.jetbrains.amper.cli.test.utils.runSlowTest
 import org.jetbrains.amper.cli.test.utils.xcodeProjectManagementSpans
@@ -145,6 +146,8 @@ class ProjectTemplatesTest : AmperCliTestBase() {
         val result = runCli(tempRoot, "build", assertEmptyStdErr = false)
         if (OsFamily.current.isMac) {
             result.readTelemetrySpans().assertXcodeProjectIsValid()
+        } else {
+            result.assertWarnings("Nothing to build")
         }
     }
 

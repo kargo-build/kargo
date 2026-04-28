@@ -74,8 +74,13 @@ class AmperBackend(
     }
 
     private val taskExecutor: TaskExecutor by lazy {
-        val progress = TaskProgressRenderer(context.terminal, backgroundScope)
-        TaskExecutor(taskGraph, taskExecutionMode, progress)
+        TaskExecutor(taskGraph, taskExecutionMode) {
+            TaskProgressRenderer(
+                terminal = context.terminal,
+                coroutineScope = backgroundScope,
+                executionPlan = it,
+            )
+        }
     }
 
     /**
@@ -140,6 +145,12 @@ class AmperBackend(
             .map { it.taskName }
             .toSet()
         logger.debug("Selected tasks to compile: ${formatTaskNames(taskNames)}")
+
+        if (taskNames.isEmpty()) {
+            // TODO: Give more info on why there is nothing to build
+            logger.warn("Nothing to build")
+            return
+        }
         taskExecutor.runTasksAndReportOnFailure(taskNames)
     }
 

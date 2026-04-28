@@ -11,6 +11,7 @@ import com.github.ajalt.mordant.table.ColumnWidth
 import com.github.ajalt.mordant.table.horizontalLayout
 import com.github.ajalt.mordant.table.verticalLayout
 import com.github.ajalt.mordant.terminal.Terminal
+import com.github.ajalt.mordant.widgets.ProgressBar
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -23,7 +24,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.jetbrains.amper.engine.Task
-import org.jetbrains.amper.engine.TaskProgressListener
+import org.jetbrains.amper.engine.TaskExecutor
+import org.jetbrains.amper.engine.TaskGraphExecutionListener
+import kotlin.math.min
 import kotlin.time.ComparableTimeMark
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
@@ -35,51 +38,59 @@ class TaskProgressRenderer(
     private val terminal: Terminal,
     private val coroutineScope: CoroutineScope,
     private val timeSource: TimeSource.WithComparableMarks = TimeSource.Monotonic,
-) : TaskProgressListener {
+    executionPlan: TaskExecutor.ExecutionPlan,
+) : TaskGraphExecutionListener {
     private data class TaskEntry(
         val task: Task,
         val startTime: ComparableTimeMark,
         val elapsed: Duration,
     )
 
+    private data class ProgressState(
+        val taskEntries: List<TaskEntry> = emptyList(),
+        val completeTasksCount: Int = 0,
+    )
+
     private val maxTasksOnScreen
         get() = terminal.size.height / 3
 
-    private val updateFlow: MutableStateFlow<List<TaskEntry>> by lazy {
-        val flow = MutableStateFlow(emptyList<TaskEntry>())
+    private val totalTasksCount = executionPlan.totalTasksCount
 
-        coroutineScope.launch(Dispatchers.IO) {
-            val animation = terminal.animation<List<TaskEntry>> { threadStates ->
-                createTasksProgressWidget(threadStates)
-            }
+    private val progressStateFlow = MutableStateFlow(ProgressState())
 
-            terminal.cursor.hide(showOnExit = true)
+    private val animationJob = coroutineScope.launch(Dispatchers.IO) {
+        val animation = terminal.animation<ProgressState> { state ->
+            createTasksProgressWidget(state)
+        }
 
-            launch {
-                while (true) {
-                    updateState()
-                    delay(100.milliseconds)
-                }
-            }
+        terminal.cursor.hide(showOnExit = true)
 
-            val mutex = Mutex()
-            try {
-                flow.debounce(30.milliseconds).collectLatest { snapshot ->
-                    // animation code is single-threaded
-                    mutex.withLock {
-                        animation.update(snapshot)
-                    }
-                }
-            } finally {
-                animation.clear()
-                terminal.cursor.show()
+        launch {
+            while (true) {
+                updateElapsedTime()
+                delay(100.milliseconds)
             }
         }
 
-        flow
+        val mutex = Mutex()
+        try {
+            progressStateFlow.debounce(30.milliseconds).collectLatest { snapshot ->
+                // animation code is single-threaded
+                mutex.withLock {
+                    animation.update(snapshot)
+                }
+            }
+        } finally {
+            animation.clear()
+            terminal.cursor.show()
+        }
     }
 
-    private fun createTasksProgressWidget(taskEntries: List<TaskEntry>): Widget = verticalLayout {
+    override fun taskGraphExecutionFinished() {
+        animationJob.cancel()
+    }
+
+    private fun createTasksProgressWidget(state: ProgressState): Widget = verticalLayout {
         // Required to explicitly fill empty space with whitespaces and overwrite old lines
         align = TextAlign.LEFT
         // Required to correctly truncate very long status lines (or on very narrow terminal windows)
@@ -87,7 +98,25 @@ class TaskProgressRenderer(
 
         cell("")
 
-        for (entry in taskEntries.take(maxTasksOnScreen)) {
+        cell(horizontalLayout {
+            cell("[")
+            cell(
+                ProgressBar(
+                    fractionComplete = state.completeTasksCount.toFloat() / totalTasksCount,
+                    width = min(40, terminal.size.width),
+                    completeStyle = terminal.theme.success,
+                )
+            )
+            cell("]")
+            cell(state.completeTasksCount.toString()) {
+                style = terminal.theme.success
+            }
+            cell("/ $totalTasksCount tasks") {
+                style = terminal.theme.muted
+            }
+        })
+
+        for (entry in state.taskEntries.take(maxTasksOnScreen)) {
             cell(horizontalLayout {
                 cell(">") {
                     style = terminal.theme.muted
@@ -104,32 +133,39 @@ class TaskProgressRenderer(
                 }
             })
         }
-        if (taskEntries.size > maxTasksOnScreen) {
-            cell("(+${taskEntries.size - maxTasksOnScreen} more)")
+        if (state.taskEntries.size > maxTasksOnScreen) {
+            cell("(+${state.taskEntries.size - maxTasksOnScreen} more)")
         }
     }
 
-    private fun updateState() {
-        updateFlow.update { old ->
-            old.map { it.copy(elapsed = it.startTime.elapsedNow().roundToTheSecond()) }
+    private fun updateElapsedTime() {
+        progressStateFlow.update { old ->
+            old.copy(
+                taskEntries = old.taskEntries.map { it.copy(elapsed = it.startTime.elapsedNow().roundToTheSecond()) },
+            )
         }
     }
 
-    override fun taskStarted(task: Task): TaskProgressListener.TaskProgressCookie {
+    override fun taskStarted(task: Task): TaskGraphExecutionListener.TaskExecutionListener {
         val job = coroutineScope.launch(Dispatchers.IO) {
             val newTaskEntry = TaskEntry(task, startTime = timeSource.markNow(), elapsed = Duration.ZERO)
             delay(200.milliseconds)
-            updateFlow.update { current ->
-                current + newTaskEntry
+            progressStateFlow.update { current ->
+                current.copy(
+                    taskEntries = current.taskEntries + newTaskEntry,
+                )
             }
         }
 
-        return object : TaskProgressListener.TaskProgressCookie {
-            override fun close() {
+        return object : TaskGraphExecutionListener.TaskExecutionListener {
+            override fun onTaskFinished() {
                 job.cancel()
 
-                updateFlow.update { current ->
-                    current.filterNot { it.task === task }
+                progressStateFlow.update { current ->
+                    current.copy(
+                        taskEntries = current.taskEntries.filterNot { it.task === task },
+                        completeTasksCount = current.completeTasksCount + 1,
+                    )
                 }
             }
         }

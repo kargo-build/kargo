@@ -25,6 +25,11 @@ private fun createAmperTerminalTheme(): Theme = Theme {
     // The default is too flashy (highlight blue color).
     // Markdown blocks are already in a box, so they are visible enough - no need for extra style
     styles["markdown.code.block"] = TextStyle()
+
+    // Custom progress bar style
+    strings["progressbar.pending"] = "•"
+    strings["progressbar.separator"] = strings["progressbar.complete"]!!
+    styles["progressbar.separator"] = styles["warning"]!!
 }
 
 /**

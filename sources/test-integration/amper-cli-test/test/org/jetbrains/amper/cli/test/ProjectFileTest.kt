@@ -5,6 +5,7 @@
 package org.jetbrains.amper.cli.test
 
 import org.jetbrains.amper.cli.test.utils.assertStdoutContains
+import org.jetbrains.amper.cli.test.utils.assertWarnings
 import org.jetbrains.amper.cli.test.utils.runSlowTest
 import org.jetbrains.amper.test.AmperCliResult
 import kotlin.io.path.div
@@ -45,6 +46,8 @@ class ProjectFileTest : AmperCliTestBase() {
     fun `empty project file and no module file`() = runSlowTest {
         val projectRoot = testProject("project-root-no-modules")
         val result = runCli(projectRoot, "build")
+        result.assertWarnings("Nothing to build")
+        // The following warning doesn't show up in the logs, so we check for it separately in the stdout.
         result.assertStdoutContains("${projectRoot.resolve("project.yaml")}: Project has no modules: no root module file and no modules listed in the project file")
     }
 

@@ -4,9 +4,36 @@
 
 package org.jetbrains.amper.stdlib.graphs
 
+/**
+ * Generates a sequence of all the elements in graph `(V; E)` using depth-first search.
+ *
+ * `V` are all the nodes reachable from [roots], while `E` is expressed by [adjacent].
+ * The implementation ignores loops, as it visits each node only once.
+ *
+ * @return a sequence of all visited nodes in the DFS order.
+ * @see depthFirstDetectLoops
+ */
+fun <T> depthFirstNodeSequence(
+    roots: Iterable<T>,
+    adjacent: (T) -> Iterable<T>,
+): Sequence<T> = sequence {
+    val seen = mutableSetOf<T>()
+    val queue = ArrayDeque<T>()
+    queue.addAll(roots)
+
+    while (queue.isNotEmpty()) {
+        val element = queue.removeLast()
+        if (!seen.add(element)) {
+            continue
+        }
+        yield(element)
+        queue.addAll(adjacent(element))
+    }
+}
 
 /**
- * Detects loops in a directed graph (V; E), where V are expressed by [roots] and E is expressed by [adjacent].
+ * Detects loops in a directed graph `(V; E)`,
+ * where `V` are all the nodes reachable from [roots], and `E` is expressed by [adjacent].
  *
  * @param roots graph nodes from which all the graph is reachable.
  * @param adjacent the function that defines the nodes that are adjacent to the given node (linked by edges)

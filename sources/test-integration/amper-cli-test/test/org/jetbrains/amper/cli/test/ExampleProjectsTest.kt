@@ -4,10 +4,12 @@
 
 package org.jetbrains.amper.cli.test
 
+import org.jetbrains.amper.cli.test.utils.assertWarnings
 import org.jetbrains.amper.cli.test.utils.getTaskOutputPath
 import org.jetbrains.amper.cli.test.utils.readTelemetrySpans
 import org.jetbrains.amper.cli.test.utils.runSlowTest
 import org.jetbrains.amper.cli.test.utils.withTelemetrySpans
+import org.jetbrains.amper.system.info.OsFamily
 import org.jetbrains.amper.test.Dirs
 import org.jetbrains.amper.test.MacOnly
 import org.jetbrains.amper.test.assertEqualsWithDiff
@@ -25,7 +27,6 @@ import kotlin.io.path.exists
 import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.name
-import kotlin.test.Ignore
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertTrue
@@ -76,9 +77,13 @@ class ExampleProjectsTest: AmperCliTestBase() {
             assertEmptyStdErr = projectName !in knownProjectsWithNonEmptyStderr,
             configureAndroidHome = true, // no need to be granular by project here, we'll install them once
         )
-        val warnings = buildResult.stdoutClean.lines().filter { "WARN" in it }
-        val unexpectedWarnings = warnings.filterNot { knownWarnings.any { warning -> it.contains(warning) } }
-        assertEqualsWithDiff(unexpectedWarnings, emptyList(), "Unexpected warnings in $projectName")
+        if (projectName == "compose-ios" && !OsFamily.current.isMac) {
+            buildResult.assertWarnings("Nothing to build")
+        } else {
+            val warnings = buildResult.stdoutClean.lines().filter { "WARN" in it }
+            val unexpectedWarnings = warnings.filterNot { knownWarnings.any { warning -> it.contains(warning) } }
+            assertEqualsWithDiff(unexpectedWarnings, emptyList(), "Unexpected warnings in $projectName")
+        }
     }
 
     @Test
