@@ -5,18 +5,20 @@
 package org.jetbrains.amper.plugins.schema.model.diagnostics
 
 import kotlinx.serialization.Serializable
+import org.jetbrains.amper.plugins.schema.model.PluginData
 import org.jetbrains.amper.plugins.schema.model.SourceLocation
 import org.jetbrains.amper.problems.reporting.BuildProblem
+import org.jetbrains.amper.problems.reporting.BuildProblemSource
 import org.jetbrains.amper.problems.reporting.BuildProblemType
 import org.jetbrains.amper.problems.reporting.DiagnosticId
 import org.jetbrains.amper.problems.reporting.Level
+import org.jetbrains.amper.problems.reporting.MultipleLocationsBuildProblemSource
 import org.jetbrains.annotations.Nls
 import java.text.MessageFormat
-import java.util.ResourceBundle
+import java.util.*
 
 @Serializable
 sealed class KotlinSchemaBuildProblem : BuildProblem, DiagnosticId {
-    abstract override val source: SourceLocation
     override val level: Level get() = Level.Error
     override val type: BuildProblemType get() = BuildProblemType.Generic
     override val message: @Nls String get() = buildString {
@@ -218,6 +220,21 @@ sealed class KotlinSchemaBuildProblem : BuildProblem, DiagnosticId {
         override val messageKey get() = "schema.type.unexpected"
         override val args get() = arrayOf(typeName)
         override val type get() = BuildProblemType.UnknownSymbol
+    }
+
+    @Serializable
+    class CyclicClassReference(
+        val typeCycle: List<PluginData.SchemaName>,
+        val propertiesFormingTheLoopLocations: List<SourceLocation>,
+    ) : KotlinSchemaBuildProblem() {
+        override val source: BuildProblemSource
+            get() = MultipleLocationsBuildProblemSource(
+                sources = propertiesFormingTheLoopLocations,
+                groupingMessage = SchemaProcessorBundle.getString("schema.type.object.cyclic.reference.grouping"),
+            )
+
+        override val args get() = arrayOf(typeCycle.joinToString { "`${it.qualifiedName}`" })
+        override val messageKey get() = "schema.type.object.cyclic.reference"
     }
 }
 

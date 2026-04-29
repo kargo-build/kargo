@@ -6,9 +6,9 @@ package org.jetbrains.amper.schema.processing
 
 import com.intellij.psi.util.elementType
 import kotlinx.serialization.json.Json
-import org.jetbrains.amper.plugins.schema.model.diagnostics.KotlinSchemaBuildProblem
 import org.jetbrains.amper.plugins.schema.model.PluginData
 import org.jetbrains.amper.plugins.schema.model.PluginSettingsSearchResult
+import org.jetbrains.amper.plugins.schema.model.diagnostics.KotlinSchemaBuildProblem
 import org.jetbrains.amper.stdlib.collections.distinctBy
 import org.jetbrains.kotlin.analysis.api.KaSession
 import org.jetbrains.kotlin.analysis.api.symbols.KaClassKind
@@ -19,7 +19,6 @@ import org.jetbrains.kotlin.lexer.KtTokens
 import org.jetbrains.kotlin.psi.KtClassOrObject
 import org.jetbrains.kotlin.psi.KtFile
 import org.jetbrains.kotlin.psi.psiUtil.modalityModifier
-import kotlin.context
 
 internal fun loadSerializedBuiltinDeclarations(): String = ParsingOptions::class.java.classLoader
     .getResourceAsStream("META-INF/amper/extensibility-api-declarations.json")
@@ -146,6 +145,10 @@ fun KaSession.parsePluginDeclarations(
 
     val pluginSettingsSearchResult = pluginSettingsClassName?.let {
         context(resolver) { searchForPluginSettings(files, pluginSettingsClassName) }
+    }
+
+    context(resolver, diagnosticCollector) {
+        diagnoseCyclicReferences(resolver.resolvedClasses())
     }
 
     return PluginData.Declarations(

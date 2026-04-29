@@ -10,7 +10,7 @@ import kotlin.io.path.Path
 class DiagnosticsTest : SchemaProcessorTestBase() {
 
     @Test
-    fun `schema smoke`() = runTest {
+    fun `schema smoke`() = runSchemaTest {
         givenPluginSettingsClassName("com.example.MySettings")
         givenSourceFile(
             $$"""
@@ -237,7 +237,7 @@ fun /*{{*/overloaded/*}} [Amper] Illegal overload for `com.example.overloaded`: 
     }
 
     @Test
-    fun `enum constant names`() = runTest {
+    fun `enum constant names`() = runSchemaTest {
         givenSourceFile("""
 @Configurable interface Settings { val prop: MyEnum }
 enum class MyEnum {
@@ -250,5 +250,52 @@ enum class MyEnum {
         """.trimIndent())
 
         expectPluginData(Path("testResources/enum-constant-names.json"))
+    }
+
+    @Test
+    fun `cyclic references`() = runSchemaTest {
+        givenSourceFile("""
+
+@Configurable
+interface InfiniteLinkedList {
+  val value: String
+  val /*{{*/next/*}} [Amper] Type(s) `com.example.InfiniteLinkedList` form a self-referential cycle. This makes the type(s) impossible to construct. Please rework your configuration or make a property from the cycle optional (nullable). */: InfiniteLinkedList
+}
+
+@Configurable
+interface FiniteLinkedList {
+  val value: String
+  val next: FiniteLinkedList?
+}
+
+@Configurable
+interface PartOfTheLoop1 {
+  val /*{{*//*{{*/foo/*}} [Amper] Type(s) `com.example.PartOfTheLoop1`, `com.example.PartOfTheLoop2`, `com.example.PartOfTheLoop3` form a self-referential cycle. This makes the type(s) impossible to construct. Please rework your configuration or make a property from the cycle optional (nullable). *//*}} [Amper] Type(s) `com.example.PartOfTheLoop3A`, `com.example.PartOfTheLoop1`, `com.example.PartOfTheLoop2` form a self-referential cycle. This makes the type(s) impossible to construct. Please rework your configuration or make a property from the cycle optional (nullable). */: PartOfTheLoop2
+}
+
+@Configurable
+interface PartOfTheLoop2 {
+  val /*{{*/foo/*}} [Amper] Type(s) `com.example.PartOfTheLoop1`, `com.example.PartOfTheLoop2`, `com.example.PartOfTheLoop3` form a self-referential cycle. This makes the type(s) impossible to construct. Please rework your configuration or make a property from the cycle optional (nullable). */: PartOfTheLoop3
+  val /*{{*/bar/*}} [Amper] Type(s) `com.example.PartOfTheLoop3A`, `com.example.PartOfTheLoop1`, `com.example.PartOfTheLoop2` form a self-referential cycle. This makes the type(s) impossible to construct. Please rework your configuration or make a property from the cycle optional (nullable). */: PartOfTheLoop3A
+  val quu: NotPartOfTheLoop
+}
+
+@Configurable
+interface PartOfTheLoop3 {
+  val /*{{*/foo/*}} [Amper] Type(s) `com.example.PartOfTheLoop1`, `com.example.PartOfTheLoop2`, `com.example.PartOfTheLoop3` form a self-referential cycle. This makes the type(s) impossible to construct. Please rework your configuration or make a property from the cycle optional (nullable). */: PartOfTheLoop1
+}
+
+@Configurable
+interface PartOfTheLoop3A {
+  val /*{{*/foo/*}} [Amper] Type(s) `com.example.PartOfTheLoop3A`, `com.example.PartOfTheLoop1`, `com.example.PartOfTheLoop2` form a self-referential cycle. This makes the type(s) impossible to construct. Please rework your configuration or make a property from the cycle optional (nullable). */: PartOfTheLoop1
+}
+
+@Configurable
+interface NotPartOfTheLoop {
+  val foo: PartOfTheLoop1?
+}
+
+        """.trimIndent())
+        expectPluginData(Path("testResources/cyclic-references.json"))
     }
 }

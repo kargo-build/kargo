@@ -8,8 +8,13 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.json.Json
 import org.intellij.lang.annotations.Language
 import org.jetbrains.amper.plugins.schema.model.PluginDeclarationsRequest
-import org.jetbrains.amper.plugins.schema.model.diagnostics.KotlinSchemaBuildProblem
 import org.jetbrains.amper.plugins.schema.model.withoutOrigin
+import org.jetbrains.amper.problems.reporting.BuildProblemSource
+import org.jetbrains.amper.problems.reporting.FileBuildProblemSource
+import org.jetbrains.amper.problems.reporting.FileWithRangesBuildProblemSource
+import org.jetbrains.amper.problems.reporting.GlobalBuildProblemSource
+import org.jetbrains.amper.problems.reporting.MultipleLocationsBuildProblemSource
+import org.jetbrains.amper.problems.reporting.NonIdealDiagnostic
 import org.jetbrains.amper.test.TempDirExtension
 import org.jetbrains.amper.test.assertEqualsIgnoreLineSeparator
 import org.jetbrains.amper.test.assertEqualsWithDiff
@@ -34,7 +39,7 @@ abstract class SchemaProcessorTestBase {
         fun givenPluginSettingsClassName(name: String)
     }
 
-    protected fun runTest(
+    protected fun runSchemaTest(
         block: TestBuilder.() -> Unit,
     ) {
         class Source(
@@ -82,14 +87,14 @@ abstract class SchemaProcessorTestBase {
         )
 
         val result = runSchemaProcessor(PluginDeclarationsRequest(listOf(request))).single()
-        val groupedDiagnostics: Map<Path, List<KotlinSchemaBuildProblem>> =
-            result.diagnostics.groupBy { it.source.file }
+
         for (source in sources) {
-            val relevantErrors = groupedDiagnostics[source.path].orEmpty()
             val markers = mutableListOf<Pair<String, Int>>()
-            for (error in relevantErrors) {
-                markers += "/*{{*/" to error.source.offsetRange.first
-                markers += "/*}} ${error.message} */" to error.source.offsetRange.last
+            for (error in result.diagnostics) {
+                for (range in error.source.offsetRangesInFile(source.path)) {
+                    markers += "/*{{*/" to range.first
+                    markers += "/*}} ${error.message} */" to range.last
+                }
             }
             // Sorting all the markers to insert them one-by-one from the end to avoid offsets recalculation
             markers.sortByDescending { (_, position) -> position }
@@ -117,6 +122,14 @@ abstract class SchemaProcessorTestBase {
             originalFile = expectedJsonPluginDataPath,
         )
     }
+}
+
+@OptIn(NonIdealDiagnostic::class)
+private fun BuildProblemSource.offsetRangesInFile(path: Path): List<IntRange> = when (this) {
+    is FileWithRangesBuildProblemSource -> listOfNotNull(offsetRange.takeIf { file == path })
+    is MultipleLocationsBuildProblemSource -> sources.filter { it.file == path }.flatMap { it.offsetRangesInFile(path) }
+    is FileBuildProblemSource -> error("Don't use file-global errors in kotlin schema diagnostic")
+    GlobalBuildProblemSource -> error("Don't use global errors in kotlin schema diagnostic")
 }
 
 private val MultiLineCommentRegex = """/\*.*?\*/""".toRegex(RegexOption.DOT_MATCHES_ALL)
