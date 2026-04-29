@@ -254,24 +254,31 @@ private class PluginDeclarations(
         override fun toEnumConstant(name: String): Nothing? = null
         override fun toString() = qualifiedName
     }
-}
 
-private fun Defaults?.toInternalDefault(forType: PluginData.Type): Default? {
-    if (this != null) {
-        return Default.Static(toValue())
+    private fun Defaults?.toInternalDefault(forType: PluginData.Type): Default? {
+        if (this != null) {
+            return Default.Static(toValue())
+        }
+
+        if (forType.isNullable) {
+            // Nullable types are `null` by default
+            return Default.Static(null)
+        }
+
+        if (forType is PluginData.Type.ObjectType) {
+            // For non-nullable objects we instantiate a nested object by default,
+            // but only if all properties of the object type have defaults.
+            val declaration = (toSchemaType(forType) as SchemaType.ObjectType).declaration
+            val allPropertiesHaveDefaults = declaration.properties.all { property ->
+                property.default != null
+            }
+            if (allPropertiesHaveDefaults) {
+                return Default.NestedObject
+            }
+        }
+
+        return null
     }
-
-    if (forType.isNullable) {
-        // Nullable types are `null` by default
-        return Default.Static(null)
-    }
-
-    if (forType is PluginData.Type.ObjectType) {
-        // For non-nullable objects we instantiate a nested object by default, like with `by nested()`
-        return Default.NestedObject
-    }
-
-    return null
 }
 
 private fun Defaults.toValue(): Any? = when(this) {

@@ -142,11 +142,26 @@ Task parameters use the regular default value syntax:
 | `T | null`                     | `null` (not required - implicit default)             |
 | `object T`                     | not supported (instantiated implicitly, see the note)|
 
-!!! note
-    Properties of object type can't have an explicit default value.
-    Instead, all objects are instantiated using the default values of their properties combined with the values
-    provided on the configuration (YAML) side. If any required properties (those with no default value) remain
-    unconfigured, an error is reported and the configuration is rejected.
+!!! note "Defaults for properties of object types"
+    Properties of an object type can't have an explicit default value.
+    Instead, all objects are instantiated using the default values of their properties.
+    If the object type has any properties without defaults itself, then it is **not** instantiated by default.
+    
+    !!! example "Example - SomeSettings"
+        ```kotlin
+        @Configurable interface SomeSettings {
+            val foo: Foo  // has default - `Foo` can be instantiated by default
+            val bar: Bar  // no default - `Bar` has required properties
+        }
+        
+        @Configurable interface Foo {
+            val quu1: String get() = "hello"  // (has default - optional in YAML)
+        }
+
+        @Configurable interface Bar {
+            val quu2: String  // (no default - required in YAML)
+        }
+        ```
 
 ## Advanced
 

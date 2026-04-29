@@ -17,9 +17,9 @@ import org.jetbrains.amper.problems.reporting.ProblemReporter
 
 /**
  * A property path in a tree with associated value traces.
- * Example: `["settings" to <trace-1>, "kotlin" to <trace-2>, "version" to <trace-2>]`
+ * Example: `["settings", "kotlin", "version"]`
  */
-private typealias ValuePath = List<Pair<String, Trace>>
+private typealias ValuePath = List<String>
 
 /**
  * Convert a refined mapping node into a complete object node, if possible.
@@ -56,7 +56,7 @@ private fun ensureCompleteTreeNode(
             // Complete children filtering errors (represented by `null`) out.
             // Nothing to report - they are already reported.
             val completeChildren = node.children.mapNotNull {
-                ensureCompleteTreeNode(it, valuePath + ("[]" to it.trace))
+                ensureCompleteTreeNode(it, valuePath + "[]")
             }
             CompleteListNode(completeChildren, node.trace, node.contexts)
         }
@@ -65,7 +65,7 @@ private fun ensureCompleteTreeNode(
                 val completeKeyValues = node.refinedChildren.mapValues { (key, keyValue) ->
                     val completeValue = ensureCompleteTreeNode(
                         keyValue.value,
-                        valuePath + (key to keyValue.value.trace)
+                        valuePath + key,
                     )
                     completeValue?.let { keyValue.asCompleteForMap(it) }
                 }.filterValues { it != null }.mapValues { it.value!! }
@@ -77,19 +77,19 @@ private fun ensureCompleteTreeNode(
                 var hasMissingRequiredProps = false
                 val missingProperties = mutableListOf<MissingPropertyInfo>()
                 for (property in declaration.properties) {
-                    val propertyValuePath = valuePath + (property.name to node.trace)
+                    val propertyValuePath = valuePath + property.name
                     val mapLikePropertyValue = node.refinedChildren[property.name]
                     propertyCheckDefaultIntegrity(property, mapLikePropertyValue)
                     if (mapLikePropertyValue == null) {
                         // Property is not mentioned at all
                         if (property.isUserSettable) {
-                            // Find the last non-default trace in the path - that's the *base* trace for our missing value
-                            val baseTraceIndex = propertyValuePath.indexOfLast { (_, trace) -> !trace.isDefault }
-                            val baseTrace = propertyValuePath[baseTraceIndex].second
+                            check(!node.trace.isDefault) {
+                                // We should not allow creating objects by default if they have required properties
+                                "missing properties in default objects should be not reached"
+                            }
                             missingProperties += MissingPropertyInfo(
-                                trace = baseTrace,
-                                valuePath = propertyValuePath.map { (name, _) -> name },
-                                relativeValuePath = propertyValuePath.drop(baseTraceIndex).map { (name, _) -> name },
+                                trace = node.trace,
+                                valuePath = propertyValuePath,
                                 propertyDeclaration = property,
                             )
                         }
@@ -171,17 +171,18 @@ class MissingPropertyInfo(
      */
     val valuePath: List<String>,
     /**
-     * a path relative to the construct with the [trace].
-     * E.g., when the [valuePath] is `["tasks", "myTask", "action", "classpath", "dependencies"]`,
-     * and the [trace] points to the `"action"` object,
-     * then the `relativeValuePath` is `["classpath", "dependencies"]`.
-     */
-    val relativeValuePath: List<String>,
-    /**
      * the declaration of the missing property.
      */
     val propertyDeclaration: SchemaObjectDeclaration.Property,
-)
+) {
+    @Deprecated(
+        level = DeprecationLevel.ERROR,
+        message = "Use propertyDeclaration.name instead",
+        replaceWith = ReplaceWith("listOf(propertyDeclaration.name)")
+    )
+    val relativeValuePath: List<String>
+        get() = listOf(propertyDeclaration.name)
+}
 
 private fun propertyCheckDefaultIntegrity(
     propertyDeclaration: SchemaObjectDeclaration.Property,

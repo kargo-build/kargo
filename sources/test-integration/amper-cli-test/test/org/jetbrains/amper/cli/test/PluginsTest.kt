@@ -20,7 +20,6 @@ import org.jetbrains.amper.test.normalizeLineSeparators
 import org.slf4j.event.Level
 import java.io.File
 import java.nio.file.Path
-import kotlin.io.path.absolutePathString
 import kotlin.io.path.div
 import kotlin.io.path.exists
 import kotlin.io.path.readText
@@ -537,8 +536,7 @@ class PluginsTest : AmperCliTestBase() {
                 "${pluginYaml}:6:17: The value of type `string` cannot be assigned to the type `boolean`",
                 "${pluginYaml}:9:13: The value of type `Settings` cannot be assigned to the type `path`",
                 "${pluginYaml}:7:23: The value of type `boolean` cannot be used in string interpolation",
-                "${pluginYaml}:4:13: No value for required task action parameter 'int'.",
-                "${pluginYaml}:4:13: No value for required property 'classpath.dependencies'.",
+                "${pluginYaml}:4:13: No value for required task action parameters: 'int', 'classpath'.",
                 "${pluginYaml}:19:24: Unable to find reference's starting element `unknownRoot` in the current context",
                 "${pluginYaml}:19:24: Unable to resolve `missing` on a non-object type `string`",
                 "${pluginYaml}:19:24: Unable to resolve `unknown`: no such property is found in type `Settings`",

@@ -54,7 +54,7 @@ class MissingPropertiesProblem(
 
     override val message: @Nls String by lazy {
         val argument = missingProperties.joinToString() {
-            "'${it.relativeValuePath.joinToString(".")}'"
+            "'${it.propertyDeclaration.name}'"
         }
         val messageKey = if (missingProperties.size == 1) when (kind) {
             MissingPropertyKind.Generic -> "validation.missing.value"

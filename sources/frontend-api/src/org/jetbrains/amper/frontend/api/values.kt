@@ -48,6 +48,9 @@ abstract class SchemaNode : Traceable {
 
     /**
      * Register a nested object value with a default-constructed instance by default.
+     *
+     * WARNING: Only use this when the nested object has all properties with defaults.
+     *  Otherwise, use [nullableValue] instead.
      */
     fun <T : SchemaNode> nested() = delegateProvider<T>(Default.NestedObject)
 

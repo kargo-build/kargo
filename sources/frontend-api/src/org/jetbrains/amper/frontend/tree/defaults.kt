@@ -35,6 +35,9 @@ internal fun Default.toTreeValue(type: SchemaType, trace: Trace): RefinedTreeNod
     is Default.Static -> toTreeValue(type, trace)
     is Default.NestedObject -> {
         check(type is SchemaType.ObjectType)
+        check(type.declaration.properties.all { it.default != null }) {
+            "All properties must have defaults for nested object default: ${type.declaration.displayName}"
+        }
         RefinedMappingNode(createDefaultProperties(type.declaration), type.declaration, trace, TypeLevelDefaultContexts)
     }
     is Default.Reference -> ReferenceNode(referencedPath, type, transform, trace, TypeLevelDefaultContexts)
