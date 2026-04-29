@@ -1,0 +1,7 @@
+Module G
+│ - main
+│ - scope = RUNTIME
+│ - platforms = [jvm]
+╰─── Module C
+     ╰─── C:main:org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0
+          ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0

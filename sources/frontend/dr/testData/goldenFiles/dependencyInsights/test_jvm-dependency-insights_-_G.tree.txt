@@ -1,0 +1,41 @@
+Module G
+│ - main
+│ - scope = COMPILE
+│ - platforms = [jvm]
+├─── Module C
+├─── G:main:org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0
+│    ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0 -> 1.9.0
+│         ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0
+│              ├─── org.jetbrains:annotations:23.0.0
+│              ├─── org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.9.0
+│              │    ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (c)
+│              ╰─── org.jetbrains.kotlin:kotlin-stdlib:2.0.0 -> #kotlinVersion
+│                   ╰─── org.jetbrains:annotations:13.0 -> 23.0.0
+╰─── G:main:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+     ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion (*)
+Module G
+│ - main
+│ - scope = RUNTIME
+│ - platforms = [jvm]
+├─── Module C
+│    ├─── C:main:org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0
+│    │    ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0
+│    │         ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.9.0
+│    │              ├─── org.jetbrains:annotations:23.0.0
+│    │              ├─── org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.9.0
+│    │              │    ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-test:1.9.0 (c)
+│    │              ╰─── org.jetbrains.kotlin:kotlin-stdlib:2.0.0 -> #kotlinVersion
+│    │                   ╰─── org.jetbrains:annotations:13.0 -> 23.0.0
+│    ├─── C:main:org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0
+│    │    ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.0 -> 1.9.0
+│    │         ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-test-jvm:1.9.0
+│    │              ├─── org.jetbrains:annotations:23.0.0
+│    │              ├─── org.jetbrains.kotlinx:kotlinx-coroutines-bom:1.9.0 (*)
+│    │              ├─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.9.0 (*)
+│    │              ╰─── org.jetbrains.kotlin:kotlin-stdlib:2.0.0 -> #kotlinVersion (*)
+│    ╰─── C:main:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+│         ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion (*)
+├─── G:main:org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0
+│    ╰─── org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.0 -> 1.9.0 (*)
+╰─── G:main:org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion, implicit
+     ╰─── org.jetbrains.kotlin:kotlin-stdlib:#kotlinVersion (*)

@@ -36,20 +36,38 @@ internal class DependencyNodeWithChildren(val node: DependencyNode): DependencyN
 fun DependencyNode.filterGraph(group: String, module: String, resolvedVersionOnly: Boolean = false): DependencyNode {
     val graph = this
 
-    val nodes = graph.distinctBfsSequence()
-        .filter { it.belongsTo(group, module) }
-        .let {
-            if (resolvedVersionOnly && it.any { it is MavenDependencyNode })
-                // Ignoring redundant constraints
-                it.filterIsInstance<MavenDependencyNode>().toSet()
-            else
-                it.toSet()
-        }
+    val targetNodes: MutableSet<DependencyNode> = mutableSetOf()
+    val groupedResolvedConstraintsByKey: MutableMap<Pair<String, String>, MutableList<MavenDependencyConstraintNode>> = mutableMapOf()
 
-    if (nodes.isEmpty()) return DependencyNodeWithChildren(graph) // root node without children
+    // Do one iteration through the graph collecting all necessary information
+    graph.distinctBfsSequence().forEach { node ->
+        if (node.belongsTo(group, module)) {
+            // Nodes that we are interested in
+            targetNodes.add(node)
+        }
+        if (node is MavenDependencyConstraintNode && node.version == node.dependencyConstraint.version) {
+            // Decisive (non-overridden) constraints
+            (groupedResolvedConstraintsByKey[node.group to node.module]
+                ?: mutableListOf<MavenDependencyConstraintNode>().also {
+                    groupedResolvedConstraintsByKey[node.group to node.module] = it
+                })
+                .add(node)
+        }
+    }
+
+    if (targetNodes.isEmpty()) {
+        // root node without children
+        return DependencyNodeWithChildren(graph)
+    }
+
+    if (resolvedVersionOnly && targetNodes.any { it is MavenDependencyNode }) {
+        // Ignoring redundant constraints
+        targetNodes.removeIf { it !is MavenDependencyNode }
+    }
 
     val nodesWithDecisiveParents = mutableSetOf<DependencyNode>()
-    nodes.addDecisiveParents(nodesWithDecisiveParents, graph, group, module, resolvedVersionOnly)
+    targetNodes.addDecisiveParents(
+        nodesWithDecisiveParents, graph, group, module, resolvedVersionOnly, groupedResolvedConstraintsByKey)
 
     val filteredGraph = graph.withFilteredChildren(resolvedVersionOnly = resolvedVersionOnly) { child, parent ->
         !resolvedVersionOnly && child in nodesWithDecisiveParents
@@ -88,7 +106,13 @@ private fun DependencyNode.correspondsToResolvedVersionOf(group: String, module:
  *   Then all dependency nodes together with effective constraint are added to the resulting set,
  *   and the method is called for parents of the resulting set nodes.
  */
-private fun Set<DependencyNode>.addDecisiveParents(nodesWithDecisiveParents: MutableSet<DependencyNode>, graph: DependencyNode, groupForInsight: String, moduleForInsight: String, resolvedVersionOnly: Boolean) {
+private fun Set<DependencyNode>.addDecisiveParents(
+    nodesWithDecisiveParents: MutableSet<DependencyNode>,
+    graph: DependencyNode, groupForInsight:
+    String, moduleForInsight:
+    String, resolvedVersionOnly: Boolean,
+    groupedResolvedConstraintsByKey: Map<Pair<String, String>, List<MavenDependencyConstraintNode>>
+) {
     val allDependenciesAndConstraints = filter { it is MavenDependencyNode || it is MavenDependencyConstraintNode }.toSet()
     val noneFilterableNodes = this - allDependenciesAndConstraints
 
@@ -101,7 +125,7 @@ private fun Set<DependencyNode>.addDecisiveParents(nodesWithDecisiveParents: Mut
                 is MavenDependencyConstraintNode -> it.group to it.module
                 else -> error("unexpected node type ${it::class.java.simpleName}")
             }
-        }.toMap()
+        }
 
         groupedByCoordinates.flatMap { entry ->
             val (group, module) = entry.key
@@ -116,13 +140,7 @@ private fun Set<DependencyNode>.addDecisiveParents(nodesWithDecisiveParents: Mut
             if (effectiveNodes.isEmpty()) {
                 val constraints = dependenciesAndConstraints
                     .mapNotNull { node ->
-                        val overriddenBy = when (node) {
-                            is MavenDependencyNode -> node.overriddenBy
-                            is MavenDependencyConstraintNode -> node.overriddenBy
-                            else -> null
-                        }
-                        overriddenBy
-                            ?.filterIsInstance<MavenDependencyConstraintNode>()
+                        groupedResolvedConstraintsByKey[entry.key]
                             ?.filter {
                                 it.group == group && it.module == module
                                         && it.version == it.dependencyConstraint.version
@@ -154,7 +172,8 @@ private fun Set<DependencyNode>.addDecisiveParents(nodesWithDecisiveParents: Mut
 
     addedNodes.forEach {
         // todo (AB) : Some parents might be obsolete (unreachable from the root) in case those are left from canceled conflicting subgraph
-        it.parents.toSet().addDecisiveParents(nodesWithDecisiveParents, graph, groupForInsight, moduleForInsight, resolvedVersionOnly)
+        it.parents.toSet().addDecisiveParents(
+            nodesWithDecisiveParents, graph, groupForInsight, moduleForInsight, resolvedVersionOnly, groupedResolvedConstraintsByKey)
     }
 }
 

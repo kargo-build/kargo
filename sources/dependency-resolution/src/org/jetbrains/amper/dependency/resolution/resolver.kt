@@ -532,7 +532,7 @@ private class ConflictResolver(
      * seen node. Can be called concurrently with any node, including those sharing the same key.
      */
     suspend fun registerAndDetectConflicts(node: DependencyNodeWithContext): Boolean =
-        conflictDetectionMutexByKey.withLock(node.key.hashCode()) {
+        conflictDetectionMutexByKey.withLock(node.key.hashCode()) { // todo (AB) : Does it really lock something?
             val similarNodes = similarNodesByKey.computeIfAbsent(node.key) { mutableSetOf() }
             similarNodes.add(node) // register the node for potential future conflict resolution
 

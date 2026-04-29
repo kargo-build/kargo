@@ -313,6 +313,10 @@ class DependencyInsightsTest : BaseModuleDrTest() {
         )
     }
 
+    /**
+     * This test checks that insights about overridden dependency are correctly reported in case
+     * an overridden version comes from the BOM constraint.
+     */
     @Test
     fun `test jvm-dependency-insights - E`(testInfo: TestInfo) = runModuleDependenciesTest {
         val aom = getTestProjectModel("jvm-dependency-insights", testDataRoot)
@@ -321,16 +325,38 @@ class DependencyInsightsTest : BaseModuleDrTest() {
             testInfo,
             aom,
             module = "E",
-            filter = ModuleResolutionFilter(
-                scope = ResolutionScope.COMPILE,
-                platforms = setOf(ResolutionPlatform.JVM),
-            ),
         )
 
         assertInsightByFile(
             group = "org.junit.jupiter",
             module = "junit-jupiter-api",
             graph = eGraph,
+            testInfo = testInfo,
+        )
+    }
+
+    /**
+     * This test checks that insights about overridden dependency are correctly reported in case
+     * an overridden version comes from the local module dependency (module C) via RUNTIME scope
+     * and is not presented among dependencies of module G (that depends on C).
+     */
+    @Test
+    fun `test jvm-dependency-insights - G`(testInfo: TestInfo) = runModuleDependenciesTest {
+        val aom = getTestProjectModel("jvm-dependency-insights", testDataRoot)
+
+        val gGraph = doTestByFile(
+            testInfo,
+            aom,
+            module = "G",
+        )
+
+        // Important: graph filtered by COMPILE classpath is not enough to calculate
+        // resolved version insight, because the resolved version of 'kotlinx-coroutines-core'
+        // comes from RUNTIME graph (version is overridden in module C, and G depends on C)
+        assertInsightByFile(
+            group = "org.jetbrains.kotlinx",
+            module = "kotlinx-coroutines-core",
+            graph = gGraph,
             testInfo = testInfo,
         )
     }

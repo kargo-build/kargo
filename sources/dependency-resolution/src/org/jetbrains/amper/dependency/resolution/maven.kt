@@ -92,6 +92,13 @@ interface MavenDependencyNode : DependencyNode {
 
     val dependency: MavenDependency
 
+    /**
+     * Contains nodes that override this node's version and were exact ground for resolving the conflict.
+     *
+     * Note: There could be other nodes of the resolved version in the same graph not included in this set.
+     * Such nodes might have been added to the graph after the conflict was resolved at the conflict resolution wave.
+     * Such a node won't produce new conflict, and the next conflict resolution wave will leave overriddenBy untouched.
+     */
     val overriddenBy: Set<DependencyNode>
 
     override val key: Key<MavenDependency>
@@ -379,6 +386,13 @@ interface MavenDependencyConstraintNode : DependencyNode {
 
     val dependencyConstraint: MavenDependencyConstraint
 
+    /**
+     * Contains nodes that override this node's version and were exact ground for resolving the conflict.
+     *
+     * Note: There could be other nodes of the resolved version in the same graph not included in this set.
+     * Such nodes might have been added to the graph after the conflict was resolved at the conflict resolution wave.
+     * Such a node won't produce new conflict, and the next conflict resolution wave will leave overriddenBy untouched.
+     */
     val overriddenBy: Set<DependencyNode>
 
     override val key: Key<MavenDependency>
