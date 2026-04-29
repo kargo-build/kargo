@@ -171,7 +171,7 @@ internal class ShowDependenciesCommand: AmperModelAwareCommand(name = "dependenc
                 terminal.println(it.prettyPrint())
             }
         } else {
-            // todo (AB) : If module graph is filtered, a resolved version of dependency might come
+            // todo (AB) : [AMPER-4905] If module graph is filtered, a resolved version of dependency might come
             //  from filtered out fragment and thus resulting graph will have no information on where resolved version comes from
             //  It might be improved in several ways:
             //  - we might invert graph the same as Idea plugin does, starting from given mavenCoordinates, showing paths
