@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.tasks.native
@@ -88,7 +88,7 @@ internal class NativeCInteropGenerateKlibTask(
             val relevantOutputs = inputDefFiles.map { defFile ->
                 async {
                     incrementalCache.execute(
-                        key = taskName.name,
+                        key = "${taskName.name}-${defFile.nameWithoutExtension}",
                         inputValues = mapOf(
                             "target" to platform.nameForCompiler,
                             "kotlinVersion" to kotlinCompilerVersion,
