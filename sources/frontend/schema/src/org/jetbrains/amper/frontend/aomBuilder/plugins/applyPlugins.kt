@@ -47,21 +47,6 @@ internal fun applyPlugins(
             module = moduleBuildCtx,
         ) ?: continue
 
-        val isOldMarkerApiUsed = appliedPlugin.tasks.values.any { it.markOutputsAs.isNotEmpty() }
-        val isNewMarkerApiUsed = appliedPlugin.generated.let { it.sources.any() || it.resources.any() }
-        if (isOldMarkerApiUsed && isNewMarkerApiUsed) {
-            // TODO: For migration period we support both, but not simultaneously
-            // Currently we don't bother with precise traces,
-            // as migration period is very short just to migrate Amper itself.
-            // Later we'll just introduce error-level deprecation diagnostic for `markOutputsAs`, which will be no-op
-            // until ultimately removed.
-            problemReporter.reportBundleError(
-                appliedPlugin.asBuildProblemSource(), PluginDiagnosticId.MixedOutputMarkerApiUsage,
-                "plugin.mixed.output.marker.api.usage",
-            )
-            continue
-        }
-
         val taskNameToPathCollector = appliedPlugin.tasks.entries.associate { (name, task) ->
             name to InputOutputCollector(task.action.backingTree)
         }
@@ -74,44 +59,11 @@ internal fun applyPlugins(
         )
 
         for ((name, task) in appliedPlugin.tasks) {
-            val perTaskOutputMarks = task.markOutputsAs.distinctBy(
-                selector = { it.path },
-                onDuplicates = { path, duplicateMarks ->
-                    val source = MultipleLocationsBuildProblemSource(
-                        sources = duplicateMarks.mapNotNull { it.asBuildProblemSource() as? FileBuildProblemSource },
-                        groupingMessage = SchemaBundle.message("plugin.invalid.mark.output.as.duplicates.grouping"),
-                    )
-                    problemReporter.reportBundleError(
-                        source = source,
-                        diagnosticId = PluginDiagnosticId.ConflictingMarkedPluginPaths,
-                        messageKey = "plugin.invalid.mark.output.as.duplicates",
-                        path
-                    )
-                }
-            ).associateBy { it.path }
-
             val pathsCollector = taskNameToPathCollector.getValue(name)
-            val outputPathsSet = pathsCollector.allOutputPaths.mapTo(hashSetOf()) { it.value }
-            perTaskOutputMarks.forEach { (path, mark) ->
-                if (path !in outputPathsSet) {
-                    problemReporter.reportBundleError(
-                        source = mark.asBuildProblemSource(),
-                        diagnosticId = PluginDiagnosticId.UndeclaredMarkedOutputPath,
-                        messageKey = "plugin.invalid.mark.output.as.no.such.path",
-                        path
-                    )
-                }
-            }
             val outputsToMarks = pathsCollector.allOutputPaths.map { path: TraceablePath ->
                 topLevelMarkedOutputs[path.value] ?: TaskFromPluginDescription.OutputPath(
                     path = path,
-                    outputMark = perTaskOutputMarks[path.value]?.let { markOutputAs ->
-                        TaskFromPluginDescription.OutputMark(
-                            kind = markOutputAs.kind,
-                            associateWith = selectFragmentByDescriptor(moduleBuildCtx, markOutputAs.fragment),
-                            trace = markOutputAs.trace,
-                        )
-                    }
+                    outputMark = null,
                 )
             }
             val taskInfo = task.action.taskInfo

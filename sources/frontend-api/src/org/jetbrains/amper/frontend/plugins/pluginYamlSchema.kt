@@ -233,6 +233,7 @@ enum class GeneratedSourcesLanguage(
     Java("java"),
 }
 
+// TODO: Convert from a schema enum to a regular internal enum once [Task.markOutputsAs] is removed.
 enum class GeneratedPathKind(
     override val schemaValue: String,
 ) : SchemaEnum {
