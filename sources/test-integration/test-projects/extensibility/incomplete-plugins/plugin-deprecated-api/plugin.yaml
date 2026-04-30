@@ -1,0 +1,7 @@
+tasks:
+  myTask:
+    action: !someTask
+      output: ${taskOutputDir}
+    markOutputsAs:
+      - path: ${taskOutputDir}
+        kind: kotlin-sources

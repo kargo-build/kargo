@@ -421,6 +421,9 @@ class PluginsTest : AmperCliTestBase() {
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:8:13: The task action function specifier 'com.example.nonExistentTask' doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:10:13: The task action function specifier 'com.example.nonExistentTask' doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:4:13: Missing task action function specifier. Add the `!<fully-qualified-task-action-function-name>` YAML type tag to the mapping. Available task action functions: <none>",
+                "${projectDir / "plugin-deprecated-api" / "plugin.yaml"}:5:5: `markOutputsAs` per-task property is deprecated and no longer has any effect. " +
+                        "Use the top-level `generated:` block instead and put your generated output in the corresponding category, e.g., `sources`, `resources`, etc. " +
+                        "The actual output path can be referenced from there using the `\${tasks.<your-task-name>.action.<parameter-name>}` syntax.",
                 "failed to read Amper model, refer to the errors above",
             )
         }

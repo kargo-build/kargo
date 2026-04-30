@@ -8,6 +8,7 @@ import org.jetbrains.amper.frontend.SchemaEnum
 import org.jetbrains.amper.frontend.api.CanBeReferenced
 import org.jetbrains.amper.frontend.api.ConstInit
 import org.jetbrains.amper.frontend.api.CustomSchemaDeclaration
+import org.jetbrains.amper.frontend.api.DeprecatedSchema
 import org.jetbrains.amper.frontend.api.ReadOnly
 import org.jetbrains.amper.frontend.api.SchemaDoc
 import org.jetbrains.amper.frontend.api.SchemaNode
@@ -119,6 +120,7 @@ class Task : SchemaNode() {
             "values of the arguments.")
     val action by value<TaskAction>()
 
+    @DeprecatedSchema("plugin.deprecated.mark.outputs.as")
     @SchemaDoc("The list of additional semantics specifiers for the task outputs. " +
             "If a task's output (e.g. generated sources) should be contributed back to the build, " +
             "add the corresponding entry to this list.")
