@@ -52,6 +52,7 @@ class AmperPublishTest : AmperCliTestBase() {
 
         groupDir.assertContainsRelativeFiles(
             "artifactName/2.2/_remote.repositories",
+            "artifactName/2.2/artifactName-2.2-javadoc.jar",
             "artifactName/2.2/artifactName-2.2-sources.jar",
             "artifactName/2.2/artifactName-2.2.jar",
             "artifactName/2.2/artifactName-2.2.pom",
@@ -151,6 +152,8 @@ class AmperPublishTest : AmperCliTestBase() {
 
         groupDir.assertContainsRelativeFiles(
             "artifactName/2.2/_remote.repositories",
+            "artifactName/2.2/artifactName-2.2-javadoc.jar",
+            "artifactName/2.2/artifactName-2.2-javadoc.jar.asc",
             "artifactName/2.2/artifactName-2.2-sources.jar",
             "artifactName/2.2/artifactName-2.2-sources.jar.asc",
             "artifactName/2.2/artifactName-2.2.jar",
@@ -205,6 +208,7 @@ class AmperPublishTest : AmperCliTestBase() {
 
         groupDir.assertContainsRelativeFiles(
             "artifactName/2.2/_remote.repositories",
+            "artifactName/2.2/artifactName-2.2-javadoc.jar",
             "artifactName/2.2/artifactName-2.2.jar",
             "artifactName/2.2/artifactName-2.2.pom",
             "artifactName/maven-metadata-local.xml",
@@ -274,39 +278,47 @@ class AmperPublishTest : AmperCliTestBase() {
         // note that publishing of main-lib module triggers all other modules (by design)
         groupDir.assertContainsRelativeFiles(
             "jvm-lib/1.2.3/_remote.repositories",
+            "jvm-lib/1.2.3/jvm-lib-1.2.3-javadoc.jar",
             "jvm-lib/1.2.3/jvm-lib-1.2.3.jar",
             "jvm-lib/1.2.3/jvm-lib-1.2.3.pom",
             "jvm-lib/maven-metadata-local.xml",
             "kmp-lib-android/1.2.3/_remote.repositories",
+            "kmp-lib-android/1.2.3/kmp-lib-android-1.2.3-javadoc.jar",
             "kmp-lib-android/1.2.3/kmp-lib-android-1.2.3-sources.jar",
             "kmp-lib-android/1.2.3/kmp-lib-android-1.2.3.pom",
             "kmp-lib-android/maven-metadata-local.xml",
             "kmp-lib-iosarm64/1.2.3/_remote.repositories",
+            "kmp-lib-iosarm64/1.2.3/kmp-lib-iosarm64-1.2.3-javadoc.jar",
             "kmp-lib-iosarm64/1.2.3/kmp-lib-iosarm64-1.2.3-sources.jar",
             "kmp-lib-iosarm64/1.2.3/kmp-lib-iosarm64-1.2.3.klib",
             "kmp-lib-iosarm64/1.2.3/kmp-lib-iosarm64-1.2.3.pom",
             "kmp-lib-iosarm64/maven-metadata-local.xml",
             "kmp-lib-js/1.2.3/_remote.repositories",
+            "kmp-lib-js/1.2.3/kmp-lib-js-1.2.3-javadoc.jar",
             "kmp-lib-js/1.2.3/kmp-lib-js-1.2.3-sources.jar",
             "kmp-lib-js/1.2.3/kmp-lib-js-1.2.3.klib",
             "kmp-lib-js/1.2.3/kmp-lib-js-1.2.3.pom",
             "kmp-lib-js/maven-metadata-local.xml",
             "kmp-lib-jvm/1.2.3/_remote.repositories",
+            "kmp-lib-jvm/1.2.3/kmp-lib-jvm-1.2.3-javadoc.jar",
             "kmp-lib-jvm/1.2.3/kmp-lib-jvm-1.2.3-sources.jar",
             "kmp-lib-jvm/1.2.3/kmp-lib-jvm-1.2.3.jar",
             "kmp-lib-jvm/1.2.3/kmp-lib-jvm-1.2.3.pom",
             "kmp-lib-jvm/maven-metadata-local.xml",
             "kmp-lib-linuxx64/1.2.3/_remote.repositories",
+            "kmp-lib-linuxx64/1.2.3/kmp-lib-linuxx64-1.2.3-javadoc.jar",
             "kmp-lib-linuxx64/1.2.3/kmp-lib-linuxx64-1.2.3-sources.jar",
             "kmp-lib-linuxx64/1.2.3/kmp-lib-linuxx64-1.2.3.klib",
             "kmp-lib-linuxx64/1.2.3/kmp-lib-linuxx64-1.2.3.pom",
             "kmp-lib-linuxx64/maven-metadata-local.xml",
             "kmp-lib-wasmjs/1.2.3/_remote.repositories",
+            "kmp-lib-wasmjs/1.2.3/kmp-lib-wasmjs-1.2.3-javadoc.jar",
             "kmp-lib-wasmjs/1.2.3/kmp-lib-wasmjs-1.2.3-sources.jar",
             "kmp-lib-wasmjs/1.2.3/kmp-lib-wasmjs-1.2.3.klib",
             "kmp-lib-wasmjs/1.2.3/kmp-lib-wasmjs-1.2.3.pom",
             "kmp-lib-wasmjs/maven-metadata-local.xml",
             "kmp-lib-wasmwasi/1.2.3/_remote.repositories",
+            "kmp-lib-wasmwasi/1.2.3/kmp-lib-wasmwasi-1.2.3-javadoc.jar",
             "kmp-lib-wasmwasi/1.2.3/kmp-lib-wasmwasi-1.2.3-sources.jar",
             "kmp-lib-wasmwasi/1.2.3/kmp-lib-wasmwasi-1.2.3.klib",
             "kmp-lib-wasmwasi/1.2.3/kmp-lib-wasmwasi-1.2.3.pom",
@@ -315,6 +327,7 @@ class AmperPublishTest : AmperCliTestBase() {
             "kmp-lib/1.2.3/kmp-lib-1.2.3.pom",
             "kmp-lib/maven-metadata-local.xml",
             "main-lib/1.2.3/_remote.repositories",
+            "main-lib/1.2.3/main-lib-1.2.3-javadoc.jar",
             "main-lib/1.2.3/main-lib-1.2.3-sources.jar",
             "main-lib/1.2.3/main-lib-1.2.3.jar",
             "main-lib/1.2.3/main-lib-1.2.3.pom",
@@ -449,6 +462,11 @@ class AmperPublishTest : AmperCliTestBase() {
         assertPublishedArtifacts(
             repoRoot = www,
             requestHistory = requestHistory,
+            "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-javadoc.jar",
+            "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-javadoc.jar.md5",
+            "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-javadoc.jar.sha1",
+            "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-javadoc.jar.sha256",
+            "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-javadoc.jar.sha512",
             "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-sources.jar",
             "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-sources.jar.md5",
             "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-sources.jar.sha1",
@@ -482,6 +500,11 @@ class AmperPublishTest : AmperCliTestBase() {
         assertPublishedArtifacts(
             repoRoot = www,
             requestHistory = requestHistory,
+            "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-javadoc.jar",
+            "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-javadoc.jar.md5",
+            "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-javadoc.jar.sha1",
+            "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-javadoc.jar.sha256",
+            "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-javadoc.jar.sha512",
             "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-sources.jar",
             "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-sources.jar.md5",
             "amper/test/jvm-publish/artifactName/2.2/artifactName-2.2-sources.jar.sha1",
@@ -605,6 +628,12 @@ class AmperPublishTest : AmperCliTestBase() {
                       </snapshotVersion>
                       <snapshotVersion>
                         <extension>pom</extension>
+                        <value>$lastVersion</value>
+                        <updated>TIMESTAMP</updated>
+                      </snapshotVersion>
+                      <snapshotVersion>
+                        <classifier>javadoc</classifier>
+                        <extension>jar</extension>
                         <value>$lastVersion</value>
                         <updated>TIMESTAMP</updated>
                       </snapshotVersion>

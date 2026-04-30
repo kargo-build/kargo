@@ -163,6 +163,7 @@ data class MavenPublishable(
 private fun TaskResult.toMavenPublishables(coordsPerPlatform: Map<Platform, MavenCoordinates>) = when (this) {
     is JvmClassesJarTask.Result -> listOf(toMavenPublishable(coordsPerPlatform))
     is SourcesJarTask.Result -> listOf(toMavenPublishable(coordsPerPlatform))
+    is JavadocJarTask.Result -> listOf(toMavenPublishable(coordsPerPlatform))
     is NativeCompileKlibTask.Result -> toMavenPublishables(coordsPerPlatform)
     is WebCompileKlibTask.Result -> toMavenPublishables(coordsPerPlatform)
     is ResolveExternalDependenciesTask.Result -> emptyList() // this is just for coords overrides, not extra artifacts
@@ -174,6 +175,9 @@ private fun JvmClassesJarTask.Result.toMavenPublishable(coordsPerPlatform: Map<P
 
 private fun SourcesJarTask.Result.toMavenPublishable(coordsPerPlatform: Map<Platform, MavenCoordinates>): MavenPublishable =
     jarPath.toMavenPublishable(coordsPerPlatform.getValue(platform).copy(classifier = "sources"))
+
+private fun JavadocJarTask.Result.toMavenPublishable(coordsPerPlatform: Map<Platform, MavenCoordinates>): MavenPublishable =
+    jarPath.toMavenPublishable(coordsPerPlatform.getValue(platform).copy(classifier = "javadoc"))
 
 private fun NativeCompileKlibTask.Result.toMavenPublishables(
     coordsPerPlatform: Map<Platform, MavenCoordinates>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.tasks.jvm
@@ -37,7 +37,7 @@ class ExecutableJarTask(
 
     private val assembler = ExecutableJarAssembler(userCacheRoot, incrementalCache)
 
-    override suspend fun getInputDirs(dependenciesResult: List<TaskResult>): List<ZipInput> {
+    override suspend fun assembleInputDirs(dependenciesResult: List<TaskResult>): List<ZipInput> {
         val compiledClasses = dependenciesResult
             .filterIsInstance<JvmCompileTask.Result>()
             .flatMap { it.classesOutputRoots }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.tasks
@@ -21,14 +21,14 @@ abstract class AbstractJarTask(
     private val incrementalCache: IncrementalCache,
 ) : Task {
 
-    protected abstract suspend fun getInputDirs(dependenciesResult: List<TaskResult>): List<ZipInput>
+    protected abstract suspend fun assembleInputDirs(dependenciesResult: List<TaskResult>): List<ZipInput>
     protected abstract fun outputJarPath(): Path
     protected abstract fun jarConfig(): JarConfig
 
     protected abstract fun createResult(jarPath: Path): Result
 
     override suspend fun run(dependenciesResult: List<TaskResult>, executionContext: TaskGraphExecutionContext): TaskResult {
-        val inputDirs = getInputDirs(dependenciesResult)
+        val inputDirs = assembleInputDirs(dependenciesResult)
         val outputJarPath = outputJarPath()
 
         val jarConfig = jarConfig()

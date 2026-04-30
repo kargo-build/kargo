@@ -32,6 +32,7 @@ internal enum class CommonTaskType(override val prefix: String) : PlatformTaskTy
     Classes("classes"),
     MergedClasses("mergedClasses"),
     Jar("jar"),
+    JavadocJar("javadocJar"),
     SourcesJar("sourcesJar"),
     Publish("publish"),
     Run("run"),
@@ -103,7 +104,6 @@ fun ProjectTasksBuilder.setupCommonTasks() {
     allModules()
         .alsoPlatforms()
         .withEach {
-            val module = module
             val sourcesJarTaskName = CommonTaskType.SourcesJar.getTaskName(module, platform)
             tasks.registerTask(
                 SourcesJarTask(
@@ -111,6 +111,16 @@ fun ProjectTasksBuilder.setupCommonTasks() {
                     module = module,
                     platform = platform,
                     taskOutputRoot = context.getTaskOutputPath(sourcesJarTaskName),
+                    incrementalCache = context.incrementalCache,
+                )
+            )
+            val javadocJarTaskName = CommonTaskType.JavadocJar.getTaskName(module, platform)
+            tasks.registerTask(
+                JavadocJarTask(
+                    taskName = javadocJarTaskName,
+                    module = module,
+                    platform = platform,
+                    taskOutputRoot = context.getTaskOutputPath(javadocJarTaskName),
                     incrementalCache = context.incrementalCache,
                 )
             )
@@ -133,6 +143,7 @@ fun ProjectTasksBuilder.setupCommonTasks() {
                             if (module.shouldPublishSourcesJars()) {
                                 add(CommonTaskType.SourcesJar.getTaskName(module, platform))
                             }
+                            add(CommonTaskType.JavadocJar.getTaskName(module, platform))
                             // we need dependencies to get publication coordinate overrides (e.g. -jvm variant)
                             add(CommonTaskType.Dependencies.getTaskName(module, platform, isTest = false))
                         }
