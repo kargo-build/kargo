@@ -11,9 +11,6 @@ dependencies:
   - ../../libraries/serialization-extended
 
 settings:
-  jvm:
-    # Used in Android Gradle builds (max 17), but common template sets it to 21, so we take the lowest version 17
-    release: 17
   kotlin:
     serialization: enabled
   publishing:

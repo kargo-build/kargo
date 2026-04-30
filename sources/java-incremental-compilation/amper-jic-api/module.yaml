@@ -11,8 +11,5 @@ dependencies:
   - ../../libraries/serialization-extended
 
 settings:
-  jvm:
-    # Used in JIC (max 16), but common template sets it to 21, so we take the lowest version 16
-    release: 16
   kotlin:
     serialization: json

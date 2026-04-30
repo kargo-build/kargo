@@ -1,3 +1,6 @@
+apply:
+  - ./common.module-template.yaml
+
 settings:
   jvm:
     # We use Gradle 8.14 right now, and it can run on all JDKs from 8 to 24.

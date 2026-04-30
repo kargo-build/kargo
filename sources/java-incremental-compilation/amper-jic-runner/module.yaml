@@ -25,8 +25,3 @@ dependencies:
   - $libs.intellij.jps.build.dependency.graph
   - org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0
   - $libs.opentelemetry.sdk.common
-
-settings:
-  jvm:
-    # Used in JIC (max 16), but common template sets it to 21, so we take the lowest version 16
-    release: 16

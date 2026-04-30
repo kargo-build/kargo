@@ -11,8 +11,3 @@ dependencies:
   - $libs.junit5.platform.launcher: compile-only
   - $libs.mordant
   - $libs.teamcity.serviceMessages
-
-settings:
-  jvm:
-    # Used in user tests (max 11), but common template sets it to 21, so we take the lowest version 11
-    release: 11

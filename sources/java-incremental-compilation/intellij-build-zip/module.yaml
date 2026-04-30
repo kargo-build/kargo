@@ -13,8 +13,3 @@ dependencies:
   - io.netty:netty-buffer:4.2.10.Final
   - $libs.intellij.deps.fastutil
   - com.dynatrace.hash4j:hash4j:0.26.0
-
-settings:
-  jvm:
-    # Used in JIC (max 16), but common template sets it to 21, so we take the lowest version 16
-    release: 16

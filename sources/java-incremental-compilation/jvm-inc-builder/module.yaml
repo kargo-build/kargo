@@ -32,8 +32,3 @@ dependencies:
   - jaxen:jaxen:1.2.0
   - com.thoughtworks.qdox:qdox:2.2.0
   - $libs.intellij.deps.fastutil
-
-settings:
-  jvm:
-    # Used in JIC (max 16), but common template sets it to 21, so we take the lowest version 16
-    release: 16

@@ -1,3 +1,6 @@
+apply:
+  - ./common.module-template.yaml
+
 settings:
   jvm:
     # JPS libraries require at least JDK 16, so we have diagnostics to force the user to use at least 16.
