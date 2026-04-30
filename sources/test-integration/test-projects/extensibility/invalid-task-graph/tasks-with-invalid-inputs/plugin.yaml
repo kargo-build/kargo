@@ -30,9 +30,6 @@ tasks:
     action: !action3
       output: ${taskOutputDir}
       input: ${consumesResources.action.output}
-    markOutputsAs:
-      - path: ${action.output}
-        kind: jvm-resources
   consumesResources:
     action: !action4
       resources:
@@ -40,3 +37,7 @@ tasks:
         kind: resources
         includeGenerated: true
       output: ${taskOutputDir}
+
+generated:
+  resources:
+    - directory: ${tasks.generatesResources.action.output}

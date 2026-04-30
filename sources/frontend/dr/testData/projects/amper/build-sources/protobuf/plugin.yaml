@@ -11,8 +11,10 @@ tasks:
       grpcEnabled: ${pluginSettings.grpc.enabled}
       javaOutputDir: ${taskOutputDir}/java
       grpcOutputDir: ${taskOutputDir}/grpc
-    markOutputsAs:
-      - path: ${action.javaOutputDir}
-        kind: java-sources
-      - path: ${action.grpcOutputDir}
-        kind: java-sources
+
+generated:
+  sources:
+    - language: java
+      directory: ${tasks.generate.action.javaOutputDir}
+    - language: java
+      directory: ${tasks.generate.action.grpcOutputDir}

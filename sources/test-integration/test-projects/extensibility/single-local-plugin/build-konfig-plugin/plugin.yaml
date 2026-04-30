@@ -10,9 +10,6 @@ tasks:
     action: !org.jetbrains.amper.plugins.buildkonfig.generateKonfig
       config: ${pluginSettings}
       outputDir: ${taskOutputDir}  # can be made default to `${taskOutputDir}`?
-    markOutputsAs:
-      - path: ${action.outputDir} # physical reference
-        kind: kotlin-sources
   
   print-generated-sources:
     action: !org.jetbrains.amper.plugins.buildkonfig.printSources
@@ -22,3 +19,8 @@ tasks:
     action: !org.jetbrains.amper.plugins.buildkonfig.hello
       thisClasspath:
         - ../app1
+
+generated:
+  sources:
+    - language: kotlin
+      directory: ${tasks.generate-konfig.action.outputDir}

@@ -14,9 +14,6 @@ tasks:
       visibility: ${pluginSettings.visibility}
       outputDir: ${taskOutputDir}/sources
       baselinePropertiesFile: ${module.rootDir}/${pluginSettings.propertiesFileName}.properties
-    markOutputsAs:
-      - path: ${action.outputDir} # physical reference
-        kind: kotlin-sources
   
   print-generated-sources:
     action: !org.jetbrains.amper.plugins.buildkonfig.printSources
@@ -26,3 +23,8 @@ tasks:
     action: !org.jetbrains.amper.plugins.buildkonfig.checkBaseline
       config: ${pluginSettings.config}
       baselinePropertiesFile: ${generate-konfig.action.baselinePropertiesFile}
+
+generated:
+  sources:
+    - language: kotlin
+      directory: ${tasks.generate-konfig.action.outputDir}

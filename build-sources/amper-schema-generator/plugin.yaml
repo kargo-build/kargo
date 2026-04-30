@@ -2,7 +2,9 @@ tasks:
   - generate:
       action: !org.jetbrains.amper.frontend.types.instrumentation.generateSchemaImplementation
         outputDirectory: ${taskOutputDir}
-      markOutputsAs:
-        - path: ${taskOutputDir}
-          kind: kotlin-sources
+
+generated:
+  sources:
+    - language: kotlin
+      directory: ${tasks.generate.action.outputDirectory}
   

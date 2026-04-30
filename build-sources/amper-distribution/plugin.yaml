@@ -32,9 +32,6 @@ tasks:
       baseClasspath: ${pluginSettings.embedClasspathAsResources.classpath}
       subdirectoryName: ${pluginSettings.embedClasspathAsResources.resourceDirName}
       jarListFileName: classpath.txt
-    markOutputsAs:
-      - path: ${taskOutputDir}
-        kind: jvm-resources
 
 commands:
   - name: uploadAmperDistribution
@@ -42,3 +39,7 @@ commands:
 
   - name: uploadAmperDistributionLocal
     performedBy: uploadLocal
+
+generated:
+  resources:
+    - directory: ${tasks.embedClasspathAsResources.action.outputDir}

@@ -16,6 +16,8 @@ tasks:
   taskThatGeneratesSources:
     action: !action
       output: ${taskOutputDir}
-    markOutputsAs:
-      - path: ${action.output}
-        kind: kotlin-sources
+
+generated:
+  sources:
+    - language: kotlin
+      directory: ${tasks.taskThatGeneratesSources.action.output}
