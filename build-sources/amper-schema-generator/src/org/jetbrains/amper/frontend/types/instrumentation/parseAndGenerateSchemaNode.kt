@@ -20,9 +20,11 @@ import com.squareup.kotlinpoet.asClassName
 import com.squareup.kotlinpoet.asTypeName
 import com.squareup.kotlinpoet.withIndent
 import org.jetbrains.amper.frontend.Platform
+import org.jetbrains.amper.frontend.SchemaBundle
 import org.jetbrains.amper.frontend.api.CanBeReferenced
 import org.jetbrains.amper.frontend.api.ConstInit
 import org.jetbrains.amper.frontend.api.Default
+import org.jetbrains.amper.frontend.api.DeprecatedSchema
 import org.jetbrains.amper.frontend.api.ExternalDependencyNotation
 import org.jetbrains.amper.frontend.api.FromKeyAndTheRestIsNested
 import org.jetbrains.amper.frontend.api.GradleSpecific
@@ -143,6 +145,15 @@ internal fun <T : SchemaNode> parseAndGenerateSchemaNode(clazz: KClass<T>): Pars
                 }
                 prop.findAnnotation<PathMark>()?.let {
                     add("inputOutputMark = %T.%N,\n", InputOutputMark::class, it.type.name)
+                }
+                prop.findAnnotation<DeprecatedSchema>()?.let {
+                    add(
+                        "deprecated = %T(message = %T.message(%S), isError = %L),\n",
+                        SchemaObjectDeclaration.Property.DeprecatedInfo::class,
+                        SchemaBundle::class,
+                        it.messageBundleId,
+                        it.isError,
+                    )
                 }
             }
             add("),\n")

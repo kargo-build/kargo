@@ -10,6 +10,7 @@ import org.jetbrains.amper.frontend.api.SchemaNode
 import org.jetbrains.amper.frontend.schema.ProductType
 import org.jetbrains.amper.frontend.tree.RefinedKeyValue
 import org.jetbrains.amper.plugins.schema.model.InputOutputMark
+import org.jetbrains.annotations.Nls
 
 interface SchemaObjectDeclaration : SchemaTypeDeclaration {
     val properties: List<Property>
@@ -87,6 +88,12 @@ interface SchemaObjectDeclaration : SchemaTypeDeclaration {
         val canBeReferenced: Boolean = false,
         val isUserSettable: Boolean = true,
         val isConstInit: Boolean = false,
+        val deprecated: DeprecatedInfo? = null,
         val origin: SchemaOrigin = SchemaOrigin.Builtin,
-    )
+    ) {
+        data class DeprecatedInfo(
+            val message: @Nls String,
+            val isError: Boolean,
+        )
+    }
 }

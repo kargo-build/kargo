@@ -252,3 +252,18 @@ annotation class ConstInit
 annotation class CustomSchemaDeclaration(
     vararg val requiredReferences: KClass<out SchemaNode>
 )
+
+/**
+ * Marks the property as deprecated.
+ * If it's used by the user (has non-default trace), then it's going to be diagnosed.
+ */
+@Target(AnnotationTarget.PROPERTY)
+@Retention(AnnotationRetention.RUNTIME)
+annotation class DeprecatedSchema(
+    /**
+     * Message bundle ID for the deprecation message to include in the diagnostic.
+     * Must be from [org.jetbrains.amper.frontend.SchemaBundle].
+     */
+    val messageBundleId: String,
+    val isError: Boolean = true,
+)
