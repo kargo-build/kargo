@@ -92,7 +92,7 @@ This includes references that ultimately point to each other or to a direct sub-
 
 !!! info
     Not every built‑in property in `plugin.yaml` can be referenced (be the final value that a reference resolves to).
-    Some properties are there purely as configuration DSL/skeleton/sections, e.g., `markOutputsAs` list or the `tasks` map.
+    Some properties are there purely as configuration DSL/skeleton/sections, e.g., the `generated` block or the `tasks` map.
     Referencing these things directly makes no sense and is forbidden.
     They can, however, appear as the starting/intermediate reference part, e.g., `tasks.myTask.action.myInput`.
 

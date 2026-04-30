@@ -151,23 +151,25 @@ Learn more about [Amper-provided reference-only properties](topics/references.md
 
 But we need to make Amper aware that our output is, in fact, generated Kotlin sources,
 so the build tool can include them in the compilation, IDE can resolve symbols from them, etc.
-To do that, we'll use the `markOutputAs` clause in our task registration:
+To do that, we'll add a `generated.sources` block to our `plugin.yaml`:
 
-```yaml hl_lines="6-8" title="build-config/plugin.yaml"
+```yaml hl_lines="7-10" title="build-config/plugin.yaml"
 tasks:
   generate:
     action: !com.example.generateSources
       propertiesFile: ${module.rootDir}/config.properties
       generatedSourceDir: ${taskOutputDir}
-    markOutputsAs:
-      - path: ${action.generatedSourceDir}
-        kind: kotlin-sources # (1)!
+
+generated:
+  sources:
+    - language: kotlin # (1)!
+      directory: ${tasks.generate.action.generatedSourceDir}
 ```
 
-1.    `java-sources` and `jvm-resources` are also possible here
+1.    `java` is also possible here; for resources, use `generated.resources` instead
 
-We've added an item to the `markOutputsAs` list, where we reference our `generatedSourceDir` path and state,
-that `kotlin-sources` will be located there after the task is run.
+We've added an entry in `generated.sources` block, where we reference our `generatedSourceDir` path and state
+that Kotlin sources will be located there after the task is run.
 
 That's it with the plugin for now! Let's enable it in one of our modules (`app`):
 
@@ -359,7 +361,7 @@ fun generateSources(
       because all "plain data" (no references to `Path` within the type) parameters are already considered as task inputs.
 
 And on the "declarative" side:
-```yaml hl_lines="5 6" title="build-config/plugin.yaml"
+```yaml hl_lines="4-6" title="build-config/plugin.yaml"
 tasks:
   generate:
     action: !com.example.generateSources
@@ -367,9 +369,11 @@ tasks:
         ${module.rootDir}/${pluginSettings.propertiesFileName}.properties
       additionalConfig: ${pluginSettings.additionalConfig}
       generatedSourceDir: ${taskOutputDir}
-    markOutputsAs:
-      - path: ${action.generatedSourceDir}
-        kind: kotlin-sources
+
+generated:
+  sources:
+    - language: kotlin
+      directory: ${tasks.generate.action.generatedSourceDir}
 ```
 
 `pluginSettings` is a global reference-only property that contains the configured plugin settings for each module the plugin is enabled in.

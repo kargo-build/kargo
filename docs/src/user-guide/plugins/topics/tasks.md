@@ -133,9 +133,6 @@ tasks:
     action: !fully.qualified.function.name
       param1: ...
       param2: ...
-    markOutputsAs:
-      - path: ...
-        kind: ...
 ```
 
 The task action is specified using the `action` property.
@@ -163,8 +160,8 @@ Tasks are registered once in `plugin.yaml`, but they are instantiated per module
     
     Now, inputs/outputs markup is done in Kotlin because it is inherently bound to the action itself 
     (if the action reads from the file, it is an input),
-    while `markOutputsAs` is not necessarily so: a generic `unzip` action may be actually unzipping some sources, and
-    only a concrete plugin may know that, so it needs to convey it at the registration site.
+    while declaring the kind of generated content in `generated:` is not necessarily so: a generic `unzip` action may be
+    actually unzipping some sources, and only a concrete plugin may know that, so it needs to convey it at the registration site.
 
 ### Naming and addressing
 
@@ -188,42 +185,49 @@ There are a bunch of things the Amper build can consume that can be produced by 
 In order to contribute some typed files back to the build, we need the following:
 
 1. To have a necessary path marked as an `@Output` in the task action
-2. To add an entry to the `markOutputsAs` list at the registration site, referring to the path and specifying the desired content kind.
+2. To add a `generated:` block at the top level of the `plugin.yaml`, declaring the kind of content and referencing the output path.
   
-Currently supported content kinds:
+Currently supported kinds of generated content:
 
-| Content kind     | Description                                                                       |
-|------------------|-----------------------------------------------------------------------------------|
-| `kotlin-sources` | A directory containing **Kotlin sources** to be compiled together with the module |
-| `java-sources`   | A directory containing **Java sources** to be compiled together with the module   |
-| `jvm-resources`  | A directory containing **jvm resources** to be bundled together with the module   |
+| Section                         | Description                                                                                                                                                          |
+|---------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| `generated.sources`             | A directory containing **sources** to be compiled together with the module (`language: kotlin` (default) or `language: java`)                                        |
+| `generated.resources`           | A directory containing **resources** to be bundled together with the module                                                                                          |
+| `generated.cinteropDefinitions` | A [`.def` file](https://kotlinlang.org/docs/native-definition-file.html) to be processed by the [`cinterop`](https://kotlinlang.org/docs/native-c-interop.html) tool |
 
 !!! example
-    ```yaml hl_lines="9"
+    ```yaml hl_lines="9-12"
     tasks:
       generate:
         action: !com.example.generateSources
           propertiesFile: ${module.rootDir}/config.properties
           generatedSourceDir: ${taskOutputDir} #(1)!
-      markOutputsAs:
-        - path: ${action.generatedSourceDir}
-          kind: kotlin-sources
+
+    generated:
+      sources:
+        - language: kotlin
+          directory: ${tasks.generate.action.generatedSourceDir}
     ```
     
     1.    `generatedSourceDir` is `#!kotlin @Output generatedSourceDir: Path` in Kotlin
 
 ### Advanced
-One can customize the platform and/or main/test scope the content is associated with using the `fragment` clause of the `markOutputsAs` list element.
+One can customize the platform and/or main/test scope the content is associated with using the `fragment` clause of each entry in the `generated.*` block.
 It has two properties: `modifier: string` and `isTest: boolean`.
 The `modifier` string has the same semantics as the suffix one can put after the `@` in the `module.yaml` configuration or
 in the names of `src` directories. For example, having:
 ```yaml
-markOutputsAs:
-  - path: ${action.generatedSourceDir}
-    kind: kotlin-sources
-    fragment:
-      isTest: true
-      modifier: ios
+generated:
+  sources:
+    - language: kotlin
+      directory: ${tasks.generate.action.generatedSourceDir}
+      fragment:
+        isTest: true
+        modifier: ios
+
+  cinteropDefinitions:
+    - defFile: ${tasks.provideNativeLibs.action.generatedDefFile}
+      fragment: native
 ```
 would make Amper treat the generated sources as if they were put into the `test@ios` directory.
 
