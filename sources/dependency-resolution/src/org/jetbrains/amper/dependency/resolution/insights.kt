@@ -47,11 +47,12 @@ fun DependencyNode.filterGraph(group: String, module: String, resolvedVersionOnl
         }
         if (node is MavenDependencyConstraintNode && node.version == node.dependencyConstraint.version) {
             // Decisive (non-overridden) constraints
-            (groupedResolvedConstraintsByKey[node.group to node.module]
-                ?: mutableListOf<MavenDependencyConstraintNode>().also {
-                    groupedResolvedConstraintsByKey[node.group to node.module] = it
-                })
-                .add(node)
+            val constraintsList = groupedResolvedConstraintsByKey[node.group to node.module]
+                ?: mutableListOf<MavenDependencyConstraintNode>()
+                    .also {
+                        groupedResolvedConstraintsByKey[node.group to node.module] = it
+                    }
+            constraintsList.add(node)
         }
     }
 
@@ -108,10 +109,11 @@ private fun DependencyNode.correspondsToResolvedVersionOf(group: String, module:
  */
 private fun Set<DependencyNode>.addDecisiveParents(
     nodesWithDecisiveParents: MutableSet<DependencyNode>,
-    graph: DependencyNode, groupForInsight:
-    String, moduleForInsight:
-    String, resolvedVersionOnly: Boolean,
-    groupedResolvedConstraintsByKey: Map<Pair<String, String>, List<MavenDependencyConstraintNode>>
+    graph: DependencyNode,
+    groupForInsight: String,
+    moduleForInsight: String,
+    resolvedVersionOnly: Boolean,
+    groupedResolvedConstraintsByKey: Map<Pair<String, String>, List<MavenDependencyConstraintNode>>,
 ) {
     val allDependenciesAndConstraints = filter { it is MavenDependencyNode || it is MavenDependencyConstraintNode }.toSet()
     val noneFilterableNodes = this - allDependenciesAndConstraints
