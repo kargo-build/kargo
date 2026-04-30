@@ -4,6 +4,7 @@
 
 package org.jetbrains.amper.frontend.plugins
 
+import org.jetbrains.amper.frontend.api.DeprecatedSchema
 import org.jetbrains.amper.frontend.api.SchemaNode
 import org.jetbrains.amper.frontend.api.StringSemantics
 import org.jetbrains.amper.frontend.api.TraceableString
@@ -24,6 +25,7 @@ class MinimalPluginModule : SchemaNode() {
 
 class MinimalPluginDeclarationSchema : SchemaNode() {
     val id by nullableValue<TraceableString>()
+    @DeprecatedSchema("plugin.description.should.be.top.level", isError = false)
     @Deprecated("Use the description from the plugin's module instead")
     val description by nullableValue<String>()
     @StringSemantics(SchemaType.StringType.Semantics.PluginSettingsClass)

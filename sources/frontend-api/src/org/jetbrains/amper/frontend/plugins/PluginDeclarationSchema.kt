@@ -4,6 +4,7 @@
 
 package org.jetbrains.amper.frontend.plugins
 
+import org.jetbrains.amper.frontend.api.DeprecatedSchema
 import org.jetbrains.amper.frontend.api.SchemaDoc
 import org.jetbrains.amper.frontend.api.SchemaNode
 import org.jetbrains.amper.frontend.api.StringSemantics
@@ -18,6 +19,7 @@ class PluginDeclarationSchema : SchemaNode() {
             "Module name is used by default.")
     val id by value<String>() // Defaults to the module name, is set on the tree level later.
 
+    @DeprecatedSchema("plugin.description.should.be.top.level", isError = false)
     @Deprecated("Use the plugin module's description instead.")
     @SchemaDoc("Plugin description. " +
             "Can be used by tooling to provide documentation on plugin references in configuration files. " +

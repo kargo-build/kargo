@@ -29,7 +29,6 @@ fun treeDiagnosticFactories(@Suppress("unused") refiner: TreeRefiner) = listOf<T
     IncorrectSettingsSectionFactory,
     KotlinCompilerVersionDiagnosticsFactory,
     ObsoleteLibProductTypeDiagnosticsFactory,
-    PluginInfoDescriptionIsDeprecatedFactory,
     TemplateNameWithoutPostfix,
     UnknownQualifiers,
     UnsupportedLayoutDiagnosticFactory,

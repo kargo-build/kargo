@@ -16,8 +16,6 @@ enum class PluginDiagnosticId : DiagnosticId {
     ConflictingPluginTaskPaths,
     ConstInitPropertyIsNotFullyResolved,
     InvalidCheckerTaskName,
-    MixedOutputMarkerApiUsage,
-    PluginDescriptionShouldBeTopLevel,
     PluginDoesntRegisterAnyTasks,
     PluginDuplicateId,
     PluginMissingSchemaClass,
@@ -27,7 +25,6 @@ enum class PluginDiagnosticId : DiagnosticId {
     TaskDependencyLoop,
     TaskOutputProducedByMultipleTasks,
     UndeclaredGeneratedDirectoryOutput,
-    UndeclaredMarkedOutputPath,
     UnexpectedPluginProductType,
     UnproducedInputInBuildDirectory,
 }

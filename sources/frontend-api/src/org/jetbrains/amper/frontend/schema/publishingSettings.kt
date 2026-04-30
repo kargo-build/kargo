@@ -4,6 +4,7 @@
 
 package org.jetbrains.amper.frontend.schema
 
+import org.jetbrains.amper.frontend.api.DeprecatedSchema
 import org.jetbrains.amper.frontend.api.KnownStringValues
 import org.jetbrains.amper.frontend.api.Misnomers
 import org.jetbrains.amper.frontend.api.PlatformAgnostic
@@ -36,6 +37,7 @@ class PublishingSettings : SchemaNode() {
 
     @PlatformAgnostic
     @SchemaDoc("Obsolete, use 'artifactId' instead.")
+    @DeprecatedSchema("obsolete.settings.publishing.name", isError = false)
     @Deprecated("Use 'artifactId' instead.")
     val name by nullableValue<String>()
 
