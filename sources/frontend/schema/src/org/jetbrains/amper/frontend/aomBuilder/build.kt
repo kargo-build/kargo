@@ -267,7 +267,6 @@ private fun Dependency.resolveInternalDependency(
         trace = trace,
     )
     is CatalogDependency -> error("Catalog dependency must be processed earlier!")
-    else -> error("Unknown dependency type: ${this::class}")
 }
 
 context(problemReporter: ProblemReporter)

@@ -25,4 +25,4 @@ settings:
   publishing:
     enabled: true
     group: org.jetbrains.amper.android.settings.plugin
-    name: org.jetbrains.amper.android.settings.plugin.gradle.plugin
+    artifactId: org.jetbrains.amper.android.settings.plugin.gradle.plugin

@@ -44,6 +44,7 @@ settings:
       - -Xconsistent-data-class-copy-visibility
       - -Xcontext-parameters
       - -Xrender-internal-diagnostic-names
+      - -Xwarning-level=REDUNDANT_ELSE_IN_WHEN:error
       - -Xwarning-level=UNCHECKED_CAST:error # At least suppress + explain why it's safe (where the check happened)
     optIns:
       - kotlin.contracts.ExperimentalContracts

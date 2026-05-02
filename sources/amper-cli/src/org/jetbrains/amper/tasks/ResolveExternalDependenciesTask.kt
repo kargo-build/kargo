@@ -149,7 +149,7 @@ class ResolveExternalDependenciesTask(
     ) : TaskResult
 
     companion object {
-        private val logger = LoggerFactory.getLogger(javaClass)
+        private val logger = LoggerFactory.getLogger(ResolveExternalDependenciesTask::class.java)
 
         internal suspend fun resolveModuleDependencies(
             resolutionPlatform: ResolutionPlatform,
