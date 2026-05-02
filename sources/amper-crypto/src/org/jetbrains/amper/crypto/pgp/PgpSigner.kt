@@ -4,7 +4,6 @@
 
 package org.jetbrains.amper.crypto.pgp
 
-import org.bouncycastle.openpgp.api.OpenPGPApi
 import org.bouncycastle.openpgp.api.OpenPGPKey
 import org.bouncycastle.openpgp.api.OpenPGPKeyReader
 import org.bouncycastle.openpgp.api.OpenPGPSignature
@@ -12,7 +11,6 @@ import org.bouncycastle.openpgp.api.bc.BcOpenPGPApi
 import java.io.IOException
 import java.nio.file.Path
 import kotlin.io.path.inputStream
-import kotlin.io.path.name
 import kotlin.io.path.writeText
 
 /**

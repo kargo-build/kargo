@@ -8,7 +8,6 @@ import kotlin.io.path.Path
 import kotlin.io.path.exists
 import kotlin.io.path.readText
 import kotlin.test.Test
-import kotlin.text.get
 
 abstract class MessagesConventionsTest(private val bundleName: String) {
     @Test

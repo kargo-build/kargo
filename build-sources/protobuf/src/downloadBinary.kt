@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.plugins.protobuf
@@ -8,7 +8,6 @@ import java.io.IOException
 import java.net.URI
 import java.nio.file.Path
 import java.nio.file.attribute.PosixFilePermission
-import kotlin.collections.plus
 import kotlin.io.path.getPosixFilePermissions
 import kotlin.io.path.outputStream
 import kotlin.io.path.setPosixFilePermissions

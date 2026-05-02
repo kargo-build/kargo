@@ -20,8 +20,6 @@ import org.jetbrains.amper.cli.filterByPluginId
 import org.jetbrains.amper.cli.options.ModuleFilter
 import org.jetbrains.amper.cli.options.selectModules
 import org.jetbrains.amper.frontend.Model
-import kotlin.collections.sorted
-import kotlin.collections.toSet
 
 private enum class CustomCommandsListFormat(val cliName: String) {
     Plain("plain"),

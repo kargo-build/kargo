@@ -14,9 +14,9 @@ import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.MavenCoordinates
 import org.jetbrains.amper.dependency.resolution.withJarEntry
 import org.jetbrains.amper.frontend.dr.resolver.MavenResolver
-import org.jetbrains.amper.maven.download.downloadSingleArtifactJar
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.maven.contributor.filterJarProjects
+import org.jetbrains.amper.maven.download.downloadSingleArtifactJar
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
 import kotlin.io.path.div

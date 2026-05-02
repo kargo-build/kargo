@@ -12,7 +12,7 @@ import org.jetbrains.amper.templates.json.TemplateResource
 import org.jetbrains.annotations.Nls
 import java.net.URL
 import java.nio.file.Path
-import java.util.ResourceBundle
+import java.util.*
 import kotlin.io.path.createDirectories
 import kotlin.io.path.outputStream
 

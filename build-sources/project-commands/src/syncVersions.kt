@@ -11,15 +11,11 @@ import utils.fetchContent
 import utils.replaceEachFileText
 import utils.replaceFileText
 import utils.replaceRegexGroup1
-import java.io.File
 import java.nio.file.FileVisitResult
 import java.nio.file.Path
 import kotlin.io.path.div
 import kotlin.io.path.name
-import kotlin.io.path.readText
-import kotlin.io.path.relativeTo
 import kotlin.io.path.visitFileTree
-import kotlin.io.path.writeText
 
 /*
  * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.

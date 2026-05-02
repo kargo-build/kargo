@@ -35,7 +35,6 @@ import org.jetbrains.amper.problems.reporting.MultipleLocationsBuildProblemSourc
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 import org.jetbrains.amper.stdlib.collections.joinToString
 import java.nio.file.InvalidPathException
-import kotlin.collections.get
 import kotlin.contracts.contract
 import kotlin.io.path.Path
 

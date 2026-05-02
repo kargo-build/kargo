@@ -6,11 +6,11 @@ package org.jetbrains.amper
 
 import io.opentelemetry.api.trace.Span
 import org.jetbrains.amper.cli.logging.withoutConsoleLogging
-import org.jetbrains.amper.frontend.messages.renderMessage
 import org.jetbrains.amper.cli.userReadableError
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.frontend.dr.resolver.MavenResolver
 import org.jetbrains.amper.frontend.dr.resolver.MavenResolverException
+import org.jetbrains.amper.frontend.messages.renderMessage
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.problems.reporting.BuildProblem
 import org.jetbrains.amper.problems.reporting.Level

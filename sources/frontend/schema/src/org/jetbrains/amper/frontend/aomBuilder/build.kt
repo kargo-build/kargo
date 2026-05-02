@@ -17,7 +17,6 @@ import org.jetbrains.amper.frontend.VersionCatalog
 import org.jetbrains.amper.frontend.aomBuilder.plugins.buildAndApplyPlugins
 import org.jetbrains.amper.frontend.api.Trace
 import org.jetbrains.amper.frontend.api.asTrace
-import org.jetbrains.amper.frontend.api.asTraceableValue
 import org.jetbrains.amper.frontend.catalogs.builtInCatalog
 import org.jetbrains.amper.frontend.catalogs.substituteCatalogDependencies
 import org.jetbrains.amper.frontend.contexts.DefaultInheritance
@@ -56,7 +55,6 @@ import org.jetbrains.amper.frontend.tree.get
 import org.jetbrains.amper.frontend.tree.instance
 import org.jetbrains.amper.frontend.tree.mergeTrees
 import org.jetbrains.amper.frontend.types.SchemaTypingContext
-import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.frontend.types.maven.MavenPluginDescriptionAdapter
 import org.jetbrains.amper.maven.MavenPluginXml
 import org.jetbrains.amper.plugins.schema.model.PluginData

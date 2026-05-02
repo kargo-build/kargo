@@ -4,13 +4,21 @@
 
 package kotlinx.validation.api
 
-import kotlin.metadata.jvm.*
-import org.objectweb.asm.*
-import org.objectweb.asm.tree.*
-import java.io.*
+import org.objectweb.asm.ClassReader
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.tree.AnnotationNode
+import org.objectweb.asm.tree.ClassNode
+import org.objectweb.asm.tree.FieldNode
+import org.objectweb.asm.tree.MethodNode
+import java.io.InputStream
+import java.io.PrintStream
 import java.util.*
-import java.util.jar.*
+import java.util.jar.JarFile
 import kotlin.metadata.KmProperty
+import kotlin.metadata.jvm.JvmFieldSignature
+import kotlin.metadata.jvm.JvmMethodSignature
+import kotlin.metadata.jvm.KotlinClassMetadata
+import kotlin.metadata.jvm.syntheticMethodForAnnotations
 
 @ExternalApi
 @Suppress("unused")

@@ -7,16 +7,16 @@ package org.jetbrains.amper.tasks.executable
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.core.extract.extractFileToCacheLocation
 import org.jetbrains.amper.incrementalcache.IncrementalCache
-import org.jetbrains.amper.jar.JarConfig
-import org.jetbrains.amper.jar.ZipInput
 import org.jetbrains.amper.jar.CompressionStrategy
+import org.jetbrains.amper.jar.JarConfig
 import org.jetbrains.amper.jar.ZipConfig
+import org.jetbrains.amper.jar.ZipInput
 import org.jetbrains.amper.run.ToolingArtifactsDownloader
 import java.nio.file.Path
 import kotlin.io.path.Path
 import kotlin.io.path.createTempFile
-import kotlin.io.path.writeText
 import kotlin.io.path.div
+import kotlin.io.path.writeText
 
 /**
  * Assembles an executable JAR with the appropriate structure and configuration.

@@ -8,7 +8,7 @@ import java.io.ByteArrayOutputStream
 import java.io.FilterOutputStream
 import java.io.OutputStream
 import java.io.PrintStream
-import java.util.Locale
+import java.util.*
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 

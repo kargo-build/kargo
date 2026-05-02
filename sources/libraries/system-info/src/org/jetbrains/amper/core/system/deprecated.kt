@@ -6,7 +6,6 @@ package org.jetbrains.amper.core.system
 
 import org.jetbrains.amper.system.info.OsFamily
 import org.jetbrains.amper.system.info.SystemInfo
-import kotlin.DeprecationLevel
 
 @Deprecated(
     message = "Moved to org.jetbrains.amper.system.info",

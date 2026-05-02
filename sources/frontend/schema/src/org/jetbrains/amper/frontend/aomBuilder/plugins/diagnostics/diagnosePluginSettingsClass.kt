@@ -8,7 +8,7 @@ import org.jetbrains.amper.frontend.aomBuilder.plugins.PluginDiagnosticId
 import org.jetbrains.amper.frontend.asBuildProblemSource
 import org.jetbrains.amper.frontend.plugins.PluginDeclarationSchema
 import org.jetbrains.amper.frontend.reportBundleError
-import org.jetbrains.amper.frontend.types.generated.settingsClassDelegate
+import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.plugins.schema.model.PluginData
 import org.jetbrains.amper.plugins.schema.model.PluginSettingsSearchResult
 import org.jetbrains.amper.problems.reporting.BuildProblemType

@@ -12,7 +12,7 @@ import org.jetbrains.amper.frontend.tree.TreeRefiner
 import org.jetbrains.amper.frontend.tree.completeTree
 import org.jetbrains.amper.frontend.tree.instance
 import org.jetbrains.amper.frontend.tree.reading.readTree
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfProject
+import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.problems.reporting.ProblemReporter
 
 context(problemReporter: ProblemReporter)

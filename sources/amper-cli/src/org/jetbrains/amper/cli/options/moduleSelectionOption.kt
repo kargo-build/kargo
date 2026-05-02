@@ -20,7 +20,6 @@ import com.github.ajalt.mordant.input.interactiveMultiSelectList
 import com.github.ajalt.mordant.terminal.Terminal
 import org.jetbrains.amper.cli.userReadableError
 import org.jetbrains.amper.frontend.AmperModule
-import kotlin.collections.map
 
 internal sealed class ModuleFilter {
     data object All : ModuleFilter()

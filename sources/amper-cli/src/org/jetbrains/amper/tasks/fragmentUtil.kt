@@ -8,13 +8,12 @@ import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Fragment
 import org.jetbrains.amper.frontend.FragmentDependencyType
 import org.jetbrains.amper.frontend.FragmentLink
-import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.LeafFragment
+import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.frontend.isDescendantOf
 import org.jetbrains.amper.tasks.native.NativeTaskType
 import org.jetbrains.amper.util.BuildType
-
 
 internal fun compilationTaskNameFor(
     module: AmperModule,

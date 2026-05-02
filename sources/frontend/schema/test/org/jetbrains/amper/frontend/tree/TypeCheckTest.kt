@@ -7,11 +7,7 @@ package org.jetbrains.amper.frontend.tree
 import org.jetbrains.amper.frontend.api.DefaultTrace
 import org.jetbrains.amper.frontend.contexts.EmptyContexts
 import org.jetbrains.amper.frontend.types.SchemaType
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfCatalogDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfEnumAllOpenPreset
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfEnumAmperLayout
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfSettings
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfVariantDependency
+import org.jetbrains.amper.frontend.types.generated.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull

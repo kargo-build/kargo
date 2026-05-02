@@ -8,7 +8,6 @@ import com.github.ajalt.mordant.terminal.Terminal
 import org.jetbrains.amper.ProcessRunner
 import org.jetbrains.amper.cli.telemetry.setAmperModule
 import org.jetbrains.amper.cli.userReadableError
-import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.engine.TaskGraphExecutionContext
 import org.jetbrains.amper.engine.TestTask
 import org.jetbrains.amper.frontend.AmperModule
@@ -19,6 +18,7 @@ import org.jetbrains.amper.tasks.EmptyTaskResult
 import org.jetbrains.amper.tasks.NativeTestRunSettings
 import org.jetbrains.amper.tasks.TaskResult
 import org.jetbrains.amper.telemetry.setListAttribute
+import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.use
 import org.jetbrains.amper.util.BuildType
 import org.slf4j.LoggerFactory

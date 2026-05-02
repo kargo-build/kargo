@@ -6,7 +6,6 @@ package org.jetbrains.amper.frontend.tree.reading
 
 import org.jetbrains.amper.frontend.contexts.Contexts
 import org.jetbrains.amper.frontend.schema.SchemaMavenCoordinates
-import org.jetbrains.amper.frontend.tree.ErrorNode
 import org.jetbrains.amper.frontend.tree.TreeDiagnosticId
 import org.jetbrains.amper.frontend.tree.TreeNode
 import org.jetbrains.amper.frontend.tree.reading.DependencyTypeInferenceResult.Bom
@@ -18,24 +17,8 @@ import org.jetbrains.amper.frontend.types.SchemaObjectDeclaration
 import org.jetbrains.amper.frontend.types.SchemaType
 import org.jetbrains.amper.frontend.types.SchemaVariantDeclaration
 import org.jetbrains.amper.frontend.types.TaskActionVariantDeclaration
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfBomDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfCatalogDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfExternalMavenDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfInternalDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfShadowDependencyCatalog
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfShadowDependencyLocal
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfShadowDependencyMaven
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfUnscopedBomDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfUnscopedCatalogDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfUnscopedExternalMavenDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfUnscopedModuleDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfVariantDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfVariantScopedDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfVariantShadowDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfVariantUnscopedDependency
-import org.jetbrains.amper.frontend.types.generated.DeclarationOfVariantUnscopedExternalDependency
+import org.jetbrains.amper.frontend.types.generated.*
 import org.jetbrains.amper.problems.reporting.ProblemReporter
-import kotlin.reflect.KClass
 
 /**
  * Try to derive the concrete type from the value based on the rules for the given [type]

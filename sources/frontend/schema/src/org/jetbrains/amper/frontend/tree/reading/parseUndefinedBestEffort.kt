@@ -5,7 +5,6 @@
 package org.jetbrains.amper.frontend.tree.reading
 
 import org.jetbrains.amper.frontend.contexts.Contexts
-import org.jetbrains.amper.frontend.tree.NullLiteralNode
 import org.jetbrains.amper.frontend.tree.TreeNode
 import org.jetbrains.amper.frontend.types.SchemaType
 import org.jetbrains.amper.problems.reporting.ProblemReporter

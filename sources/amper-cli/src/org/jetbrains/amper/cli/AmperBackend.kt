@@ -44,8 +44,6 @@ import org.jetbrains.amper.util.runnablePlatforms
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
-import kotlin.collections.filter
-import kotlin.collections.ifEmpty
 
 class AmperBackend(
     val context: CliContext,

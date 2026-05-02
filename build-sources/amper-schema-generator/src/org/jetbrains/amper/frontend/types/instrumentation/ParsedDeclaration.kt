@@ -5,7 +5,7 @@ package org.jetbrains.amper.frontend.types.instrumentation
 
 import com.squareup.kotlinpoet.ClassName
 import com.squareup.kotlinpoet.TypeName
-import java.util.Locale
+import java.util.*
 import kotlin.reflect.KClass
 
 internal sealed class ParsedDeclaration(

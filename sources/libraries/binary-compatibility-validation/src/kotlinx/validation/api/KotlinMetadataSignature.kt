@@ -4,9 +4,15 @@
 
 package kotlinx.validation.api
 
-import kotlin.metadata.jvm.*
-import org.objectweb.asm.*
-import org.objectweb.asm.tree.*
+import org.objectweb.asm.Opcodes
+import org.objectweb.asm.tree.AnnotationNode
+import org.objectweb.asm.tree.ClassNode
+import org.objectweb.asm.tree.FieldNode
+import org.objectweb.asm.tree.MethodNode
+import kotlin.metadata.jvm.JvmFieldSignature
+import kotlin.metadata.jvm.JvmMemberSignature
+import kotlin.metadata.jvm.JvmMethodSignature
+import kotlin.metadata.jvm.KotlinClassMetadata
 
 @ExternalApi // Only name is part of the API, nothing else is used by stdlib
 data class ClassBinarySignature internal constructor(

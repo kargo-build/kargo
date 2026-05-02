@@ -14,7 +14,8 @@ import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.tasks.TaskOutputRoot
 import org.jetbrains.amper.tasks.TaskResult
 import java.nio.file.Path
-import kotlin.io.path.*
+import kotlin.io.path.exists
+import kotlin.io.path.pathString
 
 /**
  * Merges multiple output directories from [JvmClassesTask] into a single directory.

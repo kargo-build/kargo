@@ -27,7 +27,6 @@ import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestInfo
 import org.junit.jupiter.api.assertInstanceOf
 import java.nio.file.Path
-import kotlin.collections.filterIsInstance
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.contract
 import kotlin.io.path.Path

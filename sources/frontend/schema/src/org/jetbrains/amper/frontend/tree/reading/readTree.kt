@@ -19,8 +19,8 @@ import org.jetbrains.amper.frontend.messages.originalFilePath
 import org.jetbrains.amper.frontend.reportBundleError
 import org.jetbrains.amper.frontend.tree.MappingNode
 import org.jetbrains.amper.frontend.tree.TreeDiagnosticId
-import org.jetbrains.amper.frontend.tree.diagnoseUnknownProperties
 import org.jetbrains.amper.frontend.tree.diagnoseDeprecatedProperties
+import org.jetbrains.amper.frontend.tree.diagnoseUnknownProperties
 import org.jetbrains.amper.frontend.types.SchemaObjectDeclaration
 import org.jetbrains.amper.frontend.types.SchemaType
 import org.jetbrains.amper.problems.reporting.ProblemReporter

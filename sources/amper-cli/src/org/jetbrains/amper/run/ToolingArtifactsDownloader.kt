@@ -4,6 +4,7 @@
 
 package org.jetbrains.amper.run
 
+import org.jetbrains.amper.CliReportingMavenResolver
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.dependency.resolution.MavenCoordinates
 import org.jetbrains.amper.dependency.resolution.MavenRepository
@@ -11,7 +12,6 @@ import org.jetbrains.amper.dependency.resolution.MavenRepository.Companion.Maven
 import org.jetbrains.amper.dependency.resolution.Repository
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
-import org.jetbrains.amper.CliReportingMavenResolver
 import org.jetbrains.amper.frontend.dr.resolver.toIncrementalCacheResult
 import org.jetbrains.amper.frontend.schema.DefaultVersions
 import org.jetbrains.amper.frontend.schema.DiscouragedDirectDefaultVersionAccess

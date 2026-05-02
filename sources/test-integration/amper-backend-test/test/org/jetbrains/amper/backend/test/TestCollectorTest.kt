@@ -7,9 +7,9 @@ package org.jetbrains.amper.backend.test
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
+import org.jetbrains.amper.backend.test.TestCollector.Companion.runTestWithCollector
 import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.use
-import org.jetbrains.amper.backend.test.TestCollector.Companion.runTestWithCollector
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

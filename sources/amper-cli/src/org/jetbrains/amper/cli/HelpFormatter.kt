@@ -8,7 +8,6 @@ import com.github.ajalt.clikt.core.Context
 import com.github.ajalt.clikt.output.HelpFormatter.ParameterHelp
 import com.github.ajalt.clikt.output.MordantMarkdownHelpFormatter
 import com.github.ajalt.mordant.rendering.Widget
-import kotlin.collections.get
 
 class AmperHelpFormatter(context: Context) : MordantMarkdownHelpFormatter(context, showDefaultValues = true) {
 

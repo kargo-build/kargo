@@ -10,7 +10,6 @@ import kotlinx.serialization.Serializable
 import org.jetbrains.amper.dependency.resolution.telemetry.debugSpanBuilder
 import org.jetbrains.amper.dependency.resolution.telemetry.infoSpanBuilder
 import org.jetbrains.amper.incrementalcache.IncrementalCache
-import java.io.Closeable
 import java.nio.file.Path
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArraySet

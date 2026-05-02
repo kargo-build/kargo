@@ -5,8 +5,7 @@
 package org.jetbrains.amper.jdks
 
 import io.ktor.client.*
-import io.ktor.client.plugins.HttpRequestRetry
-import io.ktor.client.plugins.HttpTimeout
+import io.ktor.client.plugins.*
 import kotlinx.coroutines.runBlocking
 import kotlin.test.Test
 import kotlin.time.Duration.Companion.minutes

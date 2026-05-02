@@ -4,9 +4,25 @@
 
 package kotlinx.validation.api
 
-import kotlin.metadata.*
-import kotlin.metadata.jvm.*
-import org.objectweb.asm.tree.*
+import org.objectweb.asm.tree.ClassNode
+import kotlin.metadata.ClassKind
+import kotlin.metadata.KmDeclarationContainer
+import kotlin.metadata.KmTypeParameter
+import kotlin.metadata.Visibility
+import kotlin.metadata.isLateinit
+import kotlin.metadata.isReified
+import kotlin.metadata.jvm.JvmFieldSignature
+import kotlin.metadata.jvm.JvmMemberSignature
+import kotlin.metadata.jvm.JvmMethodSignature
+import kotlin.metadata.jvm.KotlinClassMetadata
+import kotlin.metadata.jvm.Metadata
+import kotlin.metadata.jvm.fieldSignature
+import kotlin.metadata.jvm.getterSignature
+import kotlin.metadata.jvm.setterSignature
+import kotlin.metadata.jvm.signature
+import kotlin.metadata.jvm.syntheticMethodForAnnotations
+import kotlin.metadata.kind
+import kotlin.metadata.visibility
 
 internal class ClassVisibility(
     val name: String,

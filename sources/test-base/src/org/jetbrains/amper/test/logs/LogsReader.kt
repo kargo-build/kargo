@@ -7,7 +7,6 @@ package org.jetbrains.amper.test.logs
 import org.slf4j.event.Level
 import java.nio.file.Path
 import kotlin.io.path.useLines
-import kotlin.text.get
 
 class LogEntry(val level: Level, val message: String)
 

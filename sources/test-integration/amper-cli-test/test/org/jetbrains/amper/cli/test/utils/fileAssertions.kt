@@ -8,7 +8,6 @@ import org.jetbrains.amper.test.generateUnifiedDiff
 import org.junit.jupiter.api.AssertionFailureBuilder
 import org.opentest4j.FileInfo
 import java.nio.file.Path
-import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.fileSize
 import kotlin.io.path.readBytes

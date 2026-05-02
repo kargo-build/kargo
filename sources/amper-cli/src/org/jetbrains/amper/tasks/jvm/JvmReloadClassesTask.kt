@@ -16,7 +16,6 @@ import org.jetbrains.compose.reload.orchestration.OrchestrationClientRole
 import org.jetbrains.compose.reload.orchestration.OrchestrationMessage.ReloadClassesRequest
 import org.jetbrains.compose.reload.orchestration.OrchestrationMessage.ReloadClassesRequest.ChangeType
 import org.jetbrains.compose.reload.orchestration.connectOrchestrationClient
-import org.jetbrains.compose.reload.orchestration.sendBlocking
 import org.slf4j.LoggerFactory
 import java.io.File
 

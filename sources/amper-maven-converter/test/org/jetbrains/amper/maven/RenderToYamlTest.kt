@@ -10,7 +10,6 @@ import org.jetbrains.amper.frontend.api.TransformedValueTrace
 import org.jetbrains.amper.frontend.contexts.TestCtx
 import org.jetbrains.amper.frontend.schema.DependencyScope
 import org.jetbrains.amper.frontend.schema.ProductType
-import org.jetbrains.amper.frontend.schema.UnscopedExternalMavenDependency
 import org.jetbrains.amper.frontend.tree.add
 import org.jetbrains.amper.frontend.tree.buildTree
 import org.jetbrains.amper.frontend.tree.invoke

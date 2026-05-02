@@ -6,7 +6,7 @@ package org.jetbrains.amper.engine
 
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import java.util.UUID
+import java.util.*
 
 /**
  * The context of a task graph execution, available to task actions when the tasks are actually executing.

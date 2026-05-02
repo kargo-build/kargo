@@ -6,7 +6,11 @@ package org.jetbrains.amper.test
 
 import org.jetbrains.amper.stdlib.properties.readProperties
 import java.nio.file.Path
-import kotlin.io.path.*
+import kotlin.io.path.Path
+import kotlin.io.path.createDirectories
+import kotlin.io.path.div
+import kotlin.io.path.exists
+import kotlin.io.path.isDirectory
 
 @Suppress("unused")
 object TeamCityHelper {

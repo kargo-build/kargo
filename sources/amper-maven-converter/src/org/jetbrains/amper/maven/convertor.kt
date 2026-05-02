@@ -23,7 +23,6 @@ import org.jetbrains.amper.telemetry.spanBuilder
 import org.jetbrains.amper.telemetry.use
 import org.slf4j.LoggerFactory
 import java.nio.file.Path
-import kotlin.collections.plus
 import kotlin.io.path.div
 
 /**

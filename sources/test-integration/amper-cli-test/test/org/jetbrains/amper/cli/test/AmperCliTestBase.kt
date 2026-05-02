@@ -10,8 +10,8 @@ import org.jetbrains.amper.processes.ProcessResult
 import org.jetbrains.amper.processes.runProcessAndCaptureOutput
 import org.jetbrains.amper.test.AmperCliResult
 import org.jetbrains.amper.test.AmperCliWithWrapperTestBase
-import org.jetbrains.amper.test.JavaHomeMode
 import org.jetbrains.amper.test.Dirs
+import org.jetbrains.amper.test.JavaHomeMode
 import org.jetbrains.amper.test.LocalAmperPublication
 import org.jetbrains.amper.test.TempDirExtension
 import org.jetbrains.amper.test.android.AndroidTools

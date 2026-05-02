@@ -6,7 +6,7 @@ package org.jetbrains.amper.dependency.resolution
 
 import org.jetbrains.annotations.Nls
 import java.text.MessageFormat
-import java.util.ResourceBundle
+import java.util.*
 
 object DependencyResolutionBundle {
     private val resourceBundle = checkNotNull(ResourceBundle.getBundle("messages.DependencyResolutionBundle")) {

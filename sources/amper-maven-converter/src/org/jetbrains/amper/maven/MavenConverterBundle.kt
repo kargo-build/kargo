@@ -6,7 +6,7 @@ package org.jetbrains.amper.maven
 
 import org.jetbrains.annotations.Nls
 import java.text.MessageFormat
-import java.util.ResourceBundle
+import java.util.*
 
 object MavenConverterBundle {
     private val resourceBundle = checkNotNull(ResourceBundle.getBundle("messages.MavenConverterBundle")) {

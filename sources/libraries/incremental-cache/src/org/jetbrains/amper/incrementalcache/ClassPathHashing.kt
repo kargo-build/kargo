@@ -8,7 +8,6 @@ import java.io.File
 import java.io.InputStream
 import java.nio.file.Path
 import java.security.MessageDigest
-import kotlin.collections.forEach
 import kotlin.io.path.Path
 import kotlin.io.path.inputStream
 import kotlin.io.path.isDirectory

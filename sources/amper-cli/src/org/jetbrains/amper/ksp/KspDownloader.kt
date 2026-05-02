@@ -4,12 +4,12 @@
 
 package org.jetbrains.amper.ksp
 
+import org.jetbrains.amper.CliReportingMavenResolver
 import org.jetbrains.amper.dependency.resolution.MavenCoordinates
 import org.jetbrains.amper.dependency.resolution.Repository
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
 import org.jetbrains.amper.dependency.resolution.ResolutionScope
 import org.jetbrains.amper.dependency.resolution.ResolvedGraph
-import org.jetbrains.amper.CliReportingMavenResolver
 
 suspend fun CliReportingMavenResolver.downloadKspJars(kspVersion: String, repositories: List<Repository>): ResolvedGraph = resolve(
     // Copying the KSP Gradle plugin's classpath

@@ -19,7 +19,6 @@ import org.jetbrains.jps.dependency.NodeSourcePathMapper
 import org.jetbrains.jps.dependency.impl.PathSourceMapper
 import java.nio.file.Path
 import java.util.*
-import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.io.path.Path
 import kotlin.io.path.div
 

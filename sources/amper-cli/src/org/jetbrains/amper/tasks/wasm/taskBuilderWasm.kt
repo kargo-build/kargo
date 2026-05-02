@@ -12,6 +12,7 @@ import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.TaskName
 import org.jetbrains.amper.incrementalcache.IncrementalCache
+import org.jetbrains.amper.jdk.provisioning.JdkProvider
 import org.jetbrains.amper.tasks.CommonTaskType
 import org.jetbrains.amper.tasks.PlatformTaskType
 import org.jetbrains.amper.tasks.ProjectTasksBuilder
@@ -19,7 +20,6 @@ import org.jetbrains.amper.tasks.ProjectTasksBuilder.Companion.getTaskOutputPath
 import org.jetbrains.amper.tasks.TaskOutputRoot
 import org.jetbrains.amper.tasks.web.WebCompileKlibTask
 import org.jetbrains.amper.tasks.web.WebLinkTask
-import org.jetbrains.amper.jdk.provisioning.JdkProvider
 
 internal fun ProjectTasksBuilder.setupWasmTasks(
     platform: Platform,

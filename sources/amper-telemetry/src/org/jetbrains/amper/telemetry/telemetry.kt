@@ -7,8 +7,6 @@ package org.jetbrains.amper.telemetry
 import io.opentelemetry.api.GlobalOpenTelemetry
 import io.opentelemetry.api.trace.SpanBuilder
 import io.opentelemetry.api.trace.Tracer
-import org.jetbrains.amper.telemetry.use
-import org.jetbrains.amper.telemetry.useWithoutCoroutines
 
 // Note: the tracer name is not used in traces, and should just be linked to the instrumentation library itself.
 // It is different from the service name, which does appear in traces.

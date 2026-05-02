@@ -15,8 +15,6 @@ import org.jetbrains.amper.dependency.resolution.MavenDependencyNode
 import org.jetbrains.amper.dependency.resolution.getDefaultFileCacheBuilder
 import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.MavenDependencyBase
-import org.jetbrains.amper.frontend.schema.SchemaMavenCoordinates
-import org.jetbrains.amper.frontend.schema.toMavenCoordinates
 import org.jetbrains.amper.incrementalcache.IncrementalCache
 import org.jetbrains.amper.problems.reporting.MessageBundle
 import kotlin.io.path.absolutePathString

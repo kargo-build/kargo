@@ -6,8 +6,6 @@ package org.jetbrains.amper.frontend.kotlin
 
 import org.jetbrains.amper.core.UsedInIdePlugin
 import org.jetbrains.amper.frontend.MavenCoordinates
-import org.jetbrains.amper.frontend.api.asTraceable
-import org.jetbrains.amper.frontend.api.asTraceableValue
 import org.jetbrains.amper.frontend.kotlin.CompilerPluginConfig.*
 import org.jetbrains.amper.frontend.schema.AllOpenPreset
 import org.jetbrains.amper.frontend.schema.NoArgPreset

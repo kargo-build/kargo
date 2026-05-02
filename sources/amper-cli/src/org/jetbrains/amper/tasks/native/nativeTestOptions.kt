@@ -4,8 +4,8 @@
 
 package org.jetbrains.amper.tasks.native
 
-import org.jetbrains.amper.tasks.NativeTestRunSettings
 import org.jetbrains.amper.tasks.AllRunSettings
+import org.jetbrains.amper.tasks.NativeTestRunSettings
 import org.jetbrains.amper.tasks.TestResultsFormat
 import org.jetbrains.amper.test.FilterMode
 import org.jetbrains.amper.test.TestFilter

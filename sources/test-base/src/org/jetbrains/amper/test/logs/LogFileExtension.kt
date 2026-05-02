@@ -4,7 +4,10 @@
 package org.jetbrains.amper.test.logs
 
 import org.junit.jupiter.api.MediaType
-import org.junit.jupiter.api.extension.*
+import org.junit.jupiter.api.extension.AfterEachCallback
+import org.junit.jupiter.api.extension.BeforeEachCallback
+import org.junit.jupiter.api.extension.ExtensionContext
+import org.junit.jupiter.api.extension.TestWatcher
 import org.slf4j.MDC
 import java.nio.file.Path
 import kotlin.io.path.absolutePathString

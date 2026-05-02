@@ -20,6 +20,7 @@ import org.jetbrains.amper.test.processes.PrefixPrintOutputListener
 import org.jetbrains.amper.test.processes.checkExitCodeIsZero
 import java.io.File
 import java.io.IOException
+import java.net.ServerSocket
 import java.nio.file.Path
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -34,7 +35,6 @@ import kotlin.io.path.pathString
 import kotlin.io.path.readLines
 import kotlin.random.Random
 import kotlin.time.Duration.Companion.seconds
-import java.net.ServerSocket
 
 private val binExtension = if (OsFamily.current.isWindows) ".exe" else ""
 private val scriptExtension = if (OsFamily.current.isWindows) ".bat" else ""

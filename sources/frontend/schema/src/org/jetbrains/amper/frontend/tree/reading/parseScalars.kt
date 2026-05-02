@@ -7,7 +7,6 @@ package org.jetbrains.amper.frontend.tree.reading
 import org.jetbrains.amper.frontend.contexts.Contexts
 import org.jetbrains.amper.frontend.tree.TreeDiagnosticId
 import org.jetbrains.amper.frontend.tree.TreeNode
-import org.jetbrains.amper.frontend.tree.reading.maven.validateAndReportMavenCoordinates
 import org.jetbrains.amper.frontend.types.SchemaType
 import org.jetbrains.amper.frontend.types.render
 import org.jetbrains.amper.problems.reporting.BuildProblemType

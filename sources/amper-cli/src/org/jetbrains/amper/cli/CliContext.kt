@@ -8,8 +8,8 @@ import com.github.ajalt.mordant.terminal.Terminal
 import io.opentelemetry.api.GlobalOpenTelemetry
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format
-import org.jetbrains.amper.android.AndroidSdkDetector
 import org.jetbrains.amper.ProcessRunner
+import org.jetbrains.amper.android.AndroidSdkDetector
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.frontend.project.AmperProjectContext
 import org.jetbrains.amper.incrementalcache.IncrementalCache
