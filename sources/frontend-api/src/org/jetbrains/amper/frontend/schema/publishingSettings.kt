@@ -33,12 +33,13 @@ class PublishingSettings : SchemaNode() {
     @PlatformAgnostic
     @SchemaDoc("Base artifact ID of the published Maven artifacts (for multiplatform libraries, a suffix may be " +
             "appended to distinguish artifacts from different platforms)")
+    @Suppress("DEPRECATION_ERROR") // it's the only allowed usage for the transition
     val artifactId by referenceValue(::name)
 
     @PlatformAgnostic
     @SchemaDoc("Obsolete, use 'artifactId' instead.")
     @DeprecatedSchema("obsolete.settings.publishing.name", isError = false)
-    @Deprecated("Use 'artifactId' instead.")
+    @Deprecated("Use 'artifactId' instead.", level = DeprecationLevel.ERROR, replaceWith = ReplaceWith("artifactId"))
     val name by nullableValue<String>()
 
     @PlatformAgnostic
