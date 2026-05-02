@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.test
@@ -26,11 +26,11 @@ class TempDirExtension : Extension, BeforeEachCallback, AfterEachCallback {
     val path
         get() = pathRef.get()!!
 
-    override fun beforeEach(context: ExtensionContext?) {
+    override fun beforeEach(context: ExtensionContext) {
         pathRef.set(createTempDirectory(Dirs.tempDir, "test-dir"))
     }
 
-    override fun afterEach(context: ExtensionContext?) {
+    override fun afterEach(context: ExtensionContext) {
         val current = pathRef.getAndSet(null)!!
         deleteWithDiagnostics(current)
     }

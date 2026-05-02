@@ -52,15 +52,15 @@ class LogFileExtension : BeforeEachCallback, TestWatcher, AfterEachCallback {
 
     private fun String.sanitizeForFilename(): String = replace(Regex("[^a-zA-Z0-9._-]"), "_")
 
-    override fun testAborted(context: ExtensionContext, cause: Throwable) {
+    override fun testAborted(context: ExtensionContext, cause: Throwable?) {
         val logFile = context.currentTestLogFile()
-        logFile.appendText("\n-------------\nTEST ABORTED:\n${cause.stackTraceToString()}")
+        logFile.appendText("\n-------------\nTEST ABORTED:\n${cause?.stackTraceToString() ?: "no cause"}")
         context.publishAndDeleteTestLogFile()
     }
 
-    override fun testFailed(context: ExtensionContext, cause: Throwable) {
+    override fun testFailed(context: ExtensionContext, cause: Throwable?) {
         val logFile = context.currentTestLogFile()
-        logFile.appendText("\n-------------\nTEST FAILED:\n${cause.stackTraceToString()}")
+        logFile.appendText("\n-------------\nTEST FAILED:\n${cause?.stackTraceToString() ?: "no cause"}")
         context.publishAndDeleteTestLogFile()
     }
 
@@ -97,6 +97,7 @@ class LogFileExtension : BeforeEachCallback, TestWatcher, AfterEachCallback {
         private val ExtensionContext.store: ExtensionContext.Store
             get() = getStore(namespace)
 
-        private inline fun <reified T> ExtensionContext.Store.get(key: String): T = get(key, T::class.java)
+        private inline fun <reified T : Any> ExtensionContext.Store.get(key: String): T = get(key, T::class.java)
+            ?: error("Store entry not found for key: $key")
     }
 }

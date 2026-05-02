@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.test.server
@@ -74,7 +74,7 @@ class HttpServerExtension(
     val requestedFiles: List<Path>
         get() = requestedFilesRef.toList()
 
-    override fun beforeEach(context: ExtensionContext?) {
+    override fun beforeEach(context: ExtensionContext) {
         val server = HttpServer.create(InetSocketAddress(InetAddress.getLoopbackAddress(), 0), 5)
         server.createContext("/www") { httpExchange ->
             if (httpExchange.requestMethod != "GET") {
@@ -126,7 +126,7 @@ class HttpServerExtension(
         }
     }
 
-    override fun afterEach(context: ExtensionContext?) {
+    override fun afterEach(context: ExtensionContext) {
         val current = serverRef.getAndSet(null)!!
         current.stop(0)
     }

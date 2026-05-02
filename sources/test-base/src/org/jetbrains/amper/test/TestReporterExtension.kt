@@ -21,7 +21,7 @@ class TestReporterExtension: Extension, BeforeEachCallback, AfterEachCallback, T
         currentContext.get()!!.publishReportEntry(map)
     }
 
-    override fun publishFile(name: String?, mediaType: MediaType?, action: ThrowingConsumer<Path?>?) {
+    override fun publishFile(name: String, mediaType: MediaType, action: ThrowingConsumer<Path>) {
         currentContext.get()!!.publishFile(name, mediaType, action)
     }
 
