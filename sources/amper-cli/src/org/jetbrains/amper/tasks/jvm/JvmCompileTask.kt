@@ -76,6 +76,7 @@ import kotlin.io.path.isDirectory
 import kotlin.io.path.listDirectoryEntries
 import kotlin.io.path.pathString
 import kotlin.io.path.walk
+import kotlin.use
 
 @OptIn(ExperimentalBuildToolsApi::class)
 internal class JvmCompileTask(
@@ -350,7 +351,6 @@ internal class JvmCompileTask(
             userSettings = userSettings,
             classpath = classpath,
             jdkHome = jdk.homeDir,
-            outputPath = compiledJvmArtifact.kotlinCompilerOutputRoot,
             compilerPlugins = compilerPlugins,
             fragments = fragments,
             additionalSourceRoots = additionalSourceRoots,
@@ -369,7 +369,7 @@ internal class JvmCompileTask(
                 // TODO maybe share the build session with the whole Amper build (across all JVM compile tasks)?
                 kotlinToolchains.createBuildSession().use {
                     val compilationOperation = kotlinToolchains.getToolchain<JvmPlatformToolchain>()
-                        .createJvmCompilationOperation(
+                        .jvmCompilationOperationBuilder(
                             sources = sourceFiles,
                             destinationDirectory = compiledJvmArtifact.kotlinCompilerOutputRoot,
                         ).apply {
@@ -378,6 +378,7 @@ internal class JvmCompileTask(
 //                            set(JvmCompilationOperation.INCREMENTAL_COMPILATION,
 //                                JvmSnapshotBasedIncrementalCompilationConfiguration())
                         }
+                        .build()
                     it.executeOperation(
                         operation = compilationOperation,
                         executionPolicy = executionPolicy,

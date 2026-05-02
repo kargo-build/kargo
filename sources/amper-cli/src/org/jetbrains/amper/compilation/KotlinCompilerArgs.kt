@@ -126,7 +126,6 @@ internal fun kotlinJvmCompilerArgs(
     classpath: List<Path>,
     compilerPlugins: List<ResolvedCompilerPlugin>,
     jdkHome: Path,
-    outputPath: Path,
     friendPaths: List<Path>,
     fragments: List<Fragment>,
     additionalSourceRoots: List<SourceRoot>,
@@ -162,11 +161,6 @@ internal fun kotlinJvmCompilerArgs(
         additionalSourceRoots = additionalSourceRoots,
         compilerPlugins = compilerPlugins,
     ))
-
-    // -d is after freeCompilerArgs because we don't allow overriding the output dir (it breaks task dependencies)
-    // (specifying -d multiple times generates a warning, and only the last value is used)
-    // TODO forbid -d in freeCompilerArgs in the frontend, so it's clearer for the users
-    add("-d=${outputPath.pathString}")
 }
 
 enum class KotlinCompilationType(val argName: String) {
