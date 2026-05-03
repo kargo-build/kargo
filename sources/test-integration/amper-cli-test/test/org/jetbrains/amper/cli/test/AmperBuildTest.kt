@@ -201,6 +201,12 @@ class AmperBuildTest : AmperCliTestBase() {
         }
     }
 
+    @Test
+    fun `kotlin compiler dev version`() = runSlowTest {
+        val projectContext = testProject("kotlin-dev-version")
+        runCli(projectDir = projectContext, "build") // just test that it builds
+    }
+
     private suspend fun runCliWithOrWithoutJps(
         projectRoot: Path,
         vararg args: String,

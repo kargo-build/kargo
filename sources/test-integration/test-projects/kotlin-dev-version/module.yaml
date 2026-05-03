@@ -1,0 +1,10 @@
+product:
+  type: jvm/app
+
+# We need this repo for the dev stdlib
+repositories:
+  - https://packages.jetbrains.team/maven/p/kt/bootstrap
+
+settings:
+  kotlin:
+    version: 2.4.20-dev-835

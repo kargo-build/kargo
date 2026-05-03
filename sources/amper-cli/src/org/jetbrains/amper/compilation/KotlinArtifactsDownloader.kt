@@ -8,6 +8,7 @@ import org.jetbrains.amper.CliReportingMavenResolver
 import org.jetbrains.amper.core.AmperUserCacheRoot
 import org.jetbrains.amper.core.downloader.KOTLIN_GROUP_ID
 import org.jetbrains.amper.dependency.resolution.MavenCoordinates
+import org.jetbrains.amper.dependency.resolution.MavenRepository
 import org.jetbrains.amper.dependency.resolution.MavenRepository.Companion.MavenCentral
 import org.jetbrains.amper.dependency.resolution.Repository
 import org.jetbrains.amper.dependency.resolution.ResolutionPlatform
@@ -75,7 +76,7 @@ internal class KotlinArtifactsDownloader(
         groupId: String,
         artifactId: String,
         version: String,
-        repositories: List<Repository> = listOf(MavenCentral),
+        repositories: List<Repository> = listOf(MavenCentral, KotlinBootstrap),
     ): List<Path> =
         // using incrementalCache because currently DR takes ~3s even when the artifact is already cached
         incrementalCache.execute("resolve-$groupId-$artifactId-$version", emptyMap(), emptyList()) {
@@ -89,4 +90,12 @@ internal class KotlinArtifactsDownloader(
             )
             return@execute resolved.toIncrementalCacheResult()
         }.outputFiles
+
+    companion object {
+        /**
+         * Repository where dev Kotlin artifacts are hosted.
+         * This is useful for compiler plugin authors that need to test in advance against future versions of Kotlin.
+         */
+        private val KotlinBootstrap = MavenRepository("https://packages.jetbrains.team/maven/p/kt/bootstrap")
+    }
 }
