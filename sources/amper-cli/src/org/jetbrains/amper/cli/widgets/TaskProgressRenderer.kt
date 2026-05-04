@@ -58,6 +58,8 @@ class TaskProgressRenderer(
 
     private val progressStateFlow = MutableStateFlow(ProgressState())
 
+    private val platformProgressReporter = PlatformProgressReporter(terminal)
+
     private val animationJob = coroutineScope.launch(Dispatchers.IO) {
         val animation = terminal.animation<ProgressState> { state ->
             createTasksProgressWidget(state)
@@ -78,11 +80,17 @@ class TaskProgressRenderer(
                 // animation code is single-threaded
                 mutex.withLock {
                     animation.update(snapshot)
+                    platformProgressReporter.update(
+                        state = PlatformProgressReporter.Progress.Percentage(
+                            ratio = snapshot.completeTasksCount.toFloat() / totalTasksCount,
+                        )
+                    )
                 }
             }
         } finally {
             animation.clear()
             terminal.cursor.show()
+            platformProgressReporter.update(PlatformProgressReporter.Progress.Hidden)
         }
     }
 

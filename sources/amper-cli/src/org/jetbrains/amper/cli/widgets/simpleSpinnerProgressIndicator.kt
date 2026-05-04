@@ -26,6 +26,8 @@ fun simpleSpinnerProgressIndicator(
     terminal: Terminal,
     message: String,
 ): Job {
+    val platformProgress = PlatformProgressReporter(terminal)
+
     val animator = progressBarLayout(align = TextAlign.LEFT) {
         spinner(Spinner.Dots(terminal.theme.success))
         text(terminal.theme.muted(message))
@@ -33,8 +35,10 @@ fun simpleSpinnerProgressIndicator(
 
     return scope.launch(Dispatchers.IO) {
         try {
+            platformProgress.update(PlatformProgressReporter.Progress.Indeterminate)
             animator.execute()
         } finally {
+            platformProgress.update(PlatformProgressReporter.Progress.Hidden)
             animator.clear()
         }
     }
