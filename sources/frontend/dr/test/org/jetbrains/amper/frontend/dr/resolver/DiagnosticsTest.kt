@@ -119,6 +119,9 @@ class DiagnosticsTest : BaseModuleDrTest() {
         )
     }
 
+    /**
+     * The test checks that implicitly added kotlin-related dependencies with invalid versions are correctly reported
+     */
     @Test
     fun `test sync diagnostics kotlib stdlib`(testInfo: TestInfo) = runSlowModuleDependenciesTest {
         val aom = getTestProjectModel("multi-module-failed-resolve-kotlin-stdlib", testDataRoot)
@@ -153,15 +156,6 @@ class DiagnosticsTest : BaseModuleDrTest() {
         collectBuildProblems(jvmAppFragmentDeps, diagnosticsReporter, Level.Error)
         val buildProblems = diagnosticsReporter.problems
 
-        /**
-         * This magic number 16 (4*4) appears because we are diagnosing each fragment (4 fragments total),
-         * and each fragment contains 4 incorrect dependencies.
-         *
-         * The common fragment contains incorrect dependencies by definition in a module file.
-         * More specific fragments contain incorrect dependencies because they were propagated during merge.
-         */
-        assertEquals(6, buildProblems.size)
-
         // Implicit dependency added by `kotlin`
         // A version of the library is taken from settings:kotlin:version in file module.yaml
         checkBuiltInDependencyBuildProblem(
@@ -177,6 +171,12 @@ class DiagnosticsTest : BaseModuleDrTest() {
             "org.jetbrains.kotlin", "kotlin-test-junit5",
             Path("module.yaml"),
         )
+
+        /**
+         * This magic number 6 (2*3) doesn't matter much on its own, what matters is that
+         * all buildProblems belong to the dependencies "kotlin-stdlib" and "kotlin-test-junit5" and are checked above
+         */
+        assertEquals(6, buildProblems.size)
     }
 
     /**
