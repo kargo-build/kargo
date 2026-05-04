@@ -119,6 +119,66 @@ class DiagnosticsTest : BaseModuleDrTest() {
         )
     }
 
+    @Test
+    fun `test sync diagnostics kotlib stdlib`(testInfo: TestInfo) = runSlowModuleDependenciesTest {
+        val aom = getTestProjectModel("multi-module-failed-resolve-kotlin-stdlib", testDataRoot)
+
+        assertEquals(
+            setOf("main", "test"),
+            aom.modules.single { it.userReadableName == "app" }.fragments.map { it.name }.toSet(),
+            ""
+        )
+
+        val jvmAppFragmentDeps = doTestByFile(
+            testInfo,
+            aom,
+            ideSyncTestResolutionInput,
+            module = "app",
+            filter = ideSyncModuleResolutionFilter,
+            messagesCheck = { node ->
+                if (!assertDependencyError(node, "org.jetbrains.kotlin", "kotlin-stdlib")
+                    && !assertDependencyError(node, "org.jetbrains.kotlin", "kotlin-test-junit5")
+                ) {
+                    node.verifyOwnMessages()
+                }
+            }
+        )
+
+        assertFiles(
+            testInfo,
+            root = jvmAppFragmentDeps,
+        )
+
+        val diagnosticsReporter = CollectingProblemReporter()
+        collectBuildProblems(jvmAppFragmentDeps, diagnosticsReporter, Level.Error)
+        val buildProblems = diagnosticsReporter.problems
+
+        /**
+         * This magic number 16 (4*4) appears because we are diagnosing each fragment (4 fragments total),
+         * and each fragment contains 4 incorrect dependencies.
+         *
+         * The common fragment contains incorrect dependencies by definition in a module file.
+         * More specific fragments contain incorrect dependencies because they were propagated during merge.
+         */
+        assertEquals(6, buildProblems.size)
+
+        // Implicit dependency added by `kotlin`
+        // A version of the library is taken from settings:kotlin:version in file module.yaml
+        checkBuiltInDependencyBuildProblem(
+            buildProblems, 4,
+            "org.jetbrains.kotlin", "kotlin-stdlib",
+            Path("module.yaml"),
+        )
+
+        // Implicit dependency added by `kotlin`
+        // A version of the library is taken from settings:kotlin:version in file module.yaml
+        checkBuiltInDependencyBuildProblem(
+            buildProblems, 2,
+            "org.jetbrains.kotlin", "kotlin-test-junit5",
+            Path("module.yaml"),
+        )
+    }
+
     /**
      * AMPER-4882 revealed that the dependency insights graph is calculated for the same coordinates as many times as
      * coordinates are mentioned in the AOM
