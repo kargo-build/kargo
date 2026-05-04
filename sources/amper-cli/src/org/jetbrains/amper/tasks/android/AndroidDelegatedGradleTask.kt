@@ -111,7 +111,7 @@ abstract class AndroidDelegatedGradleTask(
             IncrementalCache.ExecutionResult(result.filter(::outputFilterPredicate))
         }
         taskOutputPath.path.createDirectories()
-        executionResult.outputFiles.map {
+        executionResult.outputFiles.forEach {
             it.copyToRecursively(
                 taskOutputPath.path.resolve(it.fileName), followLinks = false, overwrite = true
             )

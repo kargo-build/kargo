@@ -37,6 +37,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
+import kotlin.test.assertTrue
 
 class DiagnosticsTest : BaseModuleDrTest() {
 
@@ -199,7 +200,9 @@ class DiagnosticsTest : BaseModuleDrTest() {
                 aom,
                 ideSyncTestResolutionInput,
                 messagesCheck = { node ->
-                    node.messages.all { it.severity <= Severity.WARNING }
+                    assertTrue {
+                        node.messages.all { it.severity <= Severity.WARNING }
+                    }
                 },
                 filter = ideSyncModuleResolutionFilter
             )
@@ -258,7 +261,9 @@ class DiagnosticsTest : BaseModuleDrTest() {
                 aom,
                 ideSyncTestResolutionInput,
                 messagesCheck = { node ->
-                    node.messages.all { it.severity <= Severity.WARNING }
+                    assertTrue {
+                        node.messages.all { it.severity <= Severity.WARNING }
+                    }
                 },
                 filter = ideSyncModuleResolutionFilter
             )
@@ -324,7 +329,9 @@ class DiagnosticsTest : BaseModuleDrTest() {
                     aom,
                     ideSyncTestResolutionInput,
                     messagesCheck = { node ->
-                        node.messages.all { it.severity <= Severity.WARNING }
+                        assertTrue {
+                            node.messages.all { it.severity <= Severity.WARNING }
+                        }
                     },
                     filter = ideSyncModuleResolutionFilter
                 )

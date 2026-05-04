@@ -4,6 +4,7 @@
 
 package org.jetbrains.amper.cli.test
 
+import org.jetbrains.amper.cli.test.utils.assertStderrContains
 import org.jetbrains.amper.cli.test.utils.assertStdoutContains
 import org.jetbrains.amper.cli.test.utils.runSlowTest
 import org.junit.jupiter.api.Test
@@ -26,6 +27,6 @@ class KotlinxRpcTest : AmperCliTestBase() {
             expectedExitCode = 1,
             assertEmptyStdErr = false,
         )
-        result.stderr.contains("1st type argument is marked with @Rpc annotation, but inferred type is class Any")
+        result.assertStderrContains("1st type argument is marked with @Rpc annotation, but inferred type is class Any")
     }
 }

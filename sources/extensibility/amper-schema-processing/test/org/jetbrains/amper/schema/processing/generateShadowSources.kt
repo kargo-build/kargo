@@ -203,7 +203,9 @@ private fun Defaults.toCode(type: PluginData.Type): CodeBlock = when (this) {
     is Defaults.ListDefault -> if (value.isEmpty()) CodeBlock.of("emptyList()") else {
         type as PluginData.Type.ListType
         val list = CodeBlock.builder()
-        value.map { list.add("%L, ", it.toCode(type.elementType)) }
+        value.forEach {
+            list.add("%L, ", it.toCode(type.elementType))
+        }
         CodeBlock.of("listOf(%L)", list.build())
     }
     is Defaults.MapDefault -> CodeBlock.of("emptyMap()") // NOTE: support non-trivial maps when ready
