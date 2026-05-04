@@ -77,25 +77,25 @@ class ProjectFileTest : AmperCliTestBase() {
             expectedExitCode = 1,
             assertEmptyStdErr = false,
         )
-        assertContains(r.stdout, "project.yaml:7:5: Glob pattern \"glob-with-no-matches-at-all/*\" doesn't match any Amper module directory under the project root")
-        assertContains(r.stdout, "project.yaml:8:5: Glob pattern \"not-a-modul?\" doesn't match any Amper module directory under the project root")
+        assertContains(r.stdout, "project.yaml:7:5: Glob pattern `glob-with-no-matches-at-all/*` doesn't match any Amper module directory under the project root")
+        assertContains(r.stdout, "project.yaml:8:5: Glob pattern `not-a-modul?` doesn't match any Amper module directory under the project root")
         assertContains(r.stdout, "project.yaml:14:5: The root module is included by default")
 
-        assertContains(r.stderr, "project.yaml:3:5: Unresolved module path \"./does-not-exist\"")
-        assertContains(r.stderr, "project.yaml:4:5: Unresolved module path \"./does/not/exist\"")
-        assertContains(r.stderr, "project.yaml:5:5: \"not-a-dir\" is not a directory")
-        assertContains(r.stderr, "project.yaml:6:5: Directory \"not-a-module\" doesn't contain an Amper module file")
-        assertContains(r.stderr, "project.yaml:9:5: Invalid glob pattern \"broken[syntax\": Missing '] near index 12\n" +
+        assertContains(r.stderr, "project.yaml:3:5: Unresolved module path `./does-not-exist`")
+        assertContains(r.stderr, "project.yaml:4:5: Unresolved module path `./does/not/exist`")
+        assertContains(r.stderr, "project.yaml:5:5: `not-a-dir` is not a directory")
+        assertContains(r.stderr, "project.yaml:6:5: Directory `not-a-module` doesn't contain an Amper module file")
+        assertContains(r.stderr, "project.yaml:9:5: Invalid glob pattern `broken[syntax`: Missing '] near index 12\n" +
                 "broken[syntax\n" +
                 "            ^")
-        assertContains(r.stderr, "project.yaml:10:5: Invalid glob pattern \"broken[z-a]syntax\": Invalid range near index 7\n" +
+        assertContains(r.stderr, "project.yaml:10:5: Invalid glob pattern `broken[z-a]syntax`: Invalid range near index 7\n" +
                 "broken[z-a]syntax\n" +
                 "       ^")
-        assertContains(r.stderr, "project.yaml:11:5: Invalid glob pattern \"broken[syntax/with/**\": Explicit 'name separator' in class near index 13\n" +
+        assertContains(r.stderr, "project.yaml:11:5: Invalid glob pattern `broken[syntax/with/**`: Explicit 'name separator' in class near index 13\n" +
                 "broken[syntax/with/**\n" +
                 "             ^")
-        assertContains(r.stderr, "project.yaml:12:5: Unsupported \"**\" in module glob pattern \"forbidden/**/recursive\". Use multiple single-level \"*\" segments instead to specify the depth exactly.")
-        assertContains(r.stderr, "project.yaml:13:5: Directory \"../jvm-default-compiler-settings\" is not under the project root")
+        assertContains(r.stderr, "project.yaml:12:5: Unsupported `**` in module glob pattern `forbidden/**/recursive`. Use multiple single-level `*` segments instead to specify the depth exactly.")
+        assertContains(r.stderr, "project.yaml:13:5: Directory `../jvm-default-compiler-settings` is not under the project root")
         assertContains(r.stderr, "ERROR: Aborting because there were errors in the Amper project file, please see above")
     }
 

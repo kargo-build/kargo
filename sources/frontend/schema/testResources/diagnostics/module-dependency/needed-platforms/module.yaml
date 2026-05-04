@@ -6,10 +6,10 @@ product:
     - js
 
 dependencies:
-  - <![Error] Module sub-module does not support compiling to platforms [jvm, android]!>./sub-module<!>
+  - <![Error] Module `sub-module` does not support compiling to platforms [`jvm`, `android`]!>./sub-module<!>
 
 dependencies@jvm:
-  - <![Error] Module sub-module does not support compiling to platforms [jvm]!>./sub-module<!>
+  - <![Error] Module `sub-module` does not support compiling to platforms [`jvm`]!>./sub-module<!>
 
 dependencies@js:
   - ./sub-module

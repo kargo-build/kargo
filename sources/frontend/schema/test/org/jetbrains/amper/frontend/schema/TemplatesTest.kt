@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.schema
@@ -22,7 +22,7 @@ internal class TemplatesTest : FrontendTestCaseBase(Path("testResources") / "tem
         aomTest(
             "templates-adjust-path-test",
             // TODO: Rewrite this test to properly reflect the project structure
-            expectedError = "Cannot find a module file './some-dep-2'",
+            expectedError = "Cannot find module file in `./some-dep-2`",
         )
     }
 

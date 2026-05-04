@@ -78,7 +78,7 @@ internal fun parseEnum(
         reportParsing(
             scalar, TreeDiagnosticId.UnknownEnumValue,
             "validation.types.unknown.enum.value",
-            textValue, suggestedValues.joinToString(),
+            textValue, suggestedValues.map { "`$it`" },
             type = BuildProblemType.TypeMismatch,
         )
         return errorNode(scalar, type)

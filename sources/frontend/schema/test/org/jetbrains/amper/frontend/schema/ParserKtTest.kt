@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.schema
@@ -73,7 +73,7 @@ internal class ParserKtTest : FrontendTestCaseBase(Path("testResources") / "pars
         aomTest(
             "11-frontend-plain",
             // TODO: Rewrite this test to properly reflect the project structure
-            expectedError = "Cannot find a module file '../frontend-api'"
+            expectedError = "Cannot find module file in `../frontend-api`"
         )
     }
 
@@ -184,7 +184,7 @@ internal class ParserKtTest : FrontendTestCaseBase(Path("testResources") / "pars
         aomTest(
             "24-no-npe-for-leaf-platform",
             // TODO: Rewrite this test to properly reflect the project structure
-            expectedError = "Cannot find a module file './subModule'"
+            expectedError = "Cannot find module file in `./subModule`"
         )
     }
 
@@ -210,7 +210,7 @@ internal class ParserKtTest : FrontendTestCaseBase(Path("testResources") / "pars
 
     @Test
     fun `test with android version override`() {
-        aomTest("overriding-android-sdk-compile-version", expectedError = "Version for compileSdk (27) should be at least minSdk version (30)")
+        aomTest("overriding-android-sdk-compile-version", expectedError = "Version for `compileSdk` (27) should be at least `minSdk` version (30)")
     }
 
     @Test

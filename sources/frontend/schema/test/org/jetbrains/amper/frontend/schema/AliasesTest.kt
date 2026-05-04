@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.frontend.schema
@@ -20,7 +20,7 @@ class AliasesTest : FrontendTestCaseBase(Path("testResources") / "parser" / "ali
     fun `empty aliases`() {
         aomTest(
             "empty-aliases",
-            expectedError = "Alias emptyAlias should have at least one platform present in the current product",
+            expectedError = "Alias `emptyAlias` should have at least one platform present in the current product",
         )
     }
 
@@ -28,7 +28,7 @@ class AliasesTest : FrontendTestCaseBase(Path("testResources") / "parser" / "ali
     fun `skipped alias`() {
         aomTest(
             "skipped-alias",
-            expectedError = "Alias skippedAlias should have at least one platform present in the current product",
+            expectedError = "Alias `skippedAlias` should have at least one platform present in the current product",
         )
     }
 
@@ -36,7 +36,7 @@ class AliasesTest : FrontendTestCaseBase(Path("testResources") / "parser" / "ali
     fun `expanded alias`() {
         aomTest(
             "expanded-alias",
-            expectedError = "Alias iosAndAndroid uses non-leaf platform ios, which is not supported at the moment"
+            expectedError = "Alias `iosAndAndroid` uses non-leaf platform `ios`, which is not supported at the moment"
         )
     }
 }

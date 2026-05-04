@@ -39,7 +39,7 @@ private val jarComparator = Comparator<Path> { jar1, jar2 ->
     when {
         jar1IsNaughty && !jar2IsNaughty -> 1 // naughty jar1 should be considered "bigger" (last)
         !jar1IsNaughty && jar2IsNaughty -> -1 // naughty jar2 should be considered "bigger" (last)
-        else -> jar1.name.compareTo(jar2.name) // both naughty or both good - order normally
+        else -> jar1.name.compareTo(jar2.name) // both naughty or both good – order normally
     }
 }
 

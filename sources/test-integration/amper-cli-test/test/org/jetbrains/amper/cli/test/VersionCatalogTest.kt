@@ -40,6 +40,6 @@ class VersionCatalogTest : AmperCliTestBase() {
             expectedExitCode = 1,
             assertEmptyStdErr = false,
         )
-        result.assertStderrContains("No catalog value for the key libs.kotlinx.datetime")
+        result.assertStderrContains("No catalog value for the key `libs.kotlinx.datetime`")
     }
 }

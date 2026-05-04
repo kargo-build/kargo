@@ -69,7 +69,7 @@ fun Module.convertModuleParts(): ClassBasedSet<ModulePart<*>> {
                                     messageKey = "credentials.file.does.not.have.key",
                                     credentials.file.normalize(),
                                     keyProperty.value,
-                                    credentialProperties.keys.joinToString(),
+                                    credentialProperties.keys.map { "`$it`" },
                                     problemType = BuildProblemType.UnresolvedReference,
                                 )
                             }

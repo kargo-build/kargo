@@ -54,7 +54,7 @@ class ModuleDependencyDoesntHaveNeededPlatforms(
         get() = SchemaBundle.message(
             "module.dependency.doesnt.have.needed.platforms",
             dependency.module.userReadableName,
-            unsupportedPlatforms.map(Platform::pretty),
+            unsupportedPlatforms.map { "`${it.pretty}`" },
         )
 
     val unsupportedPlatforms: Set<Platform> = dependingFragment.platforms - dependency.module.leafPlatforms

@@ -2,4 +2,4 @@ product:
   type: jvm/app
 
 repositories:
-  - <![Error] No value for required property 'url'.!>id: noUrl<!>
+  - <![Error] No value for required property `url`.!>id: noUrl<!>

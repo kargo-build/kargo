@@ -82,13 +82,13 @@ object IncorrectSettingsSectionFactory : TreeDiagnosticFactory {
                             separator = ", ",
                             lastSeparator = ", or",
                             separatorForSize2 = " or ",
-                            transform = { "'${it.schemaValue}'" }
+                            transform = { "`${it.schemaValue}`" }
                         ),
                         platforms.toList().joinToString(
                             separator = ", ",
                             lastSeparator = ", and",
                             separatorForSize2 = " and ",
-                            transform = { "'${it.schemaValue}'" }
+                            transform = { "`${it.schemaValue}`" }
                         ),
                         level = Level.Warning,
                     )
@@ -103,7 +103,7 @@ object IncorrectSettingsSectionFactory : TreeDiagnosticFactory {
                     messageKey = "settings.incorrect.product.type",
                     prop.key, // TODO use full path of the property instead
                     usedProductType,
-                    productTypes.joinToString { it.value },
+                    productTypes.joinToString { "`${it.value}`" },
                     level = Level.Warning,
                 )
             )

@@ -2,7 +2,7 @@ product:
   type: jvm/lib
 
 settings:
-  junit: <![Error] Unknown value 'invalid'. Expected one of: [junit-4, junit-5, none]!>invalid<!>
+  junit: <![Error] Unknown value `invalid`. Expected one of: [`junit-4`, `junit-5`, `none`]!>invalid<!>
   compose: <![Error] Expected `ComposeSettings ( "enabled" | {..} )`, but got `scalar`!>something-else<!>
   publishing: <![Error] Expected `PublishingSettings {..}`, but got `sequence []`!>[1,2,3]<!>
   kotlin:

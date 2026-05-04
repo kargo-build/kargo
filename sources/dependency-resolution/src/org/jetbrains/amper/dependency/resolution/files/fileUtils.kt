@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.dependency.resolution.files
@@ -61,7 +61,7 @@ internal suspend fun <T> fileOperationWithRetry(
 
 private fun retryFileOperationOnException(e: Exception, path: Path): Boolean =
     when (e) {
-        // File doesn't exist - nothing to operate on.
+        // File doesn't exist – nothing to operate on.
         is NoSuchFileException -> false
         is IOException -> {
             // Retry until the file could be opened.

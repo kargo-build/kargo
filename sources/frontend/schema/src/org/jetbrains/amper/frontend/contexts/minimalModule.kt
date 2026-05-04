@@ -102,7 +102,7 @@ private fun ProblemReporter.reportUnsupportedPlatform(
         messageKey = "product.unsupported.platform",
         productType.schemaValue,
         unsupportedPlatform.value.pretty,
-        productType.supportedPlatforms.joinToString { it.pretty },
+        productType.supportedPlatforms.map { "`${it.pretty}`" },
         problemType = BuildProblemType.InconsistentConfiguration,
     )
 }

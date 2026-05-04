@@ -3,4 +3,4 @@ product:
   platforms: [jvm, android]
 
 aliases:
-  myAlias: [ jvm, android, <![Error] Alias myAlias uses platform iosArm64, that is undeclared in the current product!>iosArm64<!> ]
+  myAlias: [ jvm, android, <![Error] Alias `myAlias` uses platform `iosArm64`, that is undeclared in the current product!>iosArm64<!> ]

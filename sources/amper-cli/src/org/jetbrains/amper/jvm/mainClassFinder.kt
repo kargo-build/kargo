@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2024 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.jvm
@@ -30,7 +30,7 @@ internal fun List<Fragment>.getEffectiveJvmMainClass(): String {
 
     if (effectiveMainClass == null) {
         userReadableError(
-            "The JVM main class was not found for application module '${module.userReadableName}' in any of the " +
+            "The JVM main class was not found for application module `${module.userReadableName}` in any of the " +
                     "following source directories:\n${flatMap { it.sourceRoots }.joinToString("\n") { "- ${it.pathString}" }}\n" +
                     "Make sure a main.kt file is present in your sources with a valid `main` function, or declare " +
                     "the fully-qualified main class explicitly with `settings.jvm.mainClass` in your module file."

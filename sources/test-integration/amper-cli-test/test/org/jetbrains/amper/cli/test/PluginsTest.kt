@@ -358,7 +358,7 @@ class PluginsTest : AmperCliTestBase() {
                    ├─ ${projectDir / "plugin-b" / "module.yaml"}:4:7
                    ╰─ ${projectDir / "hello"}
                 """.trimIndent(),
-                "${projectDir / "not-a-plugin" / "module.yaml"}:1:10: Unexpected product type for plugin. Expected jvm/amper-plugin, got jvm/app",
+                "${projectDir / "not-a-plugin" / "module.yaml"}:1:10: Unexpected product type for plugin. Expected `jvm/amper-plugin`, got `jvm/app`",
                 "${projectDir / "plugin-empty-id" / "module.yaml"}:5:18: Plugin settings class `com.example.Settings` is not found",
                 "${projectDir / "invalid-settings" / "module.yaml"}:4:18: Plugin settings class `com.example.Foo` must be an interface annotated with the `@Configurable` annotation",
                 "failed to read Amper model, refer to the errors above",
@@ -417,8 +417,8 @@ class PluginsTest : AmperCliTestBase() {
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:5:3: Expected a value: `Task {..}`",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:6:22: Unexpected custom YAML type tag",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:6:3: Expected a value: `Task {..}`",
-                "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:8:13: The task action function specifier 'com.example.nonExistentTask' doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
-                "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:10:13: The task action function specifier 'com.example.nonExistentTask' doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
+                "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:8:13: The task action function specifier `com.example.nonExistentTask` doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
+                "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:10:13: The task action function specifier `com.example.nonExistentTask` doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
                 "${projectDir / "invalid-plugin-yaml" / "plugin.yaml"}:4:13: Missing task action function specifier. Add the `!<fully-qualified-task-action-function-name>` YAML type tag to the mapping. Available task action functions: <none>",
                 "${projectDir / "plugin-deprecated-api" / "plugin.yaml"}:5:5: `markOutputsAs` per-task property is deprecated and no longer has any effect. " +
                         "Use the top-level `generated:` block instead and put your generated output in the corresponding category, e.g., `sources`, `resources`, etc. " +
@@ -525,18 +525,18 @@ class PluginsTest : AmperCliTestBase() {
         with(result) {
             val pluginYaml = projectDir / "plugin1" / "plugin.yaml"
             assertErrors(
-                "${pluginYaml}:32:5: Cannot assign to property `taskOutputDir` - it is a built-in property available for reference only",
+                "${pluginYaml}:32:5: Cannot assign to property `taskOutputDir` – it is a built-in property available for reference only",
                 "${pluginYaml}:18:11: Expected `Dependency.Maven ( maven-coordinates )`, but got `sequence []`",
-                "${pluginYaml}:34:1: Cannot assign to property `module` - it is a built-in property available for reference only",
+                "${pluginYaml}:34:1: Cannot assign to property `module` – it is a built-in property available for reference only",
                 "${pluginYaml}:17:11: Referencing `markOutputsAs` is not allowed",
                 "${pluginYaml}:14:11: Maven coordinates should not contain slashes",
-                "${pluginYaml}:15:11: Maven coordinates one-part should contain at least two parts separated by ':', but got 1",
+                "${pluginYaml}:15:11: Maven coordinates `one-part` should contain at least two parts separated by `:`, but got `1`",
                 "${pluginYaml}:11:16: Referencing `module` is not allowed",
                 "${pluginYaml}:12:16: The value of type `mapping {string : Element}` cannot be assigned to the type `Nested`",
                 "${pluginYaml}:6:17: The value of type `string` cannot be assigned to the type `boolean`",
                 "${pluginYaml}:9:13: The value of type `Settings` cannot be assigned to the type `path`",
                 "${pluginYaml}:7:23: The value of type `boolean` cannot be used in string interpolation",
-                "${pluginYaml}:4:13: No value for required task action parameters: 'int', 'classpath'.",
+                "${pluginYaml}:4:13: No value for required task action parameters: `int`, `classpath`.",
                 "${pluginYaml}:19:24: Unable to find reference's starting element `unknownRoot` in the current context",
                 "${pluginYaml}:19:24: Unable to resolve `missing` on a non-object type `string`",
                 "${pluginYaml}:19:24: Unable to resolve `unknown`: no such property is found in type `Settings`",
@@ -668,7 +668,7 @@ class PluginsTest : AmperCliTestBase() {
             assertEmptyStdErr = false,
             expectedExitCode = 1,
         ).assertErrors(
-            "${pluginYaml}:3:13: No value for required task action parameters: 'booleanProp', 'intProp', 'enumProp'.",
+            "${pluginYaml}:3:13: No value for required task action parameters: `booleanProp`, `intProp`, `enumProp`.",
             "failed to read Amper model, refer to the errors above",
         )
     }
@@ -762,7 +762,7 @@ class PluginsTest : AmperCliTestBase() {
         )
         val plugin2Yaml = r1.projectDir / "unregistered-plugin-2" / "plugin.yaml"
         r3.assertErrors(
-            "$plugin2Yaml:3:13: The task action function specifier 'nonExistedType' doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
+            "$plugin2Yaml:3:13: The task action function specifier `nonExistedType` doesn't correspond to any available `@TaskAction`-annotated top-level functions. Available task action functions: <none>",
             "Task ':unregistered-plugin-2:buildAmperPluginInfo' failed: `plugin.yaml` processing failed, see the errors above.",
         )
         r3.assertStderrContains("Task ':unregistered-plugin-2:buildAmperPluginInfo' failed: `plugin.yaml` processing failed, see the errors above.")

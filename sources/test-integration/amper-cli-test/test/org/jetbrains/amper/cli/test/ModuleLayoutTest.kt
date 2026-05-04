@@ -23,7 +23,7 @@ class ModuleLayoutTest : AmperCliTestBase() {
             expectedExitCode = 1,
             assertEmptyStdErr = false
         )
-        result.assertStderrContains("The JVM main class was not found for application module 'wrong-module-layout'")
+        result.assertStderrContains("The JVM main class was not found for application module `wrong-module-layout`")
     }
 
     @Test
@@ -35,7 +35,7 @@ class ModuleLayoutTest : AmperCliTestBase() {
             assertEmptyStdErr = false
         )
 
-        result.assertStderrContains("Module layout maven-like is only supported in JVM modules (jvm/app or jvm/lib)")
+        result.assertStderrContains("Module layout `maven-like` is only supported in JVM modules (`jvm/app` or `jvm/lib`)")
     }
 
     @Test

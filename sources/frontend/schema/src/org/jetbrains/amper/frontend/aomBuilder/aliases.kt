@@ -112,7 +112,7 @@ data class AliasWithNonLeafPlatformExpandsToNothing(
             "alias.with.non.leaf.platform.expands.to.nothing",
             alias.value,
             nonLeafPlatform.value.pretty,
-            nonLeafPlatform.value.leaves.map(Platform::pretty),
+            nonLeafPlatform.value.leaves.map { "`${it.pretty}`" },
         )
 }
 

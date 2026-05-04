@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 @file:Suppress("SameParameterValue")
@@ -64,7 +64,7 @@ class NativeDistributionCommonizerCache(private val konan: KotlinNativeCompiler)
         val todoOutputTargets = outputTargets - cachedOutputTargets
 
         if (todoOutputTargets.isEmpty()) {
-            logInfo("All available targets are commonized already - Nothing to do")
+            logInfo("All available targets are commonized already – nothing to do")
             if (todoOutputTargets.isNotEmpty()) {
                 logInfo("Platforms cannot be commonized, because of missing platform libraries: $todoOutputTargets")
             }

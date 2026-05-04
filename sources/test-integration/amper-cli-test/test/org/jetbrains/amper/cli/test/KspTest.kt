@@ -35,7 +35,7 @@ class KspTest: AmperCliTestBase() {
 
         // KSP shouldn't crash
         buildResult.assertStderrDoesNotContain("Internal error")
-        buildResult.assertSomeStderrLineContains("Invalid Kotlin compiler version 2. Should be in the format 'x.y.*'.")
+        buildResult.assertSomeStderrLineContains("Invalid Kotlin compiler version `2`. Should be in the format `x.y.*`.")
     }
 
     @Test

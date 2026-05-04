@@ -3,4 +3,4 @@ product:
   platforms: [ jvm ]
 
 aliases:
-  <![Error] Alias myAlias should have at least one platform present in the current product!>myAlias<!>: []
+  <![Error] Alias `myAlias` should have at least one platform present in the current product!>myAlias<!>: []
