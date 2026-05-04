@@ -16,6 +16,7 @@ modules:
   - sources/amper-crypto
   - sources/amper-jdk-provisioning
   - sources/amper-junit-listeners
+  - sources/amper-libraries-for-idea
   - sources/amper-maven-converter
   - sources/amper-maven-plugin-download
   - sources/amper-maven-plugins-compatibility
