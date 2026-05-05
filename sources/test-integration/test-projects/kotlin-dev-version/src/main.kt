@@ -1,3 +1,3 @@
-fun main() {
+fun someLibFunction() {
     println("Hello")
 }

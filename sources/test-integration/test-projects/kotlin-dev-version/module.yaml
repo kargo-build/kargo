@@ -1,5 +1,11 @@
 product:
-  type: jvm/app
+  type: kmp/lib
+  platforms:
+    - jvm
+    - linuxX64
+    - linuxArm64
+    - mingwX64
+    - macosArm64
 
 # We need this repo for the dev stdlib
 repositories:

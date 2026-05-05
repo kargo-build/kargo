@@ -1,5 +1,5 @@
 /*
- * Copyright 2000-2025 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
+ * Copyright 2000-2026 JetBrains s.r.o. and contributors. Use of this source code is governed by the Apache 2.0 license.
  */
 
 package org.jetbrains.amper.core.downloader
@@ -12,7 +12,8 @@ import org.jetbrains.amper.system.info.Arch
 import org.jetbrains.amper.system.info.OsFamily
 import java.nio.file.Path
 
-const val MAVEN_CENTRAL_REPOSITORY_URL = "https://repo1.maven.org/maven2"
+private const val MAVEN_CENTRAL_REPOSITORY_URL = "https://repo1.maven.org/maven2"
+private const val KOTLIN_BOOTSTRAP_REPOSITORY_URL = "https://packages.jetbrains.team/maven/p/kt/bootstrap"
 
 const val KOTLIN_GROUP_ID = "org.jetbrains.kotlin"
 
@@ -53,7 +54,7 @@ suspend fun downloadAndExtractKotlinNative(
     } ?: return null
 
     return downloadAndExtractFromMaven(
-        mavenRepository = MAVEN_CENTRAL_REPOSITORY_URL,
+        mavenRepository = if ("-dev-" in version) KOTLIN_BOOTSTRAP_REPOSITORY_URL else MAVEN_CENTRAL_REPOSITORY_URL,
         groupId = KOTLIN_GROUP_ID,
         artifactId = "kotlin-native-prebuilt",
         version = version,
