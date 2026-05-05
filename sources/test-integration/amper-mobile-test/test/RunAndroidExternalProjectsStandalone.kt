@@ -31,7 +31,7 @@ class RunAndroidExternalProjectsStandalone : AndroidBaseTest() {
     @Test
     fun kotlinConfApp2025() = runInstrumentedTests(
         projectSource = ProjectSource.RemoteRepository(
-            cloneUrl = "https://github.com/Jeffset/kotlinconf-app.git",
+            cloneUrl = "https://github.com/JetBrains/kotlinconf-app.git",
             cloneIntoDirName = "kotlinconf-app",
             refLikeToCheckout = "amper",
         ),
