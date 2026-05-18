@@ -8,6 +8,7 @@ import com.intellij.openapi.util.Computable
 import java.nio.file.Path
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.aomBuilder.readProjectModel
+import build.kargo.frontend.dr.resolver.withGitDependencies
 import org.jetbrains.amper.frontend.diagnostics.FrontendDiagnosticId.GitSourceResolutionFailed
 import org.jetbrains.amper.frontend.project.AmperProjectContext
 import org.jetbrains.amper.problems.reporting.BuildProblem
@@ -57,7 +58,7 @@ class KargoModelReader {
                             context.readProjectModel(
                                 pluginData = emptyList(),
                                 mavenPluginXmls = emptyList()
-                            )
+                            )?.withGitDependencies()
                         }.onFailure {
                             logger.error(
                                 "Kargo: Error during context.readProjectModel",

@@ -39,8 +39,8 @@ object GitSourcePreScanner {
 
             for (parsed in gitSources) {
                 logger.debug("Pre-scanning detected Git source: ${parsed.url} (${parsed.version}) in ${moduleFile.path}")
-                val resolvedDir = runCatching {
-                    cloner.resolveSourcesDir(parsed.url, parsed.version, parsed.path)
+                val repoDir = runCatching {
+                    cloner.resolveSourcesDir(parsed.url, parsed.version, null)
                 }.getOrElse { error ->
                     logger.warn("Failed to resolve Git source: ${parsed.url}@${parsed.version} - ${error.message}")
                     val errorMessage = when (error) {
@@ -61,13 +61,18 @@ object GitSourcePreScanner {
                     null
                 } ?: continue
 
-                val clonedModuleFile = amperModuleFileNames.firstNotNullOfOrNull { name ->
-                    val filePath = resolvedDir.resolve(name)
-                    if (filePath.toFile().exists()) frontendPathResolver.loadVirtualFileOrNull(filePath) else null
-                }
-
-                if (clonedModuleFile != null && clonedModuleFile !in allScannedModuleFiles) {
-                    queue.addLast(clonedModuleFile)
+                java.nio.file.Files.walk(repoDir).use { stream ->
+                    stream.filter {
+                        val pathStr = it.toString()
+                        !pathStr.contains("/.git/") && !pathStr.contains("\\.git\\") &&
+                        !pathStr.contains("/build/") && !pathStr.contains("\\build\\") &&
+                        it.toFile().isFile && (it.fileName.toString() == "module.yaml" || it.fileName.toString() == "module.amper")
+                    }.forEach { filePath ->
+                        val clonedModuleFile = frontendPathResolver.loadVirtualFileOrNull(filePath)
+                        if (clonedModuleFile != null && clonedModuleFile !in allScannedModuleFiles) {
+                            queue.addLast(clonedModuleFile)
+                        }
+                    }
                 }
             }
         }

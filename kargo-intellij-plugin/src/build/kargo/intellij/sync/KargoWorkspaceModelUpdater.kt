@@ -41,6 +41,7 @@ import org.jetbrains.amper.frontend.LocalModuleDependency
 import org.jetbrains.amper.frontend.Model
 import org.jetbrains.amper.frontend.ancestralPath
 import org.jetbrains.amper.frontend.fragmentsTargeting
+import org.jetbrains.amper.frontend.AmperModule
 import org.jetbrains.amper.frontend.Platform
 import org.jetbrains.amper.frontend.dr.resolver.AmperResolutionSettings
 import org.jetbrains.amper.frontend.dr.resolver.DirectFragmentDependencyNode
@@ -54,6 +55,7 @@ import java.io.File
 import java.lang.reflect.Array
 import java.nio.file.Files
 import java.nio.file.Paths
+import javax.swing.JOptionPane
 
 /**
  * Updates the IntelliJ WorkspaceModel based on the Kargo project model.
@@ -132,21 +134,25 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
 
                 try {
                     val ideModule = modifiableModuleModel.newModule(imlPath, "JAVA_MODULE")
+                    val isVendor = kargoModule.userReadableName.startsWith("vendor.")
+                    
+                    if (isVendor) {
+                        modifiableModuleModel.setModuleGroupPath(ideModule, arrayOf("vendor", kargoModule.userReadableName.removePrefix("vendor.")))
+                    } else {
+                        modifiableModuleModel.setModuleGroupPath(ideModule, arrayOf(kargoModule.userReadableName))
+                    }
+                    
                     nameToModule[moduleName] = ideModule
 
                     val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
-                    val isVendor = kargoModule.userReadableName.startsWith("vendor.")
 
                     fragment.sourceRoots.forEach { sourceRoot ->
                         val rootPath = sourceRoot.toString()
                         val sourceUrl = VfsUtilCore.pathToUrl(rootPath)
 
-                        // For vendor (git source) modules, use the repo root as content root so the
-                        // full repo is visible in the Project View. For local modules, map the first
-                        // non-test fragment to the module directory so project-level files and exclusions work.
-                        val contentRootPath = if (isVendor) {
-                            Paths.get(rootPath).parent?.toString() ?: rootPath
-                        } else if (isRootModule) {
+                        // For vendor (git source) modules, map the first non-test fragment to the module
+                        // directory so project-level files and exclusions work, just like local modules.
+                        val contentRootPath = if (isRootModule) {
                             kargoModule.source.moduleDir.toString()
                         } else {
                             rootPath
@@ -167,7 +173,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     modifiableModel.inheritSdk()
                     modifiableModel.commit()
 
-                    setupKotlinFacet(ideModule, moduleName, fragment)
+                    setupKotlinFacet(ideModule, moduleName, fragment, kargoModule)
                 } catch (e: Exception) {
                     logger.error("Kargo: Failed to create module $moduleName", e)
                 }
@@ -194,19 +200,18 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             val libraryName = "Kargo: ${coords.groupId}:${coords.artifactId}:${coords.version}"
             val hasKlib = mavenNode.dependency.files(false).any { it.path?.toString()?.endsWith(".klib") == true }
 
-            // Always recreate the library roots to ensure stale entries from previous syncs are cleared.
             var library = libraryTable.getLibraryByName(libraryName)
-            if (library == null) {
-                library = if (hasKlib && kotlinNativeLibraryKind != null) {
-                    projectLibraryModel.createLibrary(libraryName, kotlinNativeLibraryKind)
-                } else {
-                    projectLibraryModel.createLibrary(libraryName)
-                }
+            if (library != null) {
+                projectLibraryModel.removeLibrary(library)
             }
+            
+            library = if (hasKlib && kotlinNativeLibraryKind != null) {
+                projectLibraryModel.createLibrary(libraryName, kotlinNativeLibraryKind)
+            } else {
+                projectLibraryModel.createLibrary(libraryName)
+            }
+            
             val libModifiableModel = library.modifiableModel
-            // Clear existing roots before re-adding to avoid duplicates from previous syncs
-            libModifiableModel.getUrls(OrderRootType.CLASSES).forEach { libModifiableModel.removeRoot(it, OrderRootType.CLASSES) }
-            libModifiableModel.getUrls(OrderRootType.SOURCES).forEach { libModifiableModel.removeRoot(it, OrderRootType.SOURCES) }
 
             mavenNode.dependency.files(withSources = true).forEach { depFile ->
                 val path = depFile.path
@@ -269,15 +274,26 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                 val ideModule = nameToModule[moduleName] ?: return@forEach
                 val externalDeps = fragmentToExternalDepsExpanded[fragment] ?: return@forEach
 
+                val exportedMavenCoords = fragment.externalDependencies
+                    .mapNotNull { it as? org.jetbrains.amper.frontend.MavenDependency }
+                    .filter { it.exported }
+                    .map { it.coordinates }
+
                 val modifiableModel = ModuleRootManager.getInstance(ideModule).modifiableModel
                 externalDeps.forEach { mavenNode ->
                     val coords = mavenNode.dependency.coordinates
                     val libraryName = "Kargo: ${coords.groupId}:${coords.artifactId}:${coords.version}"
                     val library = libraryMap[libraryName]
                     if (library != null) {
-                        val existingEntry = modifiableModel.orderEntries.find { it is LibraryOrderEntry && it.libraryName == libraryName }
-                        if (existingEntry == null) {
-                            modifiableModel.addLibraryEntry(library)
+                        var entry = modifiableModel.orderEntries.find { it is LibraryOrderEntry && it.libraryName == libraryName } as? LibraryOrderEntry
+                        if (entry == null) {
+                            entry = modifiableModel.addLibraryEntry(library)
+                        }
+                        val isExported = exportedMavenCoords.any { exportedCoord ->
+                            coords.groupId == exportedCoord.groupId && coords.artifactId.startsWith(exportedCoord.artifactId)
+                        }
+                        if (isExported) {
+                            entry.isExported = true
                         }
                     }
                 }
@@ -400,7 +416,7 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
         }
     }
 
-    private fun setupKotlinFacet(ideModule: Module, moduleName: String, fragment: Fragment) {
+    private fun setupKotlinFacet(ideModule: Module, moduleName: String, fragment: Fragment, kargoModule: AmperModule) {
         try {
             val facetManager = FacetManager.getInstance(ideModule)
             val facetType = FacetTypeRegistry.getInstance().findFacetType("kotlin-language")
@@ -425,13 +441,60 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
             settings.javaClass.methods.find { it.name == "setUseProjectSettings" }?.invoke(settings, false)
 
             val isNative = fragment.platforms.any { it.isDescendantOf(Platform.NATIVE) }
+            val isJvm = fragment.platforms.any { it.isDescendantOf(Platform.JVM) }
+            val isMultiplatform = kargoModule.leafPlatforms.size > 1
+            // A "common" fragment targets multiple platforms (e.g. JVM + Native)
+            val isCommon = fragment.platforms.size > 1 || (!isNative && !isJvm)
 
-            if (isNative) {
+            // Enable HMPP for multiplatform modules
+            if (isMultiplatform) {
+                try { settings.javaClass.methods.find { it.name == "setHmppEnabled" }?.invoke(settings, true) } catch (_: Exception) {}
+                try { settings.javaClass.methods.find { it.name == "setIsHmppEnabled" }?.invoke(settings, true) } catch (_: Exception) {}
+            }
+
+            // Set dependsOn / implemented modules for expect/actual resolution
+            val refines = fragment.fragmentDependencies.filter { it.type.name == "REFINE" }.map { "${kargoModule.userReadableName}.${it.target.name}" }
+            val friends = fragment.fragmentDependencies.filter { it.type.name == "FRIEND" }.map { "${kargoModule.userReadableName}.${it.target.name}" }
+
+            if (refines.isNotEmpty()) {
+                try {
+                    settings.javaClass.methods.find { it.name == "setDependsOnModuleNames" }?.invoke(settings, refines)
+                    settings.javaClass.methods.find { it.name == "setImplementedModuleNames" }?.invoke(settings, refines)
+                } catch (e: Exception) {
+                    logger.warn("Kargo: Failed to set dependsOn/implemented modules for $moduleName", e)
+                }
+            }
+            
+            if (friends.isNotEmpty()) {
+                try {
+                    settings.javaClass.methods.find { it.name == "setAdditionalVisibleModuleNames" }?.invoke(settings, friends.toSet())
+                    settings.javaClass.methods.find { it.name == "setImplementedModuleNames" }?.invoke(settings, friends)
+                    settings.javaClass.methods.find { it.name == "setDependsOnModuleNames" }?.invoke(settings, friends)
+                } catch (e: Exception) {
+                    logger.warn("Kargo: Failed to set additional visible modules for $moduleName", e)
+                }
+            }
+
+            // Set KotlinModuleKind (SOURCE_SET_HOLDER for common, COMPILATION_AND_SOURCE_SET_HOLDER for specific platforms)
+            if (isMultiplatform) {
+                try {
+                    val moduleKindClass = Class.forName("org.jetbrains.kotlin.config.KotlinModuleKind", true, kotlinCL)
+                    val kindName = if (isCommon) "SOURCE_SET_HOLDER" else "COMPILATION_AND_SOURCE_SET_HOLDER"
+                    val kind = moduleKindClass.getField(kindName).get(null)
+                    settings.javaClass.methods.find { it.name == "setKind" }?.invoke(settings, kind)
+                } catch (e: Exception) {
+                    logger.warn("Kargo: Failed to set KotlinModuleKind for $moduleName", e)
+                }
+            }
+
+            if (isNative && !isCommon) {
                 // Configure Compiler Arguments
                 try {
                     val argsClass = Class.forName("org.jetbrains.kotlin.cli.common.arguments.K2NativeCompilerArguments", true, kotlinCL)
                     val argsInstance = argsClass.getDeclaredConstructor().newInstance()
-                    argsClass.getMethod("setMultiPlatform", Boolean::class.java).invoke(argsInstance, true)
+                    if (isMultiplatform) {
+                        argsClass.getMethod("setMultiPlatform", Boolean::class.java).invoke(argsInstance, true)
+                    }
                     try { argsClass.getMethod("setApiVersion", String::class.java).invoke(argsInstance, "2.2") } catch (_: Exception) {}
                     try { argsClass.getMethod("setLanguageVersion", String::class.java).invoke(argsInstance, "2.2") } catch (_: Exception) {}
                     settings.javaClass.methods.find { it.name == "setCompilerArguments" }?.invoke(settings, argsInstance)
@@ -487,11 +550,74 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                 } catch (e: Exception) {
                     logger.warn("Kargo: Failed to set target platform in Kotlin Facet for $moduleName", e)
                 }
+            } else if (isJvm && !isCommon) {
+                // JVM-specific fragment (e.g. src@jvm)
+                try {
+                    val argsClass = Class.forName("org.jetbrains.kotlin.cli.common.arguments.K2JVMCompilerArguments", true, kotlinCL)
+                    val argsInstance = argsClass.getDeclaredConstructor().newInstance()
+                    if (isMultiplatform) {
+                        argsClass.getMethod("setMultiPlatform", Boolean::class.java).invoke(argsInstance, true)
+                    }
+                    try { argsClass.getMethod("setApiVersion", String::class.java).invoke(argsInstance, "2.4") } catch (_: Exception) {}
+                    try { argsClass.getMethod("setLanguageVersion", String::class.java).invoke(argsInstance, "2.4") } catch (_: Exception) {}
+                    try { argsClass.getMethod("setJvmTarget", String::class.java).invoke(argsInstance, "21") } catch (_: Exception) {}
+                    settings.javaClass.methods.find { it.name == "setCompilerArguments" }?.invoke(settings, argsInstance)
+                } catch (e: Exception) {
+                    logger.warn("Kargo: Failed to set K2JVMCompilerArguments", e)
+                }
+
+                // Set JVM target platform
+                try {
+                    val jvmPlatformsClass = Class.forName("org.jetbrains.kotlin.platform.jvm.JvmPlatforms", true, kotlinCL)
+                    val jvmPlatformsInstance = jvmPlatformsClass.getField("INSTANCE").get(null)
+                    val jvmPlatform = jvmPlatformsClass.methods.find { it.name == "jvmPlatformByTargetVersion" }
+                        ?.invoke(jvmPlatformsInstance, "JVM 17")
+                        ?: jvmPlatformsClass.methods.find { it.name == "getUnspecifiedJvmPlatform" }
+                        ?.invoke(jvmPlatformsInstance)
+                    if (jvmPlatform != null) {
+                        settings.javaClass.methods.find { it.name == "setTargetPlatform" }?.invoke(settings, jvmPlatform)
+                        logger.info("Kargo: Set JVM target platform for $moduleName: $jvmPlatform")
+                    }
+                } catch (e: Exception) {
+                    logger.warn("Kargo: Failed to set JVM target platform for $moduleName", e)
+                }
+            } else {
+                // Common fragment (targets multiple platforms) or single-platform JVM-only module
+                try {
+                    val argsClass = Class.forName("org.jetbrains.kotlin.cli.common.arguments.CommonCompilerArguments\$DummyImpl", true, kotlinCL)
+                        ?: Class.forName("org.jetbrains.kotlin.cli.common.arguments.CommonCompilerArguments", true, kotlinCL)
+                    val argsInstance = argsClass.getDeclaredConstructor().newInstance()
+                    if (isMultiplatform) {
+                        argsClass.getMethod("setMultiPlatform", Boolean::class.java).invoke(argsInstance, true)
+                    }
+                    try { argsClass.getMethod("setApiVersion", String::class.java).invoke(argsInstance, "2.3") } catch (_: Exception) {}
+                    try { argsClass.getMethod("setLanguageVersion", String::class.java).invoke(argsInstance, "2.3") } catch (_: Exception) {}
+                    settings.javaClass.methods.find { it.name == "setCompilerArguments" }?.invoke(settings, argsInstance)
+                } catch (e: Exception) {
+                    logger.warn("Kargo: Failed to set CommonCompilerArguments for $moduleName", e)
+                }
+
+                // Set Common target platform for multiplatform common fragments
+                if (isMultiplatform && isCommon) {
+                    try {
+                        val commonPlatformsClass = Class.forName("org.jetbrains.kotlin.platform.CommonPlatforms", true, kotlinCL)
+                        val commonPlatformsInstance = commonPlatformsClass.getField("INSTANCE").get(null)
+                        val commonPlatform = commonPlatformsClass.methods.find { it.name == "getDefaultCommonPlatform" }
+                            ?.invoke(commonPlatformsInstance)
+                        if (commonPlatform != null) {
+                            settings.javaClass.methods.find { it.name == "setTargetPlatform" }?.invoke(settings, commonPlatform)
+                            logger.info("Kargo: Set Common target platform for $moduleName")
+                        }
+                    } catch (e: Exception) {
+                        logger.warn("Kargo: Failed to set Common target platform for $moduleName", e)
+                    }
+                }
             }
 
             modifiableFacetModel.addFacet(facet)
             modifiableFacetModel.commit()
-            logger.info("Kargo: Kotlin facet committed for $moduleName isNative=$isNative")
+            logger.info("Kargo: Kotlin facet committed for $moduleName isNative=$isNative isJvm=$isJvm isMultiplatform=$isMultiplatform isCommon=$isCommon")
+            // JOptionPane.showMessageDialog(null, "Kotlin facet committed for $moduleName isNative=$isNative isJvm=$isJvm isMultiplatform=$isMultiplatform isCommon=$isCommon")
         } catch (e: Exception) {
             logger.warn("Kargo: Failed to setup Kotlin facet for $moduleName", e)
         }
@@ -582,7 +708,20 @@ class KargoWorkspaceModelUpdater(private val project: Project) {
                     globalQueue.addAll(current.children)
                 }
 
-                rootNode.children.filterIsInstance<ModuleDependencyNode>().forEach { moduleNode ->
+                val moduleNodes = mutableSetOf<ModuleDependencyNode>()
+                val mq = ArrayDeque<DependencyNode>()
+                val mVisited = mutableSetOf<DependencyNode>()
+                mq.add(rootNode)
+                while (mq.isNotEmpty()) {
+                    val current = mq.removeFirst()
+                    if (!mVisited.add(current)) continue
+                    if (current is ModuleDependencyNode) {
+                        moduleNodes.add(current)
+                    }
+                    mq.addAll(current.children)
+                }
+
+                moduleNodes.forEach { moduleNode ->
                     val kargoModule = model.modules.find { it.userReadableName == moduleNode.moduleName }
                     moduleNode.children.filterIsInstance<DirectFragmentDependencyNode>().forEach { fragmentNode ->
                         val fragment = kargoModule?.fragments?.find { it.name == fragmentNode.fragmentName }

@@ -35,7 +35,7 @@ class GitSourceCloner(
             checkout(repoDir, version)
 
             val resolvedDir = if (subPath != null) repoDir.resolve(subPath) else repoDir
-            writeModuleNameMetadata(repoUrl, subPath, resolvedDir)
+            writeModuleNameMetadata(repoUrl, repoDir)
             return resolvedDir
         } finally {
             lock.unlock()
@@ -49,25 +49,30 @@ class GitSourceCloner(
         subPath = source.path?.toString()
     )
 
-    private fun writeModuleNameMetadata(repoUrl: String, subPath: String?, targetDir: Path) {
+    private fun writeModuleNameMetadata(repoUrl: String, repoDir: Path) {
         val repoIdentifier = repoUrl.removeSuffix(".git")
             .substringAfter("://")
             .substringAfter('/')
             .replace('/', '-')
             .lowercase()
 
-        val name = buildString {
-            append("vendor.")
-            append(repoIdentifier)
-            subPath?.split('/')?.filter { it.isNotBlank() }?.forEach {
-                append(".")
-                append(it.lowercase())
-            }
-        }
+        val baseName = "vendor.$repoIdentifier"
 
         try {
-            targetDir.createDirectories()
-            targetDir.resolve(".amper-module-name").writeText(name)
+            repoDir.createDirectories()
+            java.nio.file.Files.walk(repoDir).use { stream ->
+                stream.filter {
+                    val pathStr = it.toString()
+                    !pathStr.contains("/.git/") && !pathStr.contains("\\.git\\") &&
+                    !pathStr.contains("/build/") && !pathStr.contains("\\build\\") &&
+                    it.toFile().isFile && (it.fileName.toString() == "module.yaml" || it.fileName.toString() == "module.amper")
+                }.forEach { moduleFile ->
+                    val moduleDir = moduleFile.parent
+                    val relPath = repoDir.relativize(moduleDir).toString().replace('\\', '.').replace('/', '.')
+                    val finalName = if (relPath.isEmpty()) baseName else "$baseName.$relPath"
+                    moduleDir.resolve(".amper-module-name").writeText(finalName)
+                }
+            }
         } catch (_: Exception) {
             // Best effort
         }
